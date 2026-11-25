@@ -238,7 +238,11 @@ export function step(game, dt) {
 }
 
 function tickEffects(game, dt) {
-  for (const e of game.effects) e.ttl -= dt;
+  for (const e of game.effects) {
+    e.ttl -= dt;
+    // An attack in flight follows its bug; once the bug is gone it finishes where the bug was last seen.
+    if (e.target && !e.target.dead) e.to = { x: e.target.x, y: e.target.y };
+  }
   game.effects = game.effects.filter(e => e.ttl > 0);
 }
 

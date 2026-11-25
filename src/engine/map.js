@@ -30,6 +30,23 @@ export function pointAt(distance) {
   return { x: end.x, y: end.y };
 }
 
+// The direction a bug at `distance` walks, in radians (0 = right, π/2 = down). Within TURN px of a
+// corner it turns gradually, halfway round exactly at the corner, so bugs don't snap 90°.
+const TURN = 12;
+const angleOf = s => Math.atan2(s.b.y - s.a.y, s.b.x - s.a.x);
+function turnBetween(from, to, f) {
+  const diff = Math.atan2(Math.sin(to - from), Math.cos(to - from));   // the short way round
+  return from + diff * f;
+}
+export function headingAt(distance) {
+  let d = Math.max(0, distance), i = 0;
+  while (i < SEGMENTS.length - 1 && d > SEGMENTS[i].len) { d -= SEGMENTS[i].len; i++; }
+  const seg = SEGMENTS[i], here = angleOf(seg);
+  if (i < SEGMENTS.length - 1 && seg.len - d < TURN) return turnBetween(here, angleOf(SEGMENTS[i + 1]), 0.5 * (1 - (seg.len - d) / TURN));
+  if (i > 0 && d < TURN) return turnBetween(angleOf(SEGMENTS[i - 1]), here, 0.5 + 0.5 * d / TURN);
+  return here;
+}
+
 function distToSegment(p, a, b) {
   const dx = b.x - a.x, dy = b.y - a.y;
   const l2 = dx * dx + dy * dy;

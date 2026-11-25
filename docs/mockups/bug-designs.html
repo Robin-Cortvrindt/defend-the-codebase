@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enemy designs mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#001E32;--blue:#2563EB;--s600:#475569;--s500:#64748B;--s200:#E2E8F0;--tint:#EEF1F5}
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 24px 64px;background:var(--tint);color:var(--navy);font-family:Lato,system-ui,sans-serif}
+  h1{margin:0 0 4px;font-size:26px;font-weight:900}
+  p.sub{margin:0 0 20px;color:var(--s600);max-width:860px;line-height:1.5}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;position:sticky;top:0;padding:8px 0;background:var(--tint);z-index:1}
+  button{font:inherit;font-weight:700;font-size:13px;border:1px solid var(--s200);background:#fff;color:var(--navy);border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:24px;max-width:1240px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+  .cap{padding:12px 16px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .cap h3{margin:2px 0 0;font-size:17px}
+  .cap .meta{font-size:12px;color:var(--s500);margin-top:2px}
+  canvas{display:block;width:100%;aspect-ratio:640/230;background:var(--navy)}
+  .note{font-size:13px;line-height:1.55;color:var(--s600);padding:10px 16px 14px}
+  .note p{margin:0 0 6px}
+  .note b{color:var(--navy)}
+  .pick{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:1px 6px;border-radius:4px;color:#fff;background:var(--blue);margin-left:4px;vertical-align:1px}
+</style>
+</head>
+<body>
+<h1>Enemy designs</h1>
+<p class="sub">Every enemy gets its own look. Each keeps its <b>ring colour</b> as the main colour, so you can still tell at a glance which developer counters it (grey = nobody). Each board shows today's look and two options walking along the new code-on-a-circuit lane, at their real relative size and speed. The merge conflict splits halfway, and the memory leak grows as it walks.</p>
+<div class="controls"><button id="slow">Slow motion (¼×)</button><button id="pause">Pause</button></div>
+<div class="grid">
+
+  <div class="card"><div class="cap"><div class="eyebrow">Typo bug · blue · React</div><h3>Typo</h3><div class="meta">Tiny, fast, comes in swarms</div></div>
+    <canvas data-bug="typo" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Squiggle worm</b><span class="pick">My pick</span>: the wavy "spelling mistake" underline, crawling like a worm. Everyone knows that squiggle, and it still reads at this tiny size.</p>
+    <p><b>B. Wrong letter</b>: a little letter tile on legs that keeps flipping between wrong letters (q, x, z…). Fun, but the letter is hard to read when it's this small.</p></div></div>
+
+  <div class="card"><div class="cap"><div class="eyebrow">Null pointer · orange · Java</div><h3>Null pointer</h3><div class="meta">Medium, the main crowd</div></div>
+    <canvas data-bug="nullpointer" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Null beetle</b><span class="pick">My pick</span>: a proper beetle with an orange shell split down the middle and the <b>∅ null sign</b> on its back. Clear and bug-like.</p>
+    <p><b>B. Dangling pointer</b>: a see-through, dashed "ghost" bug with an arrow pointing at an empty box in front of it: a pointer to nothing. Clever, but harder to see in a crowd.</p></div></div>
+
+  <div class="card"><div class="cap"><div class="eyebrow">Legacy bug · fuchsia · .NET</div><h3>Legacy</h3><div class="meta">Big, slow, tough</div></div>
+    <canvas data-bug="legacy" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Floppy disk beetle</b><span class="pick">My pick</span>: its shell is a <b>floppy disk</b> (the old save icon), and it kicks up dust as it trudges along. Instantly says "old tech".</p>
+    <p><b>B. Mainframe crawler</b>: a beige old computer box with spinning tape reels and blinking lights, with a cobweb on it. Even more "legacy", but busier.</p></div></div>
+
+  <div class="card"><div class="cap"><div class="eyebrow">Merge conflict · grey · no counter</div><h3>Merge conflict</h3><div class="meta">Splits into "ours" and "theirs" when squashed</div></div>
+    <canvas data-bug="merge" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Diff bug</b><span class="pick">My pick</span>: one bug split down the middle along a zigzag seam: a <b>green + half and a red − half</b>, like a code diff. When squashed it tears along the seam into a + half and a − half.</p>
+    <p><b>B. Two glued bugs</b>: two small bugs, one with &lt; and one with &gt;, stuck together and wobbling as they pull different ways. When squashed they come apart.</p></div></div>
+
+  <div class="card"><div class="cap"><div class="eyebrow">Memory leak · grey · no counter</div><h3>Memory leak</h3><div class="meta">Grows bigger and tougher the longer it lives</div></div>
+    <canvas data-bug="leak" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Leaking blob</b><span class="pick">My pick</span>: a wobbly, see-through blob that leaves a <b>trail of drips</b> behind it and swells as it grows. The trail makes the "leak" obvious.</p>
+    <p><b>B. RAM stick</b>: a memory module on legs (gold contacts as feet) whose chips <b>light up one by one</b> as it fills up. Very "IT", and shows how full it is, but it's less of a bug.</p></div></div>
+
+  <div class="card"><div class="cap"><div class="eyebrow">Security risk · red · boss</div><h3>Security risk</h3><div class="meta">Boss at the end of every sprint</div></div>
+    <canvas data-bug="boss" width="640" height="230"></canvas>
+    <div class="note"><p><b>A. Armoured beetle, open lock</b><span class="pick">My pick</span>: a big dark-red armoured beetle with an <b>unlocked padlock</b> on its back and a pulsing red alarm ring. Clearly the boss.</p>
+    <p><b>B. Trojan horse</b>: a wooden horse on wheels with a red glow, the classic security threat. Funny and memorable, but it breaks from the bug look of the others.</p></div></div>
+
+</div>
+
+<script>
+const NAVY = '#001E32', NAVY2 = '#0A2A40', NAVY3 = '#123650', S200 = '#E2E8F0', S400 = '#94A3B8', S500 = '#64748B';
+const BLUE = '#2563EB', ORANGE = '#EA580C', FUCHSIA = '#C026D3', RED = '#DC2626', GREY = '#64748B';
+let speed = 1, paused = false;
+document.getElementById('slow').onclick = e => { speed = speed === 1 ? 0.25 : 1; e.target.classList.toggle('on', speed !== 1); };
+document.getElementById('pause').onclick = e => { paused = !paused; e.target.classList.toggle('on', paused); };
+
+const W = 640, H = 230, LANES = [42, 115, 188], LANE_W = 36;
+const CODE = ['if (user == null) return;', 'const res = await fetch(url);', 'try { save(order); }', 'SELECT * FROM users;', 'public void deploy() {', '// TODO: fix later', 'throw new Exception();', 'useEffect(() => {}, []);'];
+
+function drawBoard(ctx, t) {
+  ctx.fillStyle = NAVY; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = NAVY2; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 40; x < W; x += 40) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
+  ctx.stroke();
+  LANES.forEach((y, li) => {
+    ctx.fillStyle = 'rgba(45,212,191,.45)'; ctx.fillRect(0, y - LANE_W / 2, W, LANE_W);
+    ctx.fillStyle = '#0B3448'; ctx.fillRect(0, y - LANE_W / 2 + 2, W, LANE_W - 4);
+    ctx.save(); ctx.beginPath(); ctx.rect(0, y - LANE_W / 2 + 2, W, LANE_W - 4); ctx.clip();
+    ctx.font = '500 7.5px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle'; ctx.fillStyle = S400; ctx.globalAlpha = 0.25;
+    for (let row = -2; row <= 2; row++) {
+      let x = -400 + ((t * 18 + row * 37 + li * 90) % 400), i = row + 5 + li;
+      while (x < W) { const s = CODE[((i++ % CODE.length) + CODE.length) % CODE.length]; ctx.fillText(s, x, y + row * 7); x += ctx.measureText(s).width + 14; }
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+    // lane label
+    const label = ['Today', 'A', 'B'][li];
+    ctx.font = '900 10px Lato, sans-serif'; const w = ctx.measureText(label).width + 12;
+    ctx.fillStyle = NAVY; ctx.beginPath(); ctx.roundRect(6, y - LANE_W / 2 - 15, w, 14, 7); ctx.fill();
+    ctx.fillStyle = S200; ctx.textBaseline = 'middle'; ctx.fillText(label, 12, y - LANE_W / 2 - 7.5);
+  });
+}
+
+// ---------- shared bits ----------
+function legs(ctx, r, t, color, spread = 1, n = 3) {
+  const w = Math.sin(t * 20) * 1.6;
+  ctx.strokeStyle = color; ctx.lineWidth = r > 10 ? 2 : 1.4; ctx.lineCap = 'round'; ctx.beginPath();
+  for (const s of [-1, 1]) for (let i = 0; i < n; i++) {
+    const fx = (-0.5 + i * (1.1 / (n - 1))) * r, sw = (i % 2 ? w : -w) * s;
+    ctx.moveTo(fx, s * r * 0.6); ctx.lineTo(fx + (i - 1) * r * 0.35 + sw, s * (r * spread + 4));
+  }
+  ctx.stroke();
+}
+function oval(ctx, r, fill, ring) {
+  ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2);
+  ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
+}
+function todayBug(ctx, r, t, ring, hasLegs, icon) {
+  if (hasLegs) legs(ctx, r, t, S400);
+  oval(ctx, r, S200, ring);
+  if (icon) icon();
+}
+function droplet(ctx, h) {
+  ctx.beginPath(); ctx.moveTo(0, -h);
+  ctx.bezierCurveTo(h * 0.7, -h * 0.1, h * 0.7, h * 0.8, 0, h * 0.8);
+  ctx.bezierCurveTo(-h * 0.7, h * 0.8, -h * 0.7, -h * 0.1, 0, -h);
+}
+function padlock(ctx, s, open, color) {
+  ctx.save(); ctx.scale(s, s);
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  if (open) ctx.arc(0, -6, 5, Math.PI, -0.1); else ctx.arc(0, -3, 5, Math.PI, 0);
+  ctx.stroke();
+  if (open) { ctx.beginPath(); ctx.moveTo(-5, -6); ctx.lineTo(-5, -3); ctx.stroke(); }
+  ctx.fillRect(-7, -3, 14, 10);
+  ctx.fillStyle = NAVY; ctx.fillRect(-1, 0, 2, 4);
+  ctx.restore();
+}
+
+// ---------- the designs (drawn at the origin, walking towards +x) ----------
+const BUGS = {
+  typo: {
+    r: 5, speed: 70,
+    today: (ctx, b, t) => todayBug(ctx, 5, t, BLUE, false),
+    A: (ctx, b, t) => { // squiggle worm
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      const pts = []; for (let i = 0; i <= 14; i++) { const x = -12 + i * 1.1; pts.push([x, Math.sin(i * 0.9 - t * 22) * 2.6]); }
+      for (const [c, w] of [['rgba(37,99,235,.35)', 6], [BLUE, 3]]) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+      const [hx, hy] = pts[pts.length - 1];
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx + 1.5, hy, 3, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = BLUE; ctx.lineWidth = 1.5; ctx.stroke();
+    },
+    B: (ctx, b, t) => { // wrong letter tile
+      legs(ctx, 5, t, S400, 1.1);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(-6, -6, 12, 12, 2.5); ctx.fill(); ctx.strokeStyle = BLUE; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = BLUE; ctx.font = '700 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('qxzjk'[Math.floor((t + b.seed) * 4) % 5], 0, 0.5);
+    },
+  },
+  nullpointer: {
+    r: 9, speed: 45,
+    today: (ctx, b, t) => todayBug(ctx, 9, t, ORANGE, true),
+    A: (ctx, b, t) => { // null beetle
+      legs(ctx, 9, t, S400);
+      ctx.fillStyle = NAVY3; ctx.beginPath(); ctx.arc(10, 0, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = ORANGE; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = S400; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(13, -2); ctx.lineTo(17, -5); ctx.moveTo(13, 2); ctx.lineTo(17, 5); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-1, 0, 10, 8, 0, 0, Math.PI * 2); ctx.fillStyle = ORANGE; ctx.fill();
+      ctx.strokeStyle = '#9A3412'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-11, 0); ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(-1, 0, 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-4.5, 4); ctx.lineTo(2.5, -4); ctx.stroke();
+    },
+    B: (ctx, b, t) => { // dangling pointer
+      legs(ctx, 9, t, 'rgba(148,163,184,.6)');
+      ctx.setLineDash([3, 2.5]);
+      ctx.beginPath(); ctx.ellipse(0, 0, 10, 8, 0, 0, Math.PI * 2); ctx.fillStyle = 'rgba(234,88,12,.18)'; ctx.fill();
+      ctx.strokeStyle = ORANGE; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(234,88,12,.6)'; ctx.lineWidth = 1.2; ctx.strokeRect(19, -4, 8, 8);
+      ctx.setLineDash([]);
+      ctx.strokeStyle = ORANGE; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(16, 0); ctx.moveTo(12, -3); ctx.lineTo(16, 0); ctx.lineTo(12, 3); ctx.stroke();
+      ctx.fillStyle = ORANGE; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.fill();
+    },
+  },
+  legacy: {
+    r: 14, speed: 25,
+    today: (ctx, b, t) => todayBug(ctx, 14, t, FUCHSIA, true),
+    A: (ctx, b, t) => { // floppy disk beetle
+      // dust behind
+      for (let i = 0; i < 4; i++) {
+        const k = ((t * 1.5 + i / 4) % 1);
+        ctx.globalAlpha = 0.3 * (1 - k); ctx.fillStyle = S400;
+        ctx.beginPath(); ctx.arc(-18 - k * 18, (i % 2 ? 6 : -6) + Math.sin(i) * 3, 2 + k * 4, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      legs(ctx, 14, t * 0.6, S400, 0.95);
+      ctx.fillStyle = NAVY3; ctx.beginPath(); ctx.arc(15, 0, 5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = FUCHSIA; ctx.lineWidth = 2; ctx.stroke();
+      // the disk, seen from above, label at the back
+      ctx.save(); ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = '#4A044E'; ctx.beginPath(); ctx.moveTo(-13, -13); ctx.lineTo(9, -13); ctx.lineTo(13, -9); ctx.lineTo(13, 13); ctx.lineTo(-13, 13); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = FUCHSIA; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.fillStyle = '#CBD5E1'; ctx.fillRect(-6, -13, 12, 8); ctx.fillStyle = '#4A044E'; ctx.fillRect(1, -11.5, 3, 5);
+      ctx.fillStyle = '#F5F5F4'; ctx.fillRect(-9, 1, 18, 10);
+      ctx.strokeStyle = '#A8A29E'; ctx.lineWidth = 0.8; for (const y of [4, 6.5, 9]) { ctx.beginPath(); ctx.moveTo(-7, y); ctx.lineTo(7, y); ctx.stroke(); }
+      ctx.restore();
+    },
+    B: (ctx, b, t) => { // mainframe crawler
+      legs(ctx, 14, t * 0.6, S400, 0.95);
+      ctx.fillStyle = '#D6CFC0'; ctx.beginPath(); ctx.roundRect(-15, -12, 30, 24, 3); ctx.fill(); ctx.strokeStyle = FUCHSIA; ctx.lineWidth = 2.5; ctx.stroke();
+      for (const x of [-7, 4]) {
+        ctx.fillStyle = '#44403C'; ctx.beginPath(); ctx.arc(x, -3, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#D6CFC0'; ctx.lineWidth = 1; ctx.beginPath();
+        for (let k = 0; k < 3; k++) { const a = t * 4 + k * 2.09; ctx.moveTo(x, -3); ctx.lineTo(x + Math.cos(a) * 4, -3 + Math.sin(a) * 4); }
+        ctx.stroke();
+      }
+      ['#16A34A', '#F59E0B', '#DC2626', '#16A34A'].forEach((c, i) => { ctx.fillStyle = Math.sin(t * 6 + i * 2) > 0 ? c : '#57534E'; ctx.fillRect(-11 + i * 6, 6, 3, 3); });
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 0.7; ctx.beginPath();
+      ctx.moveTo(15, -12); ctx.lineTo(7, -12); ctx.moveTo(15, -12); ctx.lineTo(15, -4); ctx.moveTo(15, -12); ctx.lineTo(9, -6);
+      ctx.moveTo(12, -12); ctx.quadraticCurveTo(12, -9, 15, -9); ctx.moveTo(9.5, -12); ctx.quadraticCurveTo(10, -7, 15, -6.5); ctx.stroke();
+    },
+  },
+  merge: {
+    r: 10, speed: 35, splits: true,
+    today: (ctx, b, t) => b.half ? todayBug(ctx, 6, t, GREY, true, () => chevron(ctx, 6, b.half)) : todayBug(ctx, 10, t, GREY, true, () => markers(ctx, 10)),
+    A: (ctx, b, t) => { // diff bug
+      if (b.half) {
+        const plus = b.half === 'ours', fill = plus ? '#BBF7D0' : '#FECACA', ink = plus ? '#15803D' : '#B91C1C';
+        legs(ctx, 6, t * 1.2, S400);
+        ctx.beginPath(); ctx.ellipse(0, 0, 7, 5.5, 0, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = GREY; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = ink; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(-3, 0); ctx.lineTo(3, 0); if (plus) { ctx.moveTo(0, -3); ctx.lineTo(0, 3); } ctx.stroke();
+        return;
+      }
+      legs(ctx, 10, t, S400);
+      ctx.save(); ctx.beginPath(); ctx.ellipse(0, 0, 11, 8.5, 0, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = '#BBF7D0'; ctx.fillRect(-12, -10, 24, 10);
+      ctx.fillStyle = '#FECACA'; ctx.fillRect(-12, 0, 24, 10);
+      ctx.restore();
+      ctx.strokeStyle = GREY; ctx.lineWidth = 1.4; ctx.beginPath(); for (let i = 0; i <= 8; i++) { const x = -11 + i * 2.75; i ? ctx.lineTo(x, i % 2 ? -1.5 : 1.5) : ctx.moveTo(x, 0); } ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 11, 8.5, 0, 0, Math.PI * 2); ctx.strokeStyle = GREY; ctx.lineWidth = 3; ctx.stroke();
+      ctx.lineWidth = 1.8; ctx.strokeStyle = '#15803D'; ctx.beginPath(); ctx.moveTo(-3, -4.5); ctx.lineTo(3, -4.5); ctx.moveTo(0, -7); ctx.lineTo(0, -2); ctx.stroke();
+      ctx.strokeStyle = '#B91C1C'; ctx.beginPath(); ctx.moveTo(-3, 4.5); ctx.lineTo(3, 4.5); ctx.stroke();
+    },
+    B: (ctx, b, t) => { // two glued bugs
+      const one = (dy, side, ph) => {
+        ctx.save(); ctx.translate(Math.sin(t * 7 + ph) * 1.5, dy); ctx.rotate(Math.sin(t * 7 + ph) * 0.15 + (b.half ? 0 : -dy * 0.03));
+        legs(ctx, 6, t + ph, S400); oval(ctx, 6, S200, GREY); chevron(ctx, 6, side); ctx.restore();
+      };
+      if (b.half) { one(0, b.half, b.half === 'ours' ? 0 : 1.5); return; }
+      ctx.strokeStyle = GREY; ctx.lineWidth = 1.2; ctx.beginPath(); for (let i = 0; i <= 4; i++) { const y = -5 + i * 2.5; i ? ctx.lineTo(i % 2 ? -2 : 2, y) : ctx.moveTo(0, y); } ctx.stroke();
+      one(-7, 'ours', 0); one(7, 'theirs', Math.PI);
+    },
+  },
+  leak: {
+    r: 7, speed: 30, grows: true,
+    today: (ctx, b, t) => { const r = b.r; todayBug(ctx, r, t, GREY, true, () => { const f = (r - 7) / 7; ctx.save(); droplet(ctx, r * 0.75); ctx.fillStyle = NAVY; ctx.globalAlpha = 0.35 + 0.65 * f; ctx.fill(); ctx.restore(); }); },
+    A: (ctx, b, t) => { // leaking blob
+      const r = b.r;
+      ctx.save(); ctx.scale(1 + Math.sin(t * 5) * 0.05, 1 - Math.sin(t * 5) * 0.05);
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI * 2, rr = r * (1 + 0.08 * Math.sin(a * 3 + t * 4)) * (Math.cos(a) < 0 ? 1.15 : 1); const x = Math.cos(a) * rr * 1.1, y = Math.sin(a) * rr * 0.9; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.closePath(); ctx.fillStyle = 'rgba(148,163,184,.45)'; ctx.fill(); ctx.strokeStyle = GREY; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(r * 0.3, -r * 0.35, r * 0.28, r * 0.15, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    },
+    trailA: true,
+    B: (ctx, b, t) => { // RAM stick
+      const r = b.r, s = r / 10, f = (r - 7) / 7;
+      ctx.save(); ctx.scale(s, s);
+      ctx.fillStyle = '#B45309';
+      for (let i = 0; i < 6; i++) { const x = -11 + i * 4.4, w = Math.sin(t * 20 + i) * 1.2; ctx.fillRect(x + w, 7.5, 2, 3.5); ctx.fillRect(x - w, -11, 2, 3.5); }
+      ctx.fillStyle = '#166534'; ctx.beginPath(); ctx.roundRect(-14, -8, 28, 16, 2); ctx.fill(); ctx.strokeStyle = GREY; ctx.lineWidth = 2.5; ctx.stroke();
+      const lit = Math.round(f * 4);
+      for (let i = 0; i < 4; i++) { ctx.fillStyle = i < lit ? '#E2E8F0' : '#0F172A'; ctx.fillRect(-11.5 + i * 6, -4.5, 5, 9); }
+      ctx.restore();
+    },
+  },
+  boss: {
+    r: 18, speed: 22,
+    today: (ctx, b, t) => todayBug(ctx, 18, t, RED, true, () => padlock(ctx, 1, false, RED)),
+    A: (ctx, b, t) => { // armoured beetle with an open lock
+      const p = (t * 1.3) % 1;
+      ctx.globalAlpha = 0.5 * (1 - p); ctx.strokeStyle = RED; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 22 + p * 14, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+      legs(ctx, 18, t * 0.5, '#7F1D1D', 0.9);
+      ctx.fillStyle = '#450A0A'; ctx.beginPath(); ctx.arc(19, 0, 7, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = RED; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = '#7F1D1D'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(24, -3); ctx.quadraticCurveTo(30, -6, 30, -11); ctx.moveTo(24, 3); ctx.quadraticCurveTo(30, 6, 30, 11); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-1, 0, 19, 15, 0, 0, Math.PI * 2); ctx.fillStyle = '#7F1D1D'; ctx.fill(); ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.stroke();
+      ctx.strokeStyle = '#450A0A'; ctx.lineWidth = 1.5; for (const x of [-11, 9]) { ctx.beginPath(); ctx.ellipse(-1, 0, Math.abs(x + 1), 15, 0, -Math.PI / 2, Math.PI / 2, x < 0); ctx.stroke(); }
+      ctx.save(); ctx.translate(-1, 1); padlock(ctx, 0.95, true, '#FECACA'); ctx.restore();
+    },
+    B: (ctx, b, t) => { // trojan horse
+      const bob = Math.sin(t * 8) * 0.8;
+      ctx.save(); ctx.translate(0, bob);
+      ctx.shadowColor = RED; ctx.shadowBlur = 10 + 4 * Math.sin(t * 4);
+      ctx.fillStyle = '#92400E'; ctx.beginPath(); ctx.roundRect(-16, -8, 26, 13, 4); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = RED; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#92400E'; ctx.beginPath(); ctx.moveTo(4, -6); ctx.lineTo(10, -20); ctx.lineTo(20, -18); ctx.lineTo(21, -13); ctx.lineTo(13, -13); ctx.lineTo(9, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#451A03'; ctx.beginPath(); ctx.moveTo(8, -18); ctx.lineTo(3, -12); ctx.lineTo(6, -8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(15, -16, 1.4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#B45309'; ctx.lineWidth = 0.8; for (const y of [-4, 0]) { ctx.beginPath(); ctx.moveTo(-14, y); ctx.lineTo(8, y); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle = '#78350F'; ctx.fillRect(-15, 5, 24, 3);
+      for (const x of [-11, 5]) { ctx.save(); ctx.translate(x, 11); ctx.rotate(t * 3); ctx.fillStyle = '#451A03'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#D6D3D1'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.stroke(); ctx.restore(); }
+    },
+  },
+};
+function markers(ctx, r) {
+  const s = r / 10; ctx.strokeStyle = GREY; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+  ctx.moveTo(-2 * s, -6 * s); ctx.lineTo(-6 * s, -3 * s); ctx.lineTo(-2 * s, 0); ctx.moveTo(2 * s, 0); ctx.lineTo(6 * s, 3 * s); ctx.lineTo(2 * s, 6 * s); ctx.moveTo(-7 * s, 0); ctx.lineTo(7 * s, 0); ctx.stroke();
+}
+function chevron(ctx, r, side) {
+  const d = side === 'theirs' ? 1 : -1; ctx.strokeStyle = GREY; ctx.lineWidth = 1.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-d * r * 0.3, -r * 0.5); ctx.lineTo(d * r * 0.4, 0); ctx.lineTo(-d * r * 0.3, r * 0.5); ctx.stroke();
+}
+
+function makeBoard(canvas) {
+  const ctx = canvas.getContext('2d'), def = BUGS[canvas.dataset.bug];
+  const SPLIT_X = 320;
+  // a few of this bug per lane, spaced out
+  const count = def.speed > 50 ? 4 : 2;
+  const walkers = [];
+  for (let li = 0; li < 3; li++) for (let k = 0; k < count; k++) walkers.push({ lane: li, x: -30 - k * (W + 60) / count, seed: k * 1.7 + li, half: null, drips: [] });
+  let t = 0;
+  return dt => {
+    t += dt;
+    drawBoard(ctx, t);
+    for (const b of walkers) {
+      const sp = def.speed * 1.6 * (b.half ? 1.2 : 1);
+      b.x += sp * dt;
+      if (b.x > W + 40) { b.x -= W + 80; b.parts = null; b.drips = []; }
+      const y = LANES[b.lane];
+      b.r = def.grows ? 7 + 7 * Math.max(0, Math.min(1, (b.x + 30) / (W + 30))) : def.r;
+      const draw = def[['today', 'A', 'B'][b.lane]];
+      // memory-leak drip trail (option A)
+      if (def.trailA && b.lane === 1) {
+        if (!b.lastDrip || b.x - b.lastDrip > 9) { b.drips.push({ x: b.x - b.r, y: y + (Math.random() - 0.5) * b.r, age: 0, s: 1 + b.r / 7 }); b.lastDrip = b.x; }
+        b.drips.forEach(d => { d.age += dt; ctx.globalAlpha = Math.max(0, 0.45 - d.age * 0.15); ctx.fillStyle = S400; ctx.beginPath(); ctx.ellipse(d.x, d.y, 1.6 * d.s, 1.2 * d.s, 0, 0, Math.PI * 2); ctx.fill(); });
+        b.drips = b.drips.filter(d => d.age < 3); ctx.globalAlpha = 1;
+      }
+      // merge conflict: splits halfway along the lane
+      if (def.splits && b.x > SPLIT_X) {
+        const sinceSplit = (b.x - SPLIT_X) / sp;
+        if (sinceSplit < 0.35) { // the squash: a flash and "CONFLICT"
+          ctx.globalAlpha = 1 - sinceSplit / 0.35; ctx.fillStyle = S200; ctx.font = '900 10px Lato, sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('CONFLICT', SPLIT_X, y - 22 - sinceSplit * 20); ctx.globalAlpha = 1; ctx.textAlign = 'left';
+        }
+        const apart = Math.min(1, sinceSplit * 4);
+        for (const [half, dx, dy] of [['ours', 0, -1], ['theirs', -12, 1]]) {
+          ctx.save(); ctx.translate(b.x + dx * apart, y + dy * 6 * apart); draw(ctx, { ...b, half }, t + (half === 'theirs' ? 0.7 : 0)); ctx.restore();
+        }
+        continue;
+      }
+      ctx.save(); ctx.translate(b.x, y + Math.sin(t * 6 + b.seed) * 1); draw(ctx, b, t + b.seed); ctx.restore();
+    }
+  };
+}
+
+let boards = [];
+document.fonts.ready.then(() => { boards = [...document.querySelectorAll('canvas')].map(makeBoard); });
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * (paused ? 0 : speed); last = now;
+  boards.forEach(b => b(dt)); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

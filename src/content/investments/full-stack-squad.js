@@ -5,8 +5,8 @@
 // neighbour switches it on or off right away. Built like security-training.js: one investment + one feature.
 import { registerInvestment, registerFeature, getDeveloper } from '../../engine/registry.js';
 import { on } from '../../engine/events.js';
-import { killBug, addEffect } from '../../engine/game.js';
-import { devStats, grantXp } from '../../engine/devs.js';
+import { killBug } from '../../engine/game.js';
+import { devStats, grantXp, addAttack } from '../../engine/devs.js';
 import { CELL } from '../../engine/map.js';
 
 export const BOUNCE_RANGE = 1.5 * CELL;   // px, measured from the bug that was hit
@@ -43,7 +43,7 @@ on('dev:hit', ({ game, dev, bug }) => {
   const def = getDeveloper(dev.type);
   const counter = next.type === def?.counters;
   next.hp -= devStats(game, dev).damage * BOUNCE_FACTOR * (counter ? 2 : 1);
-  addEffect(game, { kind: 'beam', from: { x: bug.x, y: bug.y }, to: { x: next.x, y: next.y }, color: def?.accent || OUTLINE, width: 1.5, ttl: 0.12 });
+  addAttack(game, dev, { x: bug.x, y: bug.y }, next);   // the developer's own attack look, bug to bug
   if (next.hp <= 0) {
     killBug(game, next, dev);
     dev.kills++;

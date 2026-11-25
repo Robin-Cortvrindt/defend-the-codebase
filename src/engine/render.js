@@ -1,8 +1,9 @@
 // Canvas rendering. Reads game state, never changes it.
 import { DROP_TTL, BLINK_AT } from './drops.js';
 import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
-import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
+import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
+import { drawLane } from './lane.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
 
 export const COLORS = {
@@ -18,15 +19,13 @@ export function render(ctx, game, view) {
   drawRanges(ctx, game, view);
   for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
-  for (const bug of game.bugs) drawBug(ctx, bug);
+  for (const bug of game.bugs) drawBug(ctx, game, bug);
   drawActiveEvent(ctx, game, view);
   drawDrops(ctx, game);   // after the event so drops stay visible in the PROD-is-down darkness
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
     if (!f.draw) continue;
-    ctx.save();
-    try { f.draw(ctx, game); } catch (e) { console.error(`[feature ${f.id}]`, e); }
-    ctx.restore();
+    safeDraw(ctx, `[feature ${f.id}]`, () => f.draw(ctx, game));
   }
   ctx.restore();
 }
@@ -60,9 +59,7 @@ export function drawDrops(ctx, game) {
 function drawActiveEvent(ctx, game, view) {
   const def = game.activeEvent && getEvent(game.activeEvent);
   if (!def?.draw) return;
-  ctx.save();
-  try { def.draw(ctx, game, view); } catch (e) { console.error(`[event ${def.id}]`, e); }
-  ctx.restore();
+  safeDraw(ctx, `[event ${def.id}]`, () => def.draw(ctx, game, view));
 }
 
 function drawMap(ctx, game) {
@@ -75,20 +72,7 @@ function drawMap(ctx, game) {
   for (let r = 1; r < ROWS; r++) { ctx.moveTo(0, r * CELL + 0.5); ctx.lineTo(WIDTH, r * CELL + 0.5); }
   ctx.stroke();
 
-  const tracePath = () => {
-    ctx.beginPath();
-    WAYPOINTS.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-  };
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = COLORS.navy3;
-  ctx.lineWidth = PATH_WIDTH;
-  tracePath(); ctx.stroke();
-  ctx.strokeStyle = COLORS.pathLine;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 8]);
-  ctx.lineDashOffset = -game.time * 20;
-  tracePath(); ctx.stroke();
-  ctx.setLineDash([]);
+  drawLane(ctx, game.time);
 
   drawBuilding(ctx, game);
 }
@@ -312,13 +296,14 @@ function circleRange(ctx, x, y, r, color) {
   ctx.setLineDash([]);
 }
 
-export function drawDevTile(ctx, def, x, y, size = 36) {
+// `dev` and `time` are only passed for a developer on the board (so its icon can animate, e.g. Java's steam).
+export function drawDevTile(ctx, def, x, y, size = 36, dev, time) {
   ctx.save();
   ctx.translate(x, y);
   roundRect(ctx, -size / 2, -size / 2, size, size, size / 4);
   ctx.fillStyle = def.accent; ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-  try { def.drawIcon?.(ctx, size); } catch (e) { console.error(e); }
+  if (def.drawIcon) safeDraw(ctx, `[developer ${def.id}] drawIcon`, () => def.drawIcon(ctx, size, dev, time));
   ctx.restore();
 }
 
@@ -338,7 +323,7 @@ function drawDev(ctx, game, dev, selected) {
   const def = getDeveloper(dev.type);
   if (!def) return;
   const L = devLayout();
-  drawDevTile(ctx, def, dev.x, dev.y, MAP_TILE);
+  drawDevTile(ctx, def, dev.x, dev.y, MAP_TILE, dev, game.time);
   // ready marker: pulsing green outline inside the cell while an upgrade is unlocked
   if (upgradeUnlocked(dev)) {
     ctx.save();
@@ -386,13 +371,68 @@ function drawHover(ctx, game, view) {
   }
 }
 
-function drawBug(ctx, bug) {
-  const def = getBug(bug.type);
-  if (!def) return;
-  const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
-  const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
-  ctx.save();
-  ctx.translate(x, y);
+// How strongly a bug flashes white right now (0..1): full the moment an attack on it lands
+// (its `hitAt` progress), fading over the next 30% of the attack.
+export function hitFlash(game, bug) {
+  let best = 0;
+  for (const e of game.effects) {
+    if (e.kind !== 'attack' || e.target !== bug) continue;
+    const since = attackProgress(e) - (e.hitAt ?? 0);
+    if (since >= -1e-9) best = Math.max(best, Math.min(1, 1 - since / 0.3));
+  }
+  return best;
+}
+// A small visual knock-back for developers with `attackJolt` (px): strongest when the hit lands,
+// pushing the bug away from where the attack came from, gone 30% of the attack later.
+export function hitJolt(game, bug) {
+  const out = { x: 0, y: 0 };
+  for (const e of game.effects) {
+    if (e.kind !== 'attack' || e.target !== bug) continue;
+    const px = getDeveloper(e.dev)?.attackJolt;
+    if (!px) continue;
+    const since = attackProgress(e) - (e.hitAt ?? 0);
+    if (since < -1e-9 || since > 0.3) continue;
+    const dx = e.to.x - e.from.x, dy = e.to.y - e.from.y, len = Math.hypot(dx, dy) || 1;
+    const k = px * (1 - since / 0.3);
+    out.x += dx / len * k; out.y += dy / len * k;
+  }
+  return out;
+}
+const attackProgress = e => Math.min(1, Math.max(0, 1 - e.ttl / (e.maxTtl || 1)));
+
+// Six walking legs for a bug drawn facing +x, for bugs that draw themselves (bug `draw`).
+// `step` moves them: pass the bug's distance so they stop when it stops.
+export function drawBugLegs(ctx, r, step, color = COLORS.s400, spread = 1) {
+  const w = Math.sin(step / 3) * 1.6;
+  ctx.strokeStyle = color; ctx.lineWidth = r > 10 ? 2 : 1.4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (const s of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const fx = (-0.5 + i * 0.55) * r, sw = (i % 2 ? w : -w) * s;
+    ctx.moveTo(fx, s * r * 0.6); ctx.lineTo(fx + (i - 1) * r * 0.35 + sw, s * (r * spread + 4));
+  }
+  ctx.stroke();
+}
+
+// Runs a content draw hook inside its own save/restore. If the hook throws, it is logged and any
+// saves the hook left open are restored too, so the rest of the frame draws where it should.
+export function safeDraw(ctx, label, fn) {
+  const save = ctx.save, restore = ctx.restore;
+  let open = 0;
+  save.call(ctx);
+  ctx.save = function () { open++; return save.call(this); };
+  ctx.restore = function () { open--; return restore.call(this); };
+  try { fn(); } catch (e) {
+    console.error(label, e);
+    while (open-- > 0) restore.call(ctx);
+  } finally {
+    delete ctx.save; delete ctx.restore;
+    if (ctx.save !== save) { ctx.save = save; ctx.restore = restore; }   // a context with own methods (e.g. a test stub)
+    restore.call(ctx);
+  }
+}
+
+// The look of a bug that doesn't draw itself: legs, a pale oval in its ring colour, its icon.
+function drawDefaultBug(ctx, def, bug, r) {
   if (def.legs) {
     const wiggle = Math.sin((bug.distance || 0) / 3) * 1.5;
     ctx.strokeStyle = COLORS.s400; ctx.lineWidth = r > 10 ? 2 : 1.5;
@@ -408,7 +448,28 @@ function drawBug(ctx, bug) {
   ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
-  if (def.drawIcon) { try { def.drawIcon(ctx, r, bug); } catch (e) { console.error(e); } }
+  if (def.drawIcon) safeDraw(ctx, `[bug ${def.id}] drawIcon`, () => def.drawIcon(ctx, r, bug));
+}
+
+function drawBug(ctx, game, bug) {
+  const def = getBug(bug.type);
+  if (!def) return;
+  const jolt = hitJolt(game, bug);
+  const x = bug.x + (bug.jitter || 0) * 0.7 + jolt.x, y = bug.y + (bug.jitter || 0) + jolt.y;
+  const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
+  const heading = def.draw ? headingAt(bug.distance || 0) : 0;   // self-drawn bugs face where they walk
+  ctx.save();
+  ctx.translate(x, y);
+  if (def.draw) {
+    // The bug draws its own body, facing +x; turn it towards where it walks.
+    safeDraw(ctx, `[bug ${bug.type}] draw`, () => { ctx.rotate(heading); def.draw(ctx, r, bug, game.time); });
+  } else drawDefaultBug(ctx, def, bug, r);
+  const flash = hitFlash(game, bug);
+  if (flash > 0) {
+    ctx.globalAlpha = 0.7 * flash; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.85, heading, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
   if (bug.hp < bug.maxHp) {
     const w = Math.max(12, r * 2.2);
@@ -417,10 +478,27 @@ function drawBug(ctx, bug) {
   }
 }
 
+// A developer's attack: its own drawAttack if it has one, else today's straight beam.
+function drawAttack(ctx, game, e, t) {
+  const def = getDeveloper(e.dev);
+  const accent = def?.accent || '#fff';
+  if (def?.drawAttack) {
+    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, accent };
+    safeDraw(ctx, `[developer ${e.dev}] drawAttack`, () => def.drawAttack(ctx, a));
+    return;
+  }
+  ctx.globalAlpha = t;
+  ctx.strokeStyle = e.color || accent; ctx.lineWidth = e.width || 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
 function drawEffects(ctx, game) {
   for (const e of game.effects) {
     const t = Math.max(0, e.ttl / (e.maxTtl || 1)); // 1 → 0
-    if (e.kind === 'beam') {
+    if (e.kind === 'attack') {
+      drawAttack(ctx, game, e, t);
+    } else if (e.kind === 'beam') {
       ctx.globalAlpha = t;
       ctx.strokeStyle = e.color; ctx.lineWidth = e.width || 2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y); ctx.stroke();

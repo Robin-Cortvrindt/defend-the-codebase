@@ -83,6 +83,17 @@ test('bounce: 50% of devStats damage to the nearest other bug within range, not 
   assert.equal(far.hp, 100);
 });
 
+test('bounce shows the React developer\'s own attack, from the hit bug to the next one', () => {
+  const { g, react } = squadGame();
+  const target = bugAt(g, 'b', react.x + 30, react.y);
+  const near = bugAt(g, 'b', target.x + CELL, target.y);
+  tickDevs(g, 0.01);
+  const bounce = g.effects.find(e => e.kind === 'attack' && e.target === near);
+  assert.ok(bounce);
+  assert.equal(bounce.dev, 'react');
+  assert.deepEqual(bounce.from, { x: target.x, y: target.y });
+});
+
 test('bounce on a typo bug (React counter) does double', () => {
   const { g, react } = squadGame();
   const target = bugAt(g, 'b', react.x + 30, react.y);

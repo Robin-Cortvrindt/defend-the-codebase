@@ -119,8 +119,11 @@ export function bugsInRange(game, dev, range) {
     .sort((a, b) => b.distance - a.distance);
 }
 
+// One shot's animation from the developer to `bug`: the developer's own attack look (drawAttack),
+// or a straight beam in `color` (default its accent) for developers without one.
 export function shotBeam(game, dev, bug, color, damage = getDeveloper(dev.type).damage) {
-  addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: bug.x, y: bug.y }, color: color ?? getDeveloper(dev.type).accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
+  dev.lastShotAt = game.time;
+  addAttack(game, dev, { x: dev.x, y: dev.y }, bug, { color, damage });
 }
 
 export function hitBug(game, dev, bug, damage) {
@@ -134,6 +137,27 @@ export function hitBug(game, dev, bug, damage) {
   dev.kills++;
   grantXp(game, dev, 1);
   return true;
+}
+
+const shotSeed = (dev, target) => {
+  const n = Math.sin((dev.shots ?? 0) * 12.9898 + (target.id ?? 0) * 78.233 + (dev.col ?? 0) * 37.719 + (dev.row ?? 0) * 4.581) * 43758.5453;
+  return n - Math.floor(n);
+};
+
+// The animation of one hit. Damage is dealt by the caller, at once; this is only what you see.
+// The effect follows `target` while it lives (see tickEffects) and the developer may draw it (drawAttack).
+// `damage` sets the fallback beam's width; `color` overrides its colour.
+export function addAttack(game, dev, from, target, { color, damage } = {}) {
+  const def = getDeveloper(dev.type);
+  addEffect(game, {
+    kind: 'attack', dev: dev.type, from, to: { x: target.x, y: target.y }, target,
+    // Visual-only randomness, worked out from the shot itself so the game's own random numbers
+    // (events, mails, Claude's backfire) aren't used up by animations.
+    seed: shotSeed(dev, target), shot: dev.shots ?? 0, counter: target.type === def?.counters,
+    ttl: def?.attackDuration ?? 0.12, hitAt: def?.attackHitAt ?? 0,
+    color, width: Math.min(5, 1.5 + (damage ?? devStats(game, dev).damage) / 15),
+  });
+  dev.shots = (dev.shots ?? 0) + 1;
 }
 
 export function tickDevs(game, dt) {

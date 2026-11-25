@@ -5,6 +5,33 @@ import { CELL } from '../../engine/map.js';
 import { spendDrink } from '../../engine/drinks.js';
 
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
+// Its attack is a lightning strike: a jagged bolt cracks into the bug with a flash and a shockwave.
+const FUCHSIA = '#C026D3';
+const FLICKER = 0.045;   // seconds between re-jitters of the bolt
+
+// Small deterministic random numbers, so a frame redraws the same bolt.
+function rng(seed) {
+  let s = Math.floor(seed * 233280) % 233280;
+  return () => ((s = (s * 9301 + 49297) % 233280) / 233280) - 0.5;
+}
+
+function bolt(ctx, from, to, rnd, alpha) {
+  const N = 9, dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const pts = [from];
+  for (let i = 1; i < N; i++) {
+    const f = i / N, j = rnd() * 44 * Math.sin(Math.PI * f);
+    pts.push({ x: from.x + dx * f + nx * j, y: from.y + dy * f + ny * j });
+  }
+  pts.push(to);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const pass of [{ c: FUCHSIA, w: 9, a: 0.22 }, { c: FUCHSIA, w: 4, a: 0.9 }, { c: '#fff', w: 1.6, a: 1 }]) {
+    ctx.globalAlpha = pass.a * alpha; ctx.strokeStyle = pass.c; ctx.lineWidth = pass.w;
+    ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
 registerDeveloper({
   id: 'dotnet',
   drink: 'monster',
@@ -52,6 +79,19 @@ registerDeveloper({
         },
       },
     ],
+  },
+  attackDuration: 0.28,
+  attackHitAt: 0,
+  attackJolt: 3,   // px the bug is knocked back, visually, when the bolt hits
+  drawAttack(ctx, { from, to, progress, time, seed }) {
+    const alpha = progress < 0.15 ? 1 : 1 - (progress - 0.15) / 0.85;
+    bolt(ctx, { x: from.x, y: from.y - 6 }, to, rng(seed + Math.floor(time / FLICKER) * 0.137), alpha);
+    // white flash and an expanding shockwave ring at the bug
+    ctx.globalAlpha = alpha * 0.6; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(to.x, to.y, 16 * alpha, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1 - progress; ctx.strokeStyle = FUCHSIA; ctx.lineWidth = 3 * (1 - progress) + 1;
+    ctx.beginPath(); ctx.arc(to.x, to.y, 10 + progress * 22, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
   },
   drawIcon(ctx, size) {
     const s = size / 36;
