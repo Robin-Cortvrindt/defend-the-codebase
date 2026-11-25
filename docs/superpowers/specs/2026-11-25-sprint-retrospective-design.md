@@ -6,8 +6,10 @@ When a run ends, show a short sprint retrospective: some fun stats about the run
 
 ## Goals
 
-- **When it shows:** after the building has collapsed at the end of a lost run, a retrospective card appears on its own screen.
-- **Continue:** a "Continue" button closes it and reveals today's game-over screen, unchanged (stats, investors, retry, Investments, main menu).
+- **When it shows:** after the building has collapsed at the end of a run, a retrospective card appears on its own screen.
+- **Continue:** a "Continue" button closes it and reveals what comes next, unchanged:
+  - after a loss: today's game-over screen (stats, investors, retry, Investments, main menu)
+  - after **quitting** from the menu: the main menu (decided)
 - **What it shows:** five or six awards picked from what happened in the run. An award with nothing to report is skipped.
 
 ## Non-goals
@@ -20,7 +22,6 @@ When a run ends, show a short sprint retrospective: some fun stats about the run
 
 - Delaying the player more than one click before they can retry.
 - Breaking or covering the game-over screen once Continue is pressed.
-- A retrospective after **quitting** a run from the menu (my call: if you chose to stop, you want the menu, not a recap).
 
 ## Approaches
 
@@ -39,7 +40,7 @@ Option 1 won: everything it needs already exists as events, and it can't break t
 
 | Award | Source |
 |---|---|
-| MVP developer | `bug:killed` `{ dev }`: kills per developer id, remembering `dev.type` (and the level-3 upgrade name if it has one). It counts sold developers too. |
+| MVP developer | **Only developers still on the board at the end** (decided): the one in `game.devs` with the most `dev.kills`, a count the engine already keeps per developer. Sold developers don't count. |
 | Works on my machine | `bug:leaked` `{ bug }`: leaks per `bug.type`. |
 | Fell for it | a new `mail:phished` `{ game, mail, kind }` event, emitted by `mailbox.js` when a claim turns out to be phishing (`kind` is `stolen`, `malware` or `compromised`). |
 | Caffeine intake | `drop:collected` `{ drop }`: amounts per drink id. |
@@ -69,14 +70,19 @@ The tally lives on the game (`game.retro`), is created in `init` and resets on e
 ```
 
 - **Placement:** a DOM card inside `#stage`, above `#overlay`, in the look of the existing screen cards (navy, Lato, eyebrow plus title, Nexios palette, no emoji, sentence case, no exclamation marks).
-- **Timing:** it appears once `deathAnimDone(game)` is true, the same moment the game-over screen appears, and only when `!game.quit`. It shows once per run.
+- **Timing, lost run:** it appears once `deathAnimDone(game)` is true, the same moment the game-over screen appears underneath.
+- **Timing, quit run:**
+  - The engine goes straight to the main menu when the collapse is done (`app.toMenu`). That creates a fresh game and calls every feature's `init`.
+  - The feature keeps a reference to the previous game. If `init` sees that the previous game ended (`phase === 'lost'`) and its retrospective hasn't been shown, it shows that game's card on top of the main menu.
+  - No engine change is needed.
+- **Once per run:** a flag on the ended game (`game.retro.shown`) makes sure it shows exactly once. Retry from the game-over screen therefore never shows it twice.
 - **Continue:** removes the card. Today's game-over screen is already rendered underneath. Focus moves to the Continue button when the card opens, so Enter or Space presses it.
 - **Skipping awards:** an award with nothing to report is left out. That covers no kills, no leaks (impossible on a loss, but guarded anyway), no phishing, no Claude and no drinks. "Survived" always shows.
 - **Phone:** the card fits the board width and scrolls inside itself if it's too tall.
 
 ### Copy (my calls, tune freely)
 
-- **MVP developer:** "`<Type> developer` (`<upgrade>`) · `<n>` bugs squashed". Ties go to the developer hired first.
+- **MVP developer:** "`<Type> developer` (`<upgrade>`) · `<n>` bugs squashed", among developers still on the board. Ties go to the developer hired first (lowest id). It's skipped when there are no developers left, or none has a kill.
 - **Works on my machine:** "`<Bug name>` got through `<n>` times". Ties go to the bug that leaked first.
 - **Fell for it:** "`<n>` phishing mail(s). IT has been notified."
 - **Caffeine intake:** per drink with an amount above 0: "`<n>` `<Drink name>`", joined with " · ".
@@ -90,12 +96,12 @@ The tally lives on the game (`game.retro`), is created in `init` and resets on e
   - skipping empty ones
   - ties
   - the reset on `init`
-  - the tally from emitted events, including a sold developer's kills
-  - no card or awards needed for a quit run (`shouldShow(game)`)
+  - the tally from emitted events
+  - MVP ignoring sold developers (a sold developer with more kills doesn't win)
 - **Browser:**
   - after a loss the card appears only once the collapse is done
   - Continue reveals the normal game-over screen with its buttons working
-  - a quit run shows no card
+  - quitting from the menu shows the card over the main menu after the collapse, and Continue reveals the menu
   - restarting shows a fresh tally
   - no page errors
 
