@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Backgrounds</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #001E32; --navy2: #0A2A40; --navy3: #123650; --s400: #94A3B8; --s200: #E2E8F0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+  .lede { color: var(--s200); margin: 0 0 8px; max-width: 760px; line-height: 1.5; }
+  h2 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 36px 0 4px; }
+  h2 b { color: #fff; }
+  .note { color: var(--s200); font-size: 14px; margin: 0 0 10px; line-height: 1.5; max-width: 760px; }
+  canvas.board { display: block; width: 100%; height: auto; border: 1px solid var(--navy3); border-radius: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Playing field backgrounds</h1>
+  <p class="lede">Five looks for the board behind the lane, all on the 24 × 12 board you picked (option B). The lane, the developers, the bugs and the PROD building stay exactly as they are. Each background still shows the cells faintly, so you can see where a developer will go.</p>
+
+  <h2><b>Now</b> · plain navy grid</h2>
+  <canvas class="board" data-bg="now"></canvas>
+
+  <h2><b>1</b> · Circuit board</h2>
+  <p class="note">The whole board becomes a dark green-teal PCB. Faint copper traces, vias and a few chips sit in the empty space, so the lane looks like the main bus on the same board. This is the closest match to the lane you already have.</p>
+  <canvas class="board" data-bg="pcb"></canvas>
+
+  <h2><b>2</b> · Blueprint dots</h2>
+  <p class="note">Navy like today, but the grid lines become small dots at the cell corners, with a soft glow in the middle and darker edges. It's calm and clean, and the developers and bugs stand out most.</p>
+  <canvas class="board" data-bg="dots"></canvas>
+
+  <h2><b>3</b> · Code editor</h2>
+  <p class="note">The board is a dark IDE: line numbers down the left and dim, syntax-coloured code across the background, as if the bugs are crawling through the codebase itself.</p>
+  <canvas class="board" data-bg="ide"></canvas>
+
+  <h2><b>4</b> · Server room floor</h2>
+  <p class="note">Each cell is a raised-floor tile with a perforated vent pattern, plus a few server racks with blinking LEDs in the corners. Developers are "deployed" in the data centre.</p>
+  <canvas class="board" data-bg="server"></canvas>
+
+  <h2><b>5</b> · Nexios office</h2>
+  <p class="note">Warm, muted carpet tiles in Nexios navy shades, with a few plants, a coffee spot and desks around the edges. Friendlier and more about the company story than the tech.</p>
+  <canvas class="board" data-bg="office"></canvas>
+</main>
+
+<script>
+const M = { cols: 24, rows: 12, prod: { x: 896, y: 226 },
+  wp: [[0,60],[300,60],[300,220],[140,220],[140,420],[460,420],[460,140],[620,140],[620,380],[780,380],[780,260],[896,260]],
+  devs: [[4,4,'R'],[5,7,'J'],[9,8,'N'],[10,3,'R'],[13,6,'J'],[16,7,'N'],[17,4,'R']] };
+const CELL = 40, PATH_W = 36, W = M.cols * CELL, H = M.rows * CELL;
+const COLORS = { R: '#2563EB', J: '#EA580C', N: '#C026D3' };
+const CODE = ['if (user == null) return;', 'const res = await fetch(url);', 'try { save(order); }', 'catch (e) { log(e); }',
+  'SELECT * FROM users;', 'public void deploy() {', 'return items.map(x => x.id);', '// TODO: fix later', 'throw new Exception();'];
+
+// seeded random so every redraw looks the same
+let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+function distToSeg(px, py, [ax, ay], [bx, by]) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+const nearLane = (x, y, pad = 0) => M.wp.slice(1).some((b, i) => distToSeg(x, y, M.wp[i], b) < PATH_W / 2 + pad);
+const nearProd = (x, y) => x > M.prod.x - 30 && y < M.prod.y + 100;
+const free = (x, y, pad = 6) => !nearLane(x, y, pad) && !nearProd(x, y);
+const freeCell = (c, r) => free(c * CELL + 20, r * CELL + 20, 18);
+
+const gridLines = (ctx, color) => {
+  ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 1; c < M.cols; c++) { ctx.moveTo(c * CELL + .5, 0); ctx.lineTo(c * CELL + .5, H); }
+  for (let r = 1; r < M.rows; r++) { ctx.moveTo(0, r * CELL + .5); ctx.lineTo(W, r * CELL + .5); }
+  ctx.stroke();
+};
+
+const BG = {
+  now(ctx) { ctx.fillStyle = '#001E32'; ctx.fillRect(0, 0, W, H); gridLines(ctx, '#0A2A40'); },
+
+  pcb(ctx) {
+    ctx.fillStyle = '#04241F'; ctx.fillRect(0, 0, W, H);
+    // fibreglass weave
+    ctx.strokeStyle = 'rgba(16,80,64,.25)'; ctx.lineWidth = 1;
+    for (let x = -H; x < W; x += 6) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+    gridLines(ctx, 'rgba(45,212,191,.07)');
+    // copper traces
+    seed = 7; ctx.lineCap = 'round';
+    for (let i = 0; i < 70; i++) {
+      let x = Math.floor(rnd() * M.cols) * CELL + 20, y = Math.floor(rnd() * M.rows) * CELL + 20;
+      if (!free(x, y, 14)) continue;
+      const pts = [[x, y]];
+      for (let s = 0; s < 3; s++) {
+        const dir = Math.floor(rnd() * 4), len = (1 + Math.floor(rnd() * 2)) * 20;
+        const d = [[1,0],[0,1],[-1,0],[0,-1]][dir];
+        let nx = x + d[0] * len, ny = y + d[1] * len;
+        if (rnd() < .5) { nx += d[1] * 10; ny += d[0] * 10; }
+        if (!free(nx, ny, 10) || nx < 4 || ny < 4 || nx > W - 4 || ny > H - 4) break;
+        pts.push([nx, ny]); x = nx; y = ny;
+      }
+      if (pts.length < 2) continue;
+      ctx.strokeStyle = 'rgba(217,165,90,.28)'; ctx.lineWidth = 2;
+      ctx.beginPath(); pts.forEach(([px, py], j) => j ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.stroke();
+      for (const [px, py] of [pts[0], pts[pts.length - 1]]) {
+        ctx.fillStyle = 'rgba(217,165,90,.45)'; ctx.beginPath(); ctx.arc(px, py, 3, 0, 7); ctx.fill();
+        ctx.fillStyle = '#04241F'; ctx.beginPath(); ctx.arc(px, py, 1.2, 0, 7); ctx.fill();
+      }
+    }
+    // a few chips
+    for (const [c, r, w, h] of [[1, 9, 2, 1], [20, 1, 2, 1], [11, 0, 2, 1], [22, 10, 1, 1]]) {
+      if (!freeCell(c, r)) continue;
+      const x = c * CELL + 6, y = r * CELL + 10, cw = w * CELL - 12, ch = h * CELL - 20;
+      ctx.fillStyle = 'rgba(217,165,90,.35)';
+      for (let px = x + 4; px < x + cw - 2; px += 6) { ctx.fillRect(px, y - 4, 2, 4); ctx.fillRect(px, y + ch, 2, 4); }
+      ctx.fillStyle = '#0B1A1A'; ctx.fillRect(x, y, cw, ch);
+      ctx.fillStyle = 'rgba(148,163,184,.35)'; ctx.font = '600 6px "JetBrains Mono"'; ctx.fillText('NX-' + (c * 7 + r), x + 4, y + ch / 2 + 2);
+    }
+  },
+
+  dots(ctx) {
+    const g = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * .6);
+    g.addColorStop(0, '#032A44'); g.addColorStop(1, '#00121F');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(148,163,184,.28)';
+    for (let c = 1; c < M.cols; c++) for (let r = 1; r < M.rows; r++) { ctx.beginPath(); ctx.arc(c * CELL, r * CELL, 1.3, 0, 7); ctx.fill(); }
+    ctx.fillStyle = 'rgba(148,163,184,.1)';
+    for (let x = 20; x < W; x += 40) for (let y = 20; y < H; y += 40) { ctx.fillRect(x - .5, y - .5, 1, 1); }
+  },
+
+  ide(ctx) {
+    ctx.fillStyle = '#0D1520'; ctx.fillRect(0, 0, W, H);
+    // current-line highlight
+    ctx.fillStyle = 'rgba(37,99,235,.06)'; ctx.fillRect(0, 7 * 13 + 3, W, 13);
+    ctx.font = '500 8px "JetBrains Mono"'; ctx.textBaseline = 'middle';
+    const tokens = [['public', '#C026D3'], ['class', '#C026D3'], ['Order', '#E2E8F0'], ['{', '#64748B'], ['const', '#2563EB'], ['items', '#E2E8F0'], ['=', '#64748B'],
+      ['await', '#2563EB'], ['repo.find();', '#E2E8F0'], ['if', '#2563EB'], ['(x == null)', '#E2E8F0'], ['return;', '#2563EB'], ['try', '#EA580C'], ['{', '#64748B'],
+      ['save(order);', '#E2E8F0'], ['"prod"', '#4ADE80'], ['// TODO', '#475569'], ['42', '#F59E0B'], ['new', '#C026D3'], ['List<Bug>();', '#E2E8F0']];
+    seed = 3;
+    for (let line = 0; line * 13 < H; line++) {
+      const y = line * 13 + 9;
+      ctx.fillStyle = 'rgba(100,116,139,.35)'; ctx.textAlign = 'right'; ctx.fillText(String(line + 1), 18, y); ctx.textAlign = 'left';
+      let x = 28 + Math.floor(rnd() * 4) * 12;
+      const end = 200 + rnd() * (W - 200);
+      while (x < end) {
+        const [t, col] = tokens[Math.floor(rnd() * tokens.length)];
+        ctx.globalAlpha = .11; ctx.fillStyle = col; ctx.fillText(t, x, y); ctx.globalAlpha = 1;
+        x += ctx.measureText(t).width + 5;
+      }
+    }
+    ctx.fillStyle = 'rgba(100,116,139,.15)'; ctx.fillRect(22, 0, 1, H);
+    gridLines(ctx, 'rgba(148,163,184,.06)');
+  },
+
+  server(ctx) {
+    ctx.fillStyle = '#0B1621'; ctx.fillRect(0, 0, W, H);
+    for (let c = 0; c < M.cols; c++) for (let r = 0; r < M.rows; r++) {
+      const x = c * CELL, y = r * CELL;
+      ctx.fillStyle = (c + r) % 2 ? '#101E2B' : '#0E1B27'; ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeRect(x + .5, y + .5, CELL - 1, CELL - 1);
+      if ((c * 3 + r * 5) % 4 === 0) {   // vent tile
+        ctx.fillStyle = 'rgba(148,163,184,.13)';
+        for (let vx = x + 8; vx < x + 34; vx += 5) for (let vy = y + 8; vy < y + 34; vy += 5) ctx.fillRect(vx, vy, 2, 2);
+      }
+    }
+    // racks
+    seed = 11;
+    for (const [c, r] of [[0, 9], [1, 9], [0, 10], [1, 10], [21, 0], [22, 0], [23, 0], [12, 0], [13, 0], [22, 11], [23, 11]]) {
+      if (!freeCell(c, r)) continue;
+      const x = c * CELL + 3, y = r * CELL + 3;
+      ctx.fillStyle = '#05090E'; ctx.fillRect(x, y, 34, 34);
+      ctx.strokeStyle = '#1E293B'; ctx.strokeRect(x + .5, y + .5, 33, 33);
+      for (let u = 0; u < 5; u++) {
+        ctx.fillStyle = '#111827'; ctx.fillRect(x + 3, y + 3 + u * 6, 28, 4);
+        ctx.fillStyle = rnd() < .7 ? '#4ADE80' : '#F59E0B'; ctx.fillRect(x + 26, y + 4 + u * 6, 2, 2);
+        if (rnd() < .5) { ctx.fillStyle = '#38BDF8'; ctx.fillRect(x + 22, y + 4 + u * 6, 2, 2); }
+      }
+    }
+    // cable tray along the top edge
+    ctx.fillStyle = 'rgba(234,179,8,.08)'; ctx.fillRect(0, 0, W, 3);
+  },
+
+  office(ctx) {
+    const shades = ['#132A3E', '#152E44', '#11283B'];
+    for (let c = 0; c < M.cols; c++) for (let r = 0; r < M.rows; r++) {
+      ctx.fillStyle = shades[(c * 7 + r * 3) % 3]; ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+      // carpet tile grain, alternating direction
+      ctx.strokeStyle = 'rgba(255,255,255,.025)'; ctx.beginPath();
+      for (let k = 6; k < CELL; k += 6) {
+        if ((c + r) % 2) { ctx.moveTo(c * CELL + k, r * CELL); ctx.lineTo(c * CELL + k, r * CELL + CELL); }
+        else { ctx.moveTo(c * CELL, r * CELL + k); ctx.lineTo(c * CELL + CELL, r * CELL + k); }
+      }
+      ctx.stroke();
+    }
+    gridLines(ctx, 'rgba(0,0,0,.25)');
+    const plant = (x, y) => {
+      ctx.fillStyle = '#7C4A2A'; ctx.fillRect(x - 6, y + 2, 12, 9);
+      ctx.fillStyle = '#16A34A'; for (const [dx, dy, s] of [[-5, -2, 6], [5, -2, 6], [0, -7, 7], [0, 0, 6]]) { ctx.beginPath(); ctx.arc(x + dx, y + dy, s, 0, 7); ctx.fill(); }
+      ctx.fillStyle = 'rgba(74,222,128,.5)'; ctx.beginPath(); ctx.arc(x - 2, y - 8, 3, 0, 7); ctx.fill();
+    };
+    const desk = (x, y) => {
+      ctx.fillStyle = '#C8A67A'; ctx.fillRect(x, y, 32, 18);
+      ctx.fillStyle = '#1E293B'; ctx.fillRect(x + 9, y + 3, 14, 8);
+      ctx.fillStyle = '#38BDF8'; ctx.fillRect(x + 10, y + 4, 12, 6);
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(x + 16, y + 26, 6, 0, 7); ctx.fill();
+    };
+    const coffee = (x, y) => {
+      ctx.fillStyle = '#E2E8F0'; ctx.fillRect(x, y, 22, 28);
+      ctx.fillStyle = '#0F172A'; ctx.fillRect(x + 4, y + 4, 14, 8);
+      ctx.fillStyle = '#7C4A2A'; ctx.fillRect(x + 8, y + 18, 6, 6);
+      ctx.fillStyle = '#94A3B8'; ctx.font = '700 6px Lato'; ctx.fillText('☕', x + 25, y + 10);
+    };
+    if (freeCell(0, 11)) plant(20, 456); if (freeCell(23, 0)) plant(940, 22); if (freeCell(11, 0)) plant(460, 20);
+    if (freeCell(1, 9)) desk(44, 364); if (freeCell(2, 9)) desk(84, 364);
+    if (freeCell(20, 0)) desk(804, 6); if (freeCell(21, 0)) desk(844, 6);
+    if (freeCell(22, 11)) coffee(892, 446);
+    if (freeCell(12, 0)) plant(500, 20);
+  },
+};
+
+function draw(cv, key) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 900;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * H / W * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  BG[key](ctx);
+  // lane, unchanged from the game
+  const path = () => { ctx.beginPath(); M.wp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = 'rgba(45,212,191,.45)'; ctx.lineWidth = PATH_W; path(); ctx.stroke();
+  ctx.strokeStyle = '#0B3448'; ctx.lineWidth = PATH_W - 4; path(); ctx.stroke();
+  ctx.font = '500 7.5px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  let n = 0;
+  for (let i = 1; i < M.wp.length; i++) {
+    const [ax, ay] = M.wp[i - 1], [bx, by] = M.wp[i], len = Math.hypot(bx - ax, by - ay);
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(by - ay, bx - ax));
+    ctx.beginPath(); ctx.rect(-PATH_W / 2 + 2, -PATH_W / 2 + 2, len + PATH_W - 4, PATH_W - 4); ctx.clip();
+    for (const row of [-2, -1, 0, 1, 2]) {
+      let x = -((n * 37 + row * 23) % 90);
+      while (x < len + PATH_W) { const s = CODE[(n++) % CODE.length]; ctx.fillStyle = row === 0 ? 'rgba(94,234,212,.55)' : 'rgba(148,163,184,.32)'; ctx.fillText(s, x, row * 7); x += ctx.measureText(s).width + 14; }
+    }
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(45,212,191,.4)'; ctx.lineWidth = 2;
+  for (const [x, y] of M.wp.slice(1, -1)) { ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke(); }
+  // PROD
+  const p = M.prod;
+  ctx.fillStyle = '#0A2A40'; ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1;
+  ctx.fillRect(p.x + 2, p.y, 52, 68); ctx.strokeRect(p.x + 2.5, p.y + .5, 51, 67);
+  ctx.fillStyle = '#FDE68A';
+  for (let fy = p.y + 8; fy < p.y + 56; fy += 12) for (let fx = p.x + 10; fx < p.x + 48; fx += 12) ctx.fillRect(fx, fy, 6, 6);
+  ctx.fillStyle = '#94A3B8'; ctx.font = '700 9px Lato'; ctx.textAlign = 'center'; ctx.fillText('PROD', p.x + 28, p.y + 78); ctx.textAlign = 'left';
+  // developers
+  for (const [c, r, t] of M.devs) {
+    ctx.fillStyle = COLORS[t]; rr(ctx, c * CELL + 4, r * CELL + 4, 32, 32, 6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '900 11px Lato'; ctx.textAlign = 'center'; ctx.fillText(t === 'N' ? '.N' : t, c * CELL + 20, r * CELL + 21); ctx.textAlign = 'left';
+  }
+  // bugs
+  const L = M.wp.slice(1).map(([x, y], i) => Math.hypot(x - M.wp[i][0], y - M.wp[i][1])), total = L.reduce((a, b) => a + b);
+  [.1, .27, .44, .61, .78].forEach((f, k) => {
+    let d = f * total, i = 0; while (d > L[i]) d -= L[i++];
+    const t = d / L[i], [ax, ay] = M.wp[i], [bx, by] = M.wp[i + 1];
+    ctx.fillStyle = ['#2563EB', '#EA580C', '#94A3B8', '#C026D3', '#2563EB'][k];
+    ctx.beginPath(); ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, 6, 0, 7); ctx.fill();
+  });
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+const drawAll = () => document.querySelectorAll('canvas[data-bg]').forEach(cv => draw(cv, cv.dataset.bg));
+document.fonts.ready.then(drawAll);
+addEventListener('resize', drawAll);
+</script>
+</body>
+</html>

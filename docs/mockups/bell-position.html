@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bell Position</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #001E32; --navy2: #0A2A40; --navy3: #123650; --green: #16A34A; --s400: #94A3B8; --s200: #E2E8F0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+  .lede { color: var(--s200); margin: 0 0 28px; max-width: 680px; line-height: 1.5; }
+  h2 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 32px 0 4px; }
+  h2 b { color: #fff; }
+  .note { color: var(--s200); font-size: 14px; margin: 0 0 10px; line-height: 1.5; }
+
+  .stage { position: relative; width: 100%; aspect-ratio: 2 / 1; border: 1px solid var(--navy3); border-radius: 10px; overflow: hidden; background: var(--navy); }
+  .stage svg.board { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ov { position: absolute; inset: 0; display: flex; padding: 10px; background: rgba(0, 30, 50, .35); }
+  .ov.corner { align-items: flex-end; justify-content: flex-end; }
+  .ov.center { align-items: center; justify-content: center; }
+
+  .card { display: flex; align-items: center; gap: 12px; text-align: left; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 8px 18px 8px 8px; max-width: 46%; }
+  .card.stacked { flex-direction: column; text-align: center; padding: 14px 22px 16px; max-width: 40%; gap: 6px; }
+  .card h3 { margin: 2px 0; font-size: clamp(13px, 1.7vw, 18px); font-weight: 900; line-height: 1.2; }
+  .card small { color: var(--s400); font-size: 12px; }
+  .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
+  .bell-svg { width: clamp(56px, 9vw, 104px); height: auto; flex: none; cursor: pointer; }
+  .card.stacked .bell-svg { width: clamp(72px, 12vw, 130px); }
+  .bell-body { transform-origin: 0 -54px; animation: idle 1.6s ease-in-out infinite; }
+  .waves { opacity: .5; }
+  @keyframes idle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--navy3); color: var(--s200); margin-left: 6px; vertical-align: 2px; letter-spacing: 0; text-transform: none; }
+  .tag.rec { background: var(--green); color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Moving the bell</h1>
+  <p class="lede">After a sprint ends, the board dims and the Nexios bell card appears. Today it sits in the bottom-right corner. Below: how it looks now, and two ways to put it in the middle of the board. You can still hire and sell developers anywhere the card doesn't cover.</p>
+
+  <template id="board-tpl">
+    <svg class="board" viewBox="0 0 640 320" aria-hidden="true">
+      <g stroke="#0A2A40" stroke-width="1">
+        <path d="M40 0V320M80 0V320M120 0V320M160 0V320M200 0V320M240 0V320M280 0V320M320 0V320M360 0V320M400 0V320M440 0V320M480 0V320M520 0V320M560 0V320M600 0V320"/>
+        <path d="M0 40H640M0 80H640M0 120H640M0 160H640M0 200H640M0 240H640M0 280H640"/>
+      </g>
+      <polyline points="0,60 180,60 180,260 420,260 420,140 576,140" fill="none" stroke="rgba(45,212,191,.45)" stroke-width="36" stroke-linejoin="round"/>
+      <polyline points="0,60 180,60 180,260 420,260 420,140 576,140" fill="none" stroke="#0B3448" stroke-width="32" stroke-linejoin="round"/>
+      <rect x="578" y="106" width="52" height="68" rx="3" fill="#0A2A40" stroke="#94A3B8"/>
+      <text x="604" y="190" text-anchor="middle" font-size="9" font-weight="700" fill="#94A3B8" font-family="Lato">PROD</text>
+      <!-- developers -->
+      <g><rect x="124" y="84" width="32" height="32" rx="6" fill="#2563EB"/><text x="140" y="104" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Lato">R</text></g>
+      <g><rect x="204" y="204" width="32" height="32" rx="6" fill="#EA580C"/><text x="220" y="224" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Lato">J</text></g>
+      <g><rect x="364" y="204" width="32" height="32" rx="6" fill="#C026D3"/><text x="380" y="224" text-anchor="middle" font-size="9" font-weight="900" fill="#fff" font-family="Lato">.N</text></g>
+      <g><rect x="444" y="164" width="32" height="32" rx="6" fill="#2563EB"/><text x="460" y="184" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Lato">R</text></g>
+    </svg>
+  </template>
+
+  <template id="bell-tpl">
+    <svg class="bell-svg" viewBox="-100 -100 200 200" aria-label="Nexios victory bell">
+      <circle r="74" fill="none" stroke="#123650"/><circle r="92" fill="none" stroke="#0A2A40"/>
+      <g class="bell-body">
+        <rect x="-5" y="-54" width="10" height="12" rx="3" fill="#E2E8F0"/>
+        <path d="M-36 28 Q-38 -36 0 -42 Q38 -36 36 28 L46 38 H-46 Z" fill="#fff"/>
+        <path d="M-46 38 H46" stroke="#16A34A" stroke-width="3"/>
+        <circle cy="47" r="7" fill="#E2E8F0"/>
+        <text y="6" text-anchor="middle" font-size="11" font-weight="900" letter-spacing="1.5" fill="#001E32" font-family="Lato, sans-serif">NEXIOS</text>
+      </g>
+      <path class="waves" d="M-60 -20 q-8 10 0 20 M-70 -26 q-12 16 0 32 M60 -20 q8 10 0 20 M70 -26 q12 16 0 32" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </template>
+
+  <h2><b>Now</b> · bottom-right corner</h2>
+  <p class="note">The current look, for comparison.</p>
+  <div class="stage" data-board>
+    <div class="ov corner">
+      <div class="card"><span data-bell></span>
+        <div><div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Hiring and selling still work</small></div>
+      </div>
+    </div>
+  </div>
+
+  <h2><b>A</b> · same card, centred <span class="tag rec">my pick</span></h2>
+  <p class="note">The same card as now, moved to the middle of the board. It's the smallest change and only covers the empty cells in the middle.</p>
+  <div class="stage" data-board>
+    <div class="ov center">
+      <div class="card"><span data-bell></span>
+        <div><div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Hiring and selling still work</small></div>
+      </div>
+    </div>
+  </div>
+
+  <h2><b>B</b> · stacked and centred, bigger bell</h2>
+  <p class="note">The bell on top and the text underneath, with a larger bell, so the moment feels more like a celebration. It's narrower but taller, so it covers more of the board's middle rows.</p>
+  <div class="stage" data-board>
+    <div class="ov center">
+      <div class="card stacked"><span data-bell></span>
+        <div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Hiring and selling still work</small>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+  const board = document.getElementById('board-tpl'), bell = document.getElementById('bell-tpl');
+  document.querySelectorAll('[data-board]').forEach(s => s.prepend(board.content.cloneNode(true)));
+  document.querySelectorAll('[data-bell]').forEach(s => s.replaceWith(bell.content.cloneNode(true)));
+</script>
+</body>
+</html>
