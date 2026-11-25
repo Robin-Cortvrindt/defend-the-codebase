@@ -6,6 +6,7 @@ import { registerInvestment, registerFeature } from '../../engine/registry.js';
 import { on } from '../../engine/events.js';
 import { addEffect } from '../../engine/game.js';
 import { devStats } from '../../engine/devs.js';
+import { ordinal } from '../../engine/effects.js';
 import { getBug } from '../../engine/registry.js';
 
 export const GC_EVERY = 10;
@@ -22,7 +23,7 @@ const investment = {
   maxLevel: 1,
   getCost() { return 40; },
   apply(game) { game.unlocks.garbageCollection = true; },
-  describeEffect(game, dev) { return inJavaSquare(game, dev) ? { group: 'team', text: `every ${GC_EVERY}th kill slows bugs nearby` } : null; },
+  describeEffect(game, dev) { return inJavaSquare(game, dev) ? { group: 'team', text: `every ${ordinal(GC_EVERY)} kill slows bugs nearby` } : null; },
   effectText() { return 'Java 2x2 squares: GC pause every 10th kill'; },
 };
 

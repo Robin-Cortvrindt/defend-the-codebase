@@ -244,7 +244,7 @@ export function updateUI() {
   }
 
   updateSelPanel();
-  updateEffectsCard(app, reviewMinimized);
+  updateEffectsCard(app, reviewMinimized, isQuitOpen());
   // On game over, let the building burn down first; the end screen follows once the collapse is done.
   // A quit run burns down like a real loss, then goes straight back to the main menu.
   if (g.phase === 'lost' && g.quit && deathAnimDone(g)) {

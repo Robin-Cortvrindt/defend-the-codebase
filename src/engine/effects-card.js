@@ -10,8 +10,8 @@ import { h, set, toggle } from './dom.js';
 const SHOWN_PHASES = ['building', 'wave', 'bell'];
 
 // The developer under the cursor, unless the selected-developer panel already shows it.
-export function hoveredDev(game, view, reviewMinimized) {
-  if (!view.hover) return null;
+export function hoveredDev(game, view, reviewMinimized, quitOpen = false) {
+  if (!view.hover || quitOpen) return null;
   const phase = game.phase;
   if (!(SHOWN_PHASES.includes(phase) || (phase === 'review' && reviewMinimized))) return null;
   const dev = devAt(game, view.hover.col, view.hover.row);
@@ -25,8 +25,8 @@ export function totalsText(game, dev) {
 }
 
 // Changes when the line list changes; countdown numbers ("8 s left") are ignored so the DOM is not rebuilt every second.
-export function effectsCardKey(game, dev) {
-  const lines = devEffects(game, dev).map(l => `${l.group}|${l.name}|${l.text.replace(/\d+(?:\.\d+)? s left/g, '# s left')}`);
+export function effectsCardKey(dev, effects) {
+  const lines = effects.map(l => `${l.group}|${l.name}|${l.text.replace(/\d+(?:\.\d+)? s left/g, '# s left')}`);
   return `${dev.type}@${dev.col},${dev.row}#${levelName(dev)}\n${lines.join('\n')}`;
 }
 
@@ -35,9 +35,9 @@ let cardKey = '';
 let cardSize = null;
 let posKey = '';
 
-export function updateEffectsCard(app, reviewMinimized) {
+export function updateEffectsCard(app, reviewMinimized, quitOpen = false) {
   const game = app.game;
-  const dev = hoveredDev(game, app.view, reviewMinimized);
+  const dev = hoveredDev(game, app.view, reviewMinimized, quitOpen);
   if (!card) {
     card = h('div', { class: 'effects-card sel-panel popover hidden' });
     card.dataset.key = '';
@@ -48,7 +48,7 @@ export function updateEffectsCard(app, reviewMinimized) {
   if (!dev) { cardKey = ''; return; }
 
   const effects = devEffects(game, dev);
-  const key = effectsCardKey(game, dev);
+  const key = effectsCardKey(dev, effects);
   if (key !== cardKey) {
     cardKey = key; cardSize = null; posKey = '';
     card.innerHTML = '';
@@ -69,7 +69,12 @@ export function updateEffectsCard(app, reviewMinimized) {
 
   const stageW = stage.clientWidth;
   const stageH = stage.clientHeight;
-  if (!cardSize) { cardSize = { w: card.offsetWidth, h: card.offsetHeight }; posKey = ''; }
+  if (!cardSize) {
+    set(card.style, 'maxWidth', '');
+    set(card.style, 'maxHeight', '');
+    cardSize = { w: card.offsetWidth, h: card.offsetHeight };
+    posKey = '';
+  }
   const pk = `${dev.x},${dev.y},${stageW}x${stageH}`;
   if (pk === posKey) return;
   posKey = pk;

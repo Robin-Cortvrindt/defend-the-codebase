@@ -128,7 +128,36 @@ test('Wine tasting says tipsy', () => {
   const g = game();
   const d = hire(g, 'java', 0);
   g.activeEvent = 'wine-tasting';
-  assert.equal(line(g, d, 'event')[0].text, 'tipsy: shoots at random bugs');
+  assert.equal(line(g, d, 'event')[0].text, 'tipsy: 100% of shots at random bugs');
+  g.resistance = { 'wine-tasting': 1 / 3 };
+  assert.equal(line(g, d, 'event')[0].text, 'tipsy: 67% of shots at random bugs');
+  g.resistance = { 'wine-tasting': 1 };
+  assert.equal(line(g, d, 'event').length, 0);
+});
+
+test('Azure shows off / out of White Monster / billing', () => {
+  const g = game();
+  const n = up3(hire(g, 'dotnet', 3), 1);
+  const azure = () => line(g, n, 'upgrade').find(l => l.name === 'Azure Function').text;
+  assert.equal(azure(), 'triple area damage, 1 White Monster / 0.5 s');
+  g.drinks.monster = 0;
+  assert.equal(azure(), 'out of White Monster: not shooting');
+  n.state.azureOff = true;
+  assert.equal(azure(), 'off: not shooting');
+});
+
+test('Level 3 hides the level-2 stats it overrides and uses readable labels', () => {
+  const g = game();
+  const n = up3(hire(g, 'dotnet', 3), 0);
+  const ups = line(g, n, 'upgrade');
+  assert.deepEqual(ups[0], { group: 'upgrade', name: '.NET Core', text: 'Faster attacks' });
+  assert.deepEqual(ups[1], { group: 'upgrade', name: 'Visual Studio Enterprise', text: 'damage 160, attack speed 0.6/s' });
+});
+
+test('Garbage collection uses an ordinal', () => {
+  const g = game({ 'garbage-collection': 1 });
+  const sq = [[0, 4], [1, 4], [0, 5], [1, 5]].map(([c, r]) => hire(g, 'java', c, r));
+  assert.ok(line(g, sq[0], 'team').some(l => l.text === 'every 10th kill slows bugs nearby'));
 });
 
 test('React team bonus counts others and caps', () => {

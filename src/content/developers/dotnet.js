@@ -64,7 +64,9 @@ registerDeveloper({
       {
         id: 'azure', name: 'Azure Function', kind: 'gamble', cost: 100,
         description: 'Triple area damage, pay-as-you-go',
-        describeEffect: () => `${MULT_WORD[AZURE_DAMAGE_MULT] ?? `${AZURE_DAMAGE_MULT}×`} area damage, 1 White Monster / ${AZURE_BILL_EVERY} s`,
+        describeEffect: (game, dev) => dev.state.azureOff ? 'off: not shooting'
+          : game.drinks.monster <= 0 ? 'out of White Monster: not shooting'
+          : `${MULT_WORD[AZURE_DAMAGE_MULT] ?? `${AZURE_DAMAGE_MULT}×`} area damage, 1 White Monster / ${AZURE_BILL_EVERY} s`,
         update(game, dev, dt, stats) {
           if (dev.state.azureOff) return false;
           if (bugsInRange(game, dev, stats.range).length === 0) return true;

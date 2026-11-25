@@ -11,8 +11,20 @@ export function pctText(factor) {
   return `${n < 0 ? '−' : '+'}${Math.abs(n)}%`;
 }
 
+export function ordinal(n) {
+  const mod100 = n % 100;
+  const suffix = mod100 >= 11 && mod100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+  return `${n}${suffix}`;
+}
+
+const STAT_LABELS = {
+  damage: v => `damage ${v}`,
+  fireRate: v => `attack speed ${v}/s`,
+  range: v => `range ${v}`,
+};
+
 export function statsText(stats) {
-  return Object.entries(stats).map(([k, v]) => `${k} ${v}`).join(', ');
+  return Object.entries(stats).map(([k, v]) => (STAT_LABELS[k] ? STAT_LABELS[k](v) : `${k} ${v}`)).join(', ');
 }
 
 // Normalises a hook result into lines; skips empty ones.
@@ -30,9 +42,14 @@ function collect(kind, id, group, name, fn) {
   try { return lines(fn(), group, name); } catch (e) { console.error(`[effects ${kind} ${id}]`, e); return []; }
 }
 
-function upgradeLine(game, dev, up) {
-  const text = up.describeEffect ? up.describeEffect(game, dev)
-    : up.stats ? statsText(up.stats) : up.description;
+// `overriddenBy` = the level-3 upgrade's stats: level-2 stats it replaces no longer apply.
+function upgradeLine(game, dev, up, overriddenBy = null) {
+  let text;
+  if (up.describeEffect) text = up.describeEffect(game, dev);
+  else if (up.stats) {
+    const kept = Object.fromEntries(Object.entries(up.stats).filter(([k]) => !(overriddenBy && k in overriddenBy)));
+    text = Object.keys(kept).length ? statsText(kept) : up.description;
+  } else text = up.description;
   return lines(text, 'upgrade', up.name);
 }
 
@@ -41,7 +58,7 @@ export function devEffects(game, dev) {
   const out = [];
   const ups = def?.upgrades;
   if (dev.level >= 1 && ups?.level2) {
-    out.push(...collect('upgrade', ups.level2.id, 'upgrade', ups.level2.name, () => upgradeLine(game, dev, ups.level2)));
+    out.push(...collect('upgrade', ups.level2.id, 'upgrade', ups.level2.name, () => upgradeLine(game, dev, ups.level2, dev.level === 2 ? dev.upgrade?.stats : null)));
   }
   if (dev.level === 2 && dev.upgrade) {
     out.push(...collect('upgrade', dev.upgrade.id, 'upgrade', dev.upgrade.name, () => upgradeLine(game, dev, dev.upgrade)));

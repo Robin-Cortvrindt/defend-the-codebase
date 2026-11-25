@@ -6,6 +6,7 @@ import { createGame, startGame } from '../src/engine/game.js';
 import { CELL } from '../src/engine/map.js';
 import { placeDev } from '../src/engine/devs.js';
 import { setStorage } from '../src/engine/investments.js';
+import { devEffects } from '../src/engine/effects.js';
 import { hoveredDev, totalsText, effectsCardKey } from '../src/engine/effects-card.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 
@@ -42,6 +43,14 @@ test('hoveredDev: phase rules', () => {
   assert.equal(hoveredDev(g, { ...view, paused: true }, false), dev);
 });
 
+test('hoveredDev: hidden while the quit modal is open', () => {
+  const { g, dev } = setup();
+  g.phase = 'wave';
+  const view = { hover: { col: 0, row: 3 }, selected: null };
+  assert.equal(hoveredDev(g, view, false, false), dev);
+  assert.equal(hoveredDev(g, view, false, true), null);
+});
+
 test('totalsText formats damage, rate and range in cells', () => {
   const { g, dev } = setup();
   g.mods.damageMultiplier = 1; g.mods.fireRateMultiplier = 1; g.mods.rangeMultiplier = 1;
@@ -55,11 +64,12 @@ test('effectsCardKey ignores countdown digits but sees added/removed lines', () 
   const { g, dev } = setup();
   const set = lines => { R.getDeveloper('d').describeEffect = () => lines; };
   set([{ group: 'powerup', name: 'CEO', text: '+30% (8 s left)' }]);
-  const a = effectsCardKey(g, dev);
+  const key = () => effectsCardKey(dev, devEffects(g, dev));
+  const a = key();
   set([{ group: 'powerup', name: 'CEO', text: '+30% (7 s left)' }]);
-  assert.equal(effectsCardKey(g, dev), a);
+  assert.equal(key(), a);
   set([{ group: 'powerup', name: 'CEO', text: '+30% (7 s left)' }, { group: 'event', name: 'Rain', text: '−10%' }]);
-  assert.notEqual(effectsCardKey(g, dev), a);
+  assert.notEqual(key(), a);
   set([]);
-  assert.notEqual(effectsCardKey(g, dev), a);
+  assert.notEqual(key(), a);
 });

@@ -398,6 +398,10 @@ const feature = {
     updatedSinceDraw = false;
     if (HAS_DOM) setupTasks(game);
   },
+  describeEffect(game, dev) {
+    if (!game.mailbox?.locks.some(l => l.devId === dev.id) || !(dev.cooldown > 0)) return null;
+    return { name: 'Phished', text: `locked out (${Math.ceil(dev.cooldown)} s left)` };
+  },
   update(game, dt) {
     tickMailbox(game, dt);
     tickPenalties(game, dt);

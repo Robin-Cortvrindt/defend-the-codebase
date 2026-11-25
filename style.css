@@ -117,7 +117,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .sel-panel .choice-head small { font-size: 12px; color: var(--s400); }
 
 /* hover card: every effect acting on a developer */
-.effects-card { pointer-events: none; }
+.sel-panel.popover.effects-card { pointer-events: none; z-index: 11; }   /* above the pause veil (10); updateEffectsCard hides it while the quit modal (5) is open */
 .effects-card .popover-body { overflow: hidden; gap: 4px; }
 .effects-card .effects-totals { color: var(--s400); font-size: 12px; margin-bottom: 4px; }
 .effects-card .effect-line { display: block; font-size: 12px; color: var(--s200); }

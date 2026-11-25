@@ -7,7 +7,7 @@ import { CELL } from '../src/engine/map.js';
 import { placeDev } from '../src/engine/devs.js';
 import { powerupState } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
-import { devEffects, pctText, statsText, GROUPS } from '../src/engine/effects.js';
+import { devEffects, pctText, statsText, ordinal, GROUPS } from '../src/engine/effects.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 
 beforeEach(() => {
@@ -34,6 +34,7 @@ test('pctText and statsText', () => {
   assert.equal(pctText(0.5), '−50%');
   assert.equal(pctText(1.15), '+15%');
   assert.equal(statsText({ damage: 40, range: 2.6 }), 'damage 40, range 2.6');
+  assert.equal(statsText({ fireRate: 0.9, damage: 5 }), 'attack speed 0.9/s, damage 5');
   assert.deepEqual(GROUPS, ['upgrade', 'team', 'investment', 'powerup', 'event']);
 });
 
@@ -151,4 +152,9 @@ test('developer and feature hooks land in team, developer before aura', () => {
   const o = placeDev(g, 'a', 0, 4); o.upgrade = aura;
   assert.deepEqual(devEffects(g, n).map(l => [l.group, l.name, l.text]), [
     ['team', 'N', 'own'], ['team', 'Custom', 'own2'], ['team', 'Aura Up (nearby)', 'faster'], ['team', 'Feat', 'fx']]);
+});
+
+test('ordinal handles 1st/2nd/3rd/Nth and 11-13th', () => {
+  const o = [1, 2, 3, 4, 10, 11, 12, 13, 21, 22, 111].map(ordinal);
+  assert.deepEqual(o, ['1st', '2nd', '3rd', '4th', '10th', '11th', '12th', '13th', '21st', '22nd', '111th']);
 });
