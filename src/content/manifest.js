@@ -30,6 +30,7 @@ export const CONTENT = [
   './events/no-redbull.js',
   './events/heat-wave.js',
   './events/wine-tasting.js',  // developers shoot random bugs; zigzag shots
+  './events/goblin.js',        // a goblin steals dropped drinks
   // Building upgrades (quarter review shop)
   './upgrades/floor.js',
   './upgrades/aircon.js',
@@ -38,6 +39,7 @@ export const CONTENT = [
   './upgrades/fridge.js',
   './upgrades/generator.js',
   './upgrades/water.js',
+  './upgrades/trap.js',
   // Investments (permanent, bought between runs with Investor Capital)
   './investments/better-laptops.js',
   './investments/agile-coaching.js',
@@ -55,6 +57,7 @@ export const CONTENT = [
   './investments/cross-functional.js',    // unlock: balanced team bonus
   './investments/full-stack-squad.js',    // unlock: React hits bounce
   './investments/garbage-collection.js',  // unlock: Java 2x2 squares slow bugs
+  './investments/robot-vacuum.js',        // unlock: a robot vacuum collects drops
   // Features (teammates' add-ons, Nexios references, ...)
   './features/side-panel.js',
   './features/mailbox.js',

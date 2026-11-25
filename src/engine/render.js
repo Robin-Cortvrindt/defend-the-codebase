@@ -1,5 +1,5 @@
 // Canvas rendering. Reads game state, never changes it.
-import { DROP_TTL, BLINK_AT } from './drops.js';
+import { DROP_TTL, BLINK_AT, FLIGHT } from './drops.js';
 import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
@@ -33,6 +33,7 @@ export function render(ctx, game, view) {
 
 export function drawDrops(ctx, game) {
   for (const d of game.drops ?? []) {
+    if (d.flight > 0) { drawFlyingDrop(ctx, d); continue; }
     if (d.ttl < BLINK_AT && Math.floor(d.ttl * 5) % 2 === 0) continue; // blink
     const age = DROP_TTL - d.ttl;
     const k = age < 0.2 ? 0.4 + 0.6 * (age / 0.2) : 1;                 // pop-in
@@ -50,6 +51,29 @@ export function drawDrops(ctx, game) {
     drawDrinkIcon(ctx, def, 22);
     ctx.restore();
   }
+}
+
+// A drop on its way from the bug to its landing spot: an arc with a shadow sliding along the floor.
+function drawFlyingDrop(ctx, d) {
+  const s = 1 - d.flight / FLIGHT, e = s * (2 - s);
+  const gx = d.fromX + (d.x - d.fromX) * e, gy = d.fromY + (d.y - d.fromY) * e;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(gx, gy + 6, 7 * (0.5 + 0.5 * s), 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.translate(gx, gy - Math.sin(Math.PI * s) * 30);
+  ctx.rotate(s * 4);
+  ctx.scale(0.8, 0.8);
+  const def = getDrink(d.drink);
+  if (def?.drawIcon) {
+    ctx.beginPath();
+    ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fill();
+  }
+  drawDrinkIcon(ctx, def, 22);
+  ctx.restore();
 }
 
 // The running random event can draw over the map (e.g. PROD down), below banners and effects.
@@ -88,7 +112,7 @@ function buildingSpec(game) {
   const u = game.upgrades || {};
   return {
     floors: game.floors, lives: game.lives, maxLives: game.maxLives, time: game.time,
-    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0, water: u.water || 0 },
+    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0, water: u.water || 0, trap: u.trap || 0 },
   };
 }
 
