@@ -4,7 +4,7 @@ import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registr
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawLane } from './lane.js';
-import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
+import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop, BUILDING } from './building.js';
 
 export const COLORS = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', pathLine: '#1E4A6A',
@@ -77,7 +77,7 @@ function drawMap(ctx, game) {
   drawBuilding(ctx, game);
 }
 
-const BUILDING_GROUND = 178;      // bottom of the Nexios building (same as BUILDING.ground in building.js)
+const BUILDING_GROUND = BUILDING.ground;   // bottom of the Nexios building
 
 // The Nexios building (your base) at the end of the path. On game over it burns and caves in.
 function drawBuilding(ctx, game) {

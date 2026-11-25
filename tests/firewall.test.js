@@ -34,7 +34,7 @@ function pairGame() {
 
 test('isPathCell: lane cells yes, buildable and off-map cells no', () => {
   assert.equal(isPathCell(2, 1), true);
-  assert.equal(isPathCell(4, 4), true);
+  assert.equal(isPathCell(7, 3), true);
   assert.equal(isPathCell(2, 0), false);
   assert.equal(isPathCell(-1, 1), false);
 });
@@ -45,8 +45,8 @@ test('pair across a horizontal lane forms a firewall on the lane cell', () => {
 });
 
 test('pair across a vertical lane forms a firewall', () => {
-  const g = dotnetGame(); placeDev(g, 'dotnet', 3, 4); placeDev(g, 'dotnet', 5, 4);
-  assert.deepEqual(findFirewalls(g).map(f => [f.col, f.row]), [[4, 4]]);
+  const g = dotnetGame(); placeDev(g, 'dotnet', 6, 3); placeDev(g, 'dotnet', 8, 3);
+  assert.deepEqual(findFirewalls(g).map(f => [f.col, f.row]), [[7, 3]]);
 });
 
 test('no firewall: one dev, non-lane gap, other developer types', () => {

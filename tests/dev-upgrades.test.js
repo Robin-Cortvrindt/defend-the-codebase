@@ -46,9 +46,9 @@ test('java: Enterprise Architect deals x0.9 itself and gives +15% to neighbours,
 
 test('java: Garbage Collector holds fire 1 s every 8 s, then pulses 2x to all in range', () => {
   const g = waveGame();
-  devAt(g, 'java', 3, 3, 'springboot', 'gc');
-  const far = spawnBug(g, 'typo', 260, 10000); far.slow = 0;
-  const near2 = spawnBug(g, 'typo', 300, 10000); near2.slow = 0;
+  devAt(g, 'java', 6, 3, 'springboot', 'gc');
+  const far = spawnBug(g, 'typo', 380, 10000); far.slow = 0;
+  const near2 = spawnBug(g, 'typo', 420, 10000); near2.slow = 0;
   const log = [];
   for (let i = 1; i <= 190; i++) {
     const before = [far.hp, near2.hp];
@@ -102,16 +102,16 @@ test('react: ecosystem +10% fire rate per other React dev, capped at +50%', () =
 
 test('react: Next.js hits the target and the next 2 bugs behind it', () => {
   const g = waveGame();
-  devAt(g, 'react', 3, 3, 'vite', 'nextjs');
-  const bugs = [220, 240, 260, 280].map(dist => { const b = spawnBug(g, 'nullpointer', dist, 1000); b.slow = 0; return b; });
+  devAt(g, 'react', 6, 3, 'vite', 'nextjs');
+  const bugs = [340, 360, 380, 400].map(dist => { const b = spawnBug(g, 'nullpointer', dist, 1000); b.slow = 0; return b; });
   tickDevs(g, 0.05);
   assert.deepEqual(bugs.map(b => 1000 - b.hp), [0, 6, 6, 6]);
 });
 
 test('react: useEffect Hell chains at 20%, capped at 10', () => {
   const g = waveGame();
-  devAt(g, 'react', 3, 3, 'vite', 'effecthell');
-  const b = spawnBug(g, 'nullpointer', 260, 1000); b.slow = 0;
+  devAt(g, 'react', 6, 3, 'vite', 'effecthell');
+  const b = spawnBug(g, 'nullpointer', 380, 1000); b.slow = 0;
   g.random = () => 0.1;
   tickDevs(g, 0.05);
   assert.equal(1000 - b.hp, 99); // 1 hit + 10 re-renders at damage 9
@@ -121,9 +121,9 @@ test('react: useEffect Hell chains at 20%, capped at 10', () => {
   assert.equal(1000 - b.hp, 9);
 
   const g2 = waveGame();
-  devAt(g2, 'react', 3, 3, 'vite', 'effecthell');
-  const a = spawnBug(g2, 'nullpointer', 280, 6); a.slow = 0;
-  const c = spawnBug(g2, 'nullpointer', 220, 1000); c.slow = 0;
+  devAt(g2, 'react', 6, 3, 'vite', 'effecthell');
+  const a = spawnBug(g2, 'nullpointer', 400, 6); a.slow = 0;
+  const c = spawnBug(g2, 'nullpointer', 340, 1000); c.slow = 0;
   g2.random = () => 0.1;
   tickDevs(g2, 0.05);
   assert.ok(a.hp <= 0 || a.dead);
@@ -145,8 +145,8 @@ test('dotnet: names and stats', () => {
 
 test('dotnet: Azure splashes everything within 1 cell of the target', () => {
   const g = waveGame();
-  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const [t, n, f] = [300, 270, 220].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
+  devAt(g, 'dotnet', 6, 3, 'core', 'azure');
+  const [t, n, f] = [420, 390, 340].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
   tickDevs(g, 0.05);
   assert.equal(1000 - t.hp, 55);
   assert.equal(1000 - n.hp, 55);
@@ -155,8 +155,8 @@ test('dotnet: Azure splashes everything within 1 cell of the target', () => {
 
 test('Review Focus 3: Azure bills 1 White Monster per 0.5 s with a bug in range, never below 0, stops at 0', () => {
   const g = waveGame();
-  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
+  devAt(g, 'dotnet', 6, 3, 'core', 'azure');
+  const b = spawnBug(g, 'typo', 390, 100000); b.slow = 0;
   g.drinks.monster = 3;
   for (let i = 0; i < 40; i++) {
     tickDevs(g, 0.05);
@@ -172,7 +172,7 @@ test('Review Focus 3: Azure bills 1 White Monster per 0.5 s with a bug in range,
   assert.ok(b.hp < hp);
 
   const g2 = waveGame();
-  devAt(g2, 'dotnet', 3, 3, 'core', 'azure');
+  devAt(g2, 'dotnet', 6, 3, 'core', 'azure');
   g2.drinks.monster = 5;
   for (let i = 0; i < 40; i++) tickDevs(g2, 0.05);
   assert.equal(g2.drinks.monster, 5);
@@ -194,8 +194,8 @@ test('dotnet: Azure toggle', () => {
 
 test('Review Focus 2: Azure with 1 monster bills once, resets the bill, stops at 0', () => {
   const g = waveGame();
-  const d = devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
+  const d = devAt(g, 'dotnet', 6, 3, 'core', 'azure');
+  const b = spawnBug(g, 'typo', 390, 100000); b.slow = 0;
   g.drinks.monster = 1; g.drinks.coffee = 7;
   tickDevs(g, 0.6);
   assert.equal(g.drinks.monster, 0);

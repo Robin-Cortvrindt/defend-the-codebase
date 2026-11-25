@@ -2,6 +2,8 @@
 // Every building upgrade shows up here. `b` describes what to draw:
 // { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator } }
 
+import { PROD } from './map.js';
+
 const C = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', glass: '#1E4A6A',
   blue: '#2563EB', orange: '#EA580C', fuchsia: '#C026D3', green: '#16A34A', greenL: '#4ADE80',
@@ -9,8 +11,9 @@ const C = {
 };
 const FONT = 'Lato, system-ui, sans-serif';
 
-// Layout (logical px). The path ends at x 576, y 140: the door faces it.
-export const BUILDING = { x: 578, w: 52, ground: 178, groundTop: 118, minTop: 8 };
+// Layout (logical px), standing on PROD: the path ends at the door. Upper floors get 110 px above
+// the ground floor, as on the old board, so the building keeps its proportions.
+export const BUILDING = { x: PROD.x + 2, w: 52, ground: PROD.y + 72, groundTop: PROD.y + 12, minTop: PROD.y + 12 - 110 };
 
 function layout(b) {
   const L = b.levels || {};
