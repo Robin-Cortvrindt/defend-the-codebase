@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getDrinks, getDrink, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
 import { loadProgress, capitalFor } from './investments.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_WARRANTS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_WARRANTS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach, isLocked, lockedView } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, effectiveCooldown } from './powerups.js';
@@ -91,6 +91,7 @@ function buildPowerups() {
 }
 
 export function selectHire(id) {
+  if (isLocked(app.game)) return;   // nothing changes while the bell waits
   app.view.hire = app.view.hire === id ? null : id;
   app.view.selected = null;
 }
@@ -171,6 +172,8 @@ function swingBell() {
 
 export function updateUI() {
   const g = app.game, v = app.view;
+  // The bell locks the game: drop any selection or hire in progress (the view object is shared, so mutate it).
+  if (isLocked(g) && (v.selected || v.hire)) Object.assign(v, lockedView(v));
   updateDrinks(g);
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);

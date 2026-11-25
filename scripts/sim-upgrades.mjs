@@ -99,10 +99,10 @@ function play({ order, powers, branch, bell }, seed) {
     step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (powers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyBuilding(g, 'aircon') || buyBuilding(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') {
-      if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); }
-      ringBell(g);
-    }
+    // Nothing can change while the bell waits: ring it, then spend at the start of the sprint.
+    const spend = () => { if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); } };
+    if (g.phase === 'bell') { ringBell(g); spend(); }
+    else if (g.phase === 'review') { spend(); ringBell(g); }
   }
   return { survived: g.phase !== 'lost', sprints: g.sprint, lives: g.lives, bought };
 }

@@ -2,6 +2,7 @@
 import { getDevelopers } from './registry.js';
 import { WIDTH, HEIGHT, cellAt } from './map.js';
 import { placeDev, devAt } from './devs.js';
+import { isLocked } from './game.js';
 import { clickDrop } from './drops.js';
 import { playSound } from './sound.js';
 import { selectHire, uiActions, isQuitOpen, closeQuit } from './ui.js';
@@ -24,6 +25,7 @@ export function initInput(canvas, app) {
     if (!['building', 'wave', 'bell', 'review'].includes(g.phase)) return;
     const { x, y } = toLogical(ev);
     if (clickDrop(g, app.view, x, y)) return;
+    if (isLocked(g)) return;                  // the bell is waiting: only drops can be picked up
     const { col, row } = cellAt(x, y);
     const existing = devAt(g, col, row);
     if (existing) { app.view.selected = existing; app.view.hire = null; return; }
@@ -50,7 +52,7 @@ export function initInput(canvas, app) {
     if (isQuitOpen()) { if (ev.key === 'Escape') closeQuit(); return; }
     const devs = getDevelopers();
     const n = Number(ev.key);
-    if (n >= 1 && n <= devs.length) selectHire(devs[n - 1].id);
+    if (n >= 1 && n <= devs.length) { if (!isLocked(app.game)) selectHire(devs[n - 1].id); }
     else if (ev.key === 'Escape') { app.view.hire = null; app.view.selected = null; }
     else if (ev.key === 'p' || ev.key === 'P') uiActions.togglePause();
     else if (ev.key === 'f' || ev.key === 'F') uiActions.toggleSpeed(ev.shiftKey);

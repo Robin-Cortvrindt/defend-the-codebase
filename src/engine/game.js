@@ -60,6 +60,12 @@ export function createGame() {
 }
 
 export const totalWaves = () => getWaves().length;
+
+// While the bell waits between sprints nothing about the team can change: no hiring, selling,
+// upgrading, power-ups or mail. Ringing the bell starts the next sprint.
+export const isLocked = game => game.phase === 'bell';
+// The view with nothing selected and no hire in progress, for when the lock starts.
+export const lockedView = view => ({ ...view, selected: null, hire: null });
 export const SPRINTS_PER_QUARTER = 7;
 export const QUARTERS_PER_YEAR = 4;
 

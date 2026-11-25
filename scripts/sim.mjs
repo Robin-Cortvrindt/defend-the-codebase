@@ -58,7 +58,9 @@ function play(strategy, usePowers, seed = 1) {
     step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
+    // Nothing can change while the bell waits: ring it, then hire at the start of the sprint.
+    if (g.phase === 'bell') { ringBell(g); buy(); }
+    else if (g.phase === 'review') { buy(); ringBell(g); }
   }
   return g;
 }
