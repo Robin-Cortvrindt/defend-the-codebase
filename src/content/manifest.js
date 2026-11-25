@@ -43,6 +43,7 @@ export const CONTENT = [
   './investments/ceo-calendar.js',
   './investments/prompt-engineering.js',
   './investments/enterprise-plan.js',
+  './investments/security-training.js',   // unlock: .NET firewall
   // Features (teammates' add-ons, Nexios references, ...)
   './features/mailbox.js',
 ];
