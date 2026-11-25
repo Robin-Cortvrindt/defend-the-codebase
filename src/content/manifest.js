@@ -26,6 +26,10 @@ export const CONTENT = [
   // Building upgrades (quarter review shop)
   './upgrades/floor.js',
   './upgrades/aircon.js',
+  './upgrades/heating.js',
+  './upgrades/coffee.js',
+  './upgrades/fridge.js',
+  './upgrades/generator.js',
   // Features (teammates' add-ons, Nexios references, ...)
   './features/mailbox.js',
 ];

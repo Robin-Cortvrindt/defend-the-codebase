@@ -138,8 +138,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .choice.gamble { border-top-color: var(--orange); }
 .choice:hover { background: var(--navy3); }
 .choice small { color: var(--s400); font-size: 12px; }
-.shop { display: flex; flex-direction: column; gap: 6px; }
-.shop-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 8px; padding: 8px 10px; }
+.shop { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.shop > .eyebrow { grid-column: 1 / -1; }
+.shop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 8px; padding: 6px 8px; }
+.shop-row .btn { padding: 6px 10px; flex: none; }
 .shop-row div { display: flex; flex-direction: column; }
 .shop-row small { color: var(--s400); font-size: 12px; }
 .review-foot { display: flex; align-items: center; gap: 12px; }
@@ -158,3 +160,4 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .review-min .bell-svg { width: clamp(52px, 7vw, 80px); }
 .review-min.locked .bell-wrap { opacity: .35; cursor: not-allowed; }
 .review-min .btn { flex: none; }
+@media (max-width: 720px) { .shop { grid-template-columns: 1fr; } }

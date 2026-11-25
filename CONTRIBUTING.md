@@ -68,3 +68,14 @@ Use the Nexios palette: navy `#001E32`, blue `#2563EB` (React), orange `#EA580C`
 - `game.sprint` is the 0-based global sprint index (`game.wave` is an alias). `sprintInfo(n)` from `src/engine/game.js` gives `{ year, quarter, sprint, label }`.
 - Hand-made sprints come from `waves.js`; after those, `getSprintDef(n)` generates harder ones forever.
 - `game.coins`, `game.floors`, `game.heatResistance` (0..1, from air conditioning) and `game.raise` (total yearly-review multiplier) are plain fields on the game.
+
+## Counter-upgrades for events
+
+Every random event has an upgrade that counters it. For a new event, add one with:
+
+```js
+import { counterUpgrade } from '../../engine/upgrades.js';
+registerUpgrade(counterUpgrade({ id: 'my-fix', name: 'My fix', description: 'Counters: my event', counters: 'my-event' }));
+```
+
+In the event, scale the effect with `resistanceTo(game, 'my-event')` (0 = full effect, 1 = none). To show it on the building, add a drawing in `src/engine/building.js`.

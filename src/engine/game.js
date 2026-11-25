@@ -24,7 +24,8 @@ export function createGame() {
     pendingYearReview: false,
     lastYearReview: null,     // 'accepted' | 'approved' | 'denied' after the latest yearly review
     floors: 1,                // Nexios building floors (upgrade)
-    heatResistance: 0,        // 0..1, set by the air-conditioning upgrade; read by the heat wave event
+    heatResistance: 0,        // 0..1, set by the air-conditioning upgrade (old name, same as resistance['heat-wave'])
+    resistance: {},           // event id -> 0..1, set by counter-upgrades; each event scales its effect by (1 - resistance)
     raise: 1,                 // total yearly-review Warrant multiplier
     upgrades: {},
     quarterStats: { squashed: 0, leaked: 0 },

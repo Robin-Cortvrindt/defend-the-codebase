@@ -2,6 +2,7 @@
 import { getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
 import { LEVELS, devStats, canPlace } from './devs.js';
+import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
 
 export const COLORS = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', pathLine: '#1E4A6A',
@@ -65,7 +66,7 @@ function drawMap(ctx, game) {
   drawBuilding(ctx, game);
 }
 
-const BUILDING_GROUND = 178;      // bottom of the Nexios building
+const BUILDING_GROUND = 178;      // bottom of the Nexios building (same as BUILDING.ground in building.js)
 
 // The Nexios building (your base) at the end of the path. On game over it burns and caves in.
 function drawBuilding(ctx, game) {
@@ -74,99 +75,36 @@ function drawBuilding(ctx, game) {
   drawProductionBar(ctx, game);
 }
 
-// One storey per floor bought and an air-conditioning unit on the roof.
-function drawBuildingBody(ctx, game) {
-  const x = PROD.x + 2, w = PROD.w - 4;
-  const ground = BUILDING_GROUND;
-  const groundTop = 120;           // ground floor: 120..178 (the path enters at y 140)
-  const ac = Math.round((game.heatResistance || 0) * 3);
-  const acH = ac ? 6 + ac * 2 : 0;
-  const uppers = Math.max(0, (game.floors || 1) - 1);
-  const floorH = uppers ? Math.min(12, (groundTop - 6 - acH) / uppers) : 12;
-  const top = groundTop - uppers * floorH;
-
-  // body
-  ctx.fillStyle = COLORS.navy2;
-  ctx.fillRect(x, top, w, ground - top);
-  ctx.strokeStyle = COLORS.s200; ctx.lineWidth = 1;
-  ctx.strokeRect(x + 0.5, top + 0.5, w - 1, ground - top - 1);
-
-  // upper floors: a separator and a row of windows each
-  for (let i = 0; i < uppers; i++) {
-    const fy = groundTop - (i + 1) * floorH;
-    ctx.fillStyle = COLORS.navy3;
-    ctx.fillRect(x + 1, fy + floorH - 1, w - 2, 1);
-    const wh = Math.max(2, floorH - 5);
-    for (let k = 0; k < 4; k++) {
-      ctx.fillStyle = (i + k + Math.floor(game.time / 3)) % 5 === 0 ? COLORS.s400 : COLORS.s200;
-      ctx.globalAlpha = 0.85;
-      ctx.fillRect(x + 6 + k * 11, fy + 2, 7, wh);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // ground floor: sign, door facing the path, windows
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(x + 1, groundTop + 1, w - 2, 11);
-  ctx.fillStyle = COLORS.navy;
-  ctx.font = `900 8px ${FONT}`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('NEXIOS', x + w / 2, groundTop + 7);
-  ctx.fillStyle = COLORS.navy3;
-  ctx.fillRect(x, 130, 9, 22);
-  ctx.fillStyle = COLORS.green;
-  ctx.fillRect(x, 130, 9, 2);
-  for (let k = 0; k < 3; k++) {
-    ctx.fillStyle = COLORS.s200; ctx.globalAlpha = 0.85;
-    ctx.fillRect(x + 16 + k * 11, 134, 7, 8);
-    ctx.fillRect(x + 16 + k * 11, 150, 7, 8);
-    ctx.globalAlpha = 1;
-  }
-
-  // air conditioning on the roof, bigger per level, fan spinning
-  if (ac) {
-    const uw = 12 + ac * 4, ux = x + w - uw - 4, uy = top - acH;
-    ctx.fillStyle = COLORS.s400;
-    ctx.fillRect(ux, uy, uw, acH);
-    ctx.fillStyle = COLORS.navy;
-    const r = acH / 2 - 1.5, cx = ux + uw / 2, cy = uy + acH / 2;
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = COLORS.s200; ctx.lineWidth = 1;
-    const a0 = game.time * 8;
-    ctx.beginPath();
-    for (let k = 0; k < 3; k++) {
-      const a1 = a0 + (k * Math.PI * 2) / 3;
-      ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r);
-    }
-    ctx.stroke();
-    ctx.fillStyle = COLORS.blue;
-    ctx.font = `900 6px ${FONT}`;
-    ctx.textAlign = 'left';
-    ctx.fillText(`AC ${ac}`, x + 3, uy + acH / 2);
-  }
-
+// What building.js needs to draw this game's building: floors and every upgrade level.
+function buildingSpec(game) {
+  const u = game.upgrades || {};
+  return {
+    floors: game.floors, lives: game.lives, maxLives: game.maxLives, time: game.time,
+    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0 },
+  };
 }
 
-// Highest point of the building (roof, or the top of the AC unit), same maths as drawBuildingBody.
+// The building itself (see building.js); the production bar is drawn separately so it stays during the collapse.
+function drawBuildingBody(ctx, game) {
+  drawBuildingArt(ctx, { ...buildingSpec(game), bar: false });
+}
+
+// Highest point of the building, including whatever stands on the roof.
 function buildingTop(game) {
-  const ac = Math.round((game.heatResistance || 0) * 3);
-  const acH = ac ? 6 + ac * 2 : 0;
-  const uppers = Math.max(0, (game.floors || 1) - 1);
-  const floorH = uppers ? Math.min(12, (120 - 6 - acH) / uppers) : 12;
-  return 120 - uppers * floorH - acH;
+  return buildingArtTop(buildingSpec(game));
 }
 
 function drawProductionBar(ctx, game) {
   const x = PROD.x + 2, w = PROD.w - 4, ground = BUILDING_GROUND;
   const frac = Math.max(0, game.lives / game.maxLives);
   ctx.fillStyle = COLORS.navy3;
-  ctx.fillRect(x, ground + 4, w, 4);
+  ctx.fillRect(x, ground + 5, w, 4);
   ctx.fillStyle = frac <= 0.4 ? COLORS.orange : COLORS.green;
-  ctx.fillRect(x, ground + 4, w * frac, 4);
+  ctx.fillRect(x, ground + 5, w * frac, 4);
   ctx.fillStyle = COLORS.s400;
   ctx.font = `700 7px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`${Math.ceil(game.lives)} / ${game.maxLives}`, x + w / 2, ground + 16);
+  ctx.fillText(`${Math.ceil(game.lives)} / ${game.maxLives}`, x + w / 2, ground + 17);
 }
 
 // ----- game over: the building burns, then sinks into itself -----

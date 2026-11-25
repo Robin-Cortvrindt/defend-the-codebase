@@ -1,14 +1,10 @@
 import { registerUpgrade } from '../../engine/registry.js';
+import { counterUpgrade } from '../../engine/upgrades.js';
 
-// Air conditioning: each level takes a third off the heat wave (the heat wave event reads game.heatResistance).
-const COSTS = [3, 5, 7];
-const aircon = {
-  id: 'aircon',
-  name: 'Air conditioning',
-  description: 'Protects against heat waves',
-  maxLevel: COSTS.length,
-  getCost(game, level) { return COSTS[level] ?? Infinity; },
-  apply(game, level) { game.heatResistance = level / COSTS.length; },
-};
+// Air conditioning: counters the heat wave. Also keeps the old game.heatResistance field in sync.
+const aircon = counterUpgrade({
+  id: 'aircon', name: 'Air conditioning', description: 'Counters: heat wave', counters: 'heat-wave',
+  onApply(game, level) { game.heatResistance = level / 3; },
+});
 registerUpgrade(aircon);
 export default aircon;

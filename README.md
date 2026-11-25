@@ -17,7 +17,7 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
   - **Claude:** squashes every bug on the map. The price goes up each use, and there's a 25% chance it backfires and doubles the bugs.
 - **Inbox:** task mails trickle in, up to 4 at a time, such as "Hire 3 .NET developers" or "Survive 2 more sprints". Finish one and press Claim for Warrants, or now and then a free Claude. Watch out: about 1 in 6 mails is phishing, and you only find out when you claim it.
 - **Sprints and quarters:** waves are sprints, 7 sprints make a quarter, 4 quarters make a year, and it never ends. Between sprints you ring the Nexios victory bell.
-- **Nexios Coins:** 1 per sprint and 3 more per quarter. At each **quarter review** you spend them on the Nexios building: **add a floor** (+5 production, heals 5; the building grows) or **air conditioning** (levels 1–3; each level takes a third off heat waves).
+- **Nexios Coins:** 1 per sprint and 3 more per quarter. At each **quarter review** you spend them on the Nexios building: **add a floor** (+5 production, heals 5; the building grows) or a counter-upgrade for each random event, 3 levels each: **air conditioning** (heat wave), **server heat recovery** (heating out), **coffee bar** (out of coffee), **energy drink fridge** (out of Red Bull) and **backup generator** (PROD is down). Every upgrade shows on the building.
 - **Yearly review** after every Q4: accept a guaranteed +10% on Warrants, or ask for a raise (50% chance of +20%, otherwise nothing).
 - **Lose:** when too many bugs reach the Nexios building, production is down. Your best run (year, quarter, sprint) is remembered in the browser.
 

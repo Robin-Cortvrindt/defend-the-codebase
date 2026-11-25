@@ -220,3 +220,18 @@ This section replaces the parts of §4 it contradicts. Waves become **sprints**,
 - `registerUpgrade({ id, name, description, maxLevel?, getCost(game), apply(game), draw? })`. Upgrades appear in the quarter-review shop.
 - New events: `sprint:start`, `sprint:cleared`, `quarter:review`, `year:review`, `upgrade:bought`.
 - `wave:start` and `wave:cleared` are still emitted as aliases, so existing features keep working.
+
+## 10. Update (approved 2026-11-25): one counter-upgrade per random event
+
+| Event | Counter-upgrade (id) | Effect | On the building |
+|---|---|---|---|
+| Heat wave | Air conditioning (`aircon`) | speed-up −⅓ per level | white roof unit, one fan per level, cool-air wisps |
+| The heating is out | Server heat recovery (`heating`) | slowdown 50% → 33% → 17% → 0% | orange radiator strips under the windows (more floors per level), blinking server-room lights |
+| Out of coffee | Coffee bar (`coffee`) | Java slowdown shrinks the same way | round café sign with a steaming cup on the left wall, bigger per level, glow at level 3 |
+| Out of Red Bull | Energy drink fridge (`fridge`) | .NET slowdown shrinks the same way | glowing fuchsia fridge window, one per level |
+| PROD is down | Backup generator (`generator`) | flashlight radius +40% per level; level 3 keeps the lights on | generator box at the foot (bigger per level) and one roof light per level |
+
+- Each counter-upgrade has 3 levels for 3, 5 and 7 coins. It sets `game.resistance['<event id>'] = level / 3`. Events read it with `resistanceTo(game, id)` from `src/engine/upgrades.js` and scale their effect by it. Air conditioning also keeps `game.heatResistance`.
+- New counter-upgrades: `counterUpgrade({ id, name, description, counters })` from `src/engine/upgrades.js`.
+- The building drawing lives in `src/engine/building.js` (`drawBuilding(ctx, { floors, lives, maxLives, time, levels })`).
+- There's no chimney, because Nexios is an IT company.

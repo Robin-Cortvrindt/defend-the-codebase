@@ -1,0 +1,260 @@
+// The Nexios building: your base at the end of the path. Pure canvas drawing, no game logic.
+// Every building upgrade shows up here. `b` describes what to draw:
+// { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator } }
+
+const C = {
+  navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', glass: '#1E4A6A',
+  blue: '#2563EB', orange: '#EA580C', fuchsia: '#C026D3', green: '#16A34A', greenL: '#4ADE80',
+  s500: '#64748B', s400: '#94A3B8', s200: '#E2E8F0', white: '#fff', light: '#FDE68A',
+};
+const FONT = 'Lato, system-ui, sans-serif';
+
+// Layout (logical px). The path ends at x 576, y 140: the door faces it.
+export const BUILDING = { x: 578, w: 52, ground: 178, groundTop: 118, minTop: 8 };
+
+function layout(b) {
+  const L = b.levels || {};
+  const roofStuff = Math.max(L.aircon ? 16 : 0, L.generator ? 12 : 0);
+  const uppers = Math.max(0, (b.floors || 1) - 1);
+  const floorH = uppers ? Math.min(13, (BUILDING.groundTop - BUILDING.minTop - roofStuff) / uppers) : 13;
+  return { L, roofStuff, uppers, floorH, top: BUILDING.groundTop - uppers * floorH };
+}
+
+// Highest point of the building, including whatever stands on the roof.
+export function buildingTop(b) {
+  const { roofStuff, top } = layout(b);
+  return top - 2 - roofStuff;
+}
+
+export function drawBuilding(ctx, b) {
+  const { x, w, ground, groundTop } = BUILDING;
+  const { L, uppers, floorH, top } = layout(b);
+  const t = b.time || 0;
+
+  ctx.save();
+  // soft shadow on the ground
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x + w / 2, ground + 1, w / 2 + 6, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  // ----- body -----
+  ctx.fillStyle = C.navy2;
+  ctx.fillRect(x, top, w, ground - top);
+  // vertical glass mullions give it an office-tower look
+  ctx.fillStyle = C.navy3;
+  for (let k = 1; k < 4; k++) ctx.fillRect(x + (w / 4) * k, top + 2, 1, groundTop - top - 2);
+
+  // ----- upper floors -----
+  for (let i = 0; i < uppers; i++) {
+    const fy = groundTop - (i + 1) * floorH;
+    ctx.fillStyle = C.navy3;
+    ctx.fillRect(x, fy + floorH - 1, w, 1);
+    const wh = Math.max(2, floorH - 5);
+    for (let k = 0; k < 4; k++) {
+      const lit = ((i * 7 + k * 3 + Math.floor(t / 4)) % 5) !== 0;
+      ctx.fillStyle = lit ? C.s200 : C.glass;
+      ctx.globalAlpha = lit ? 0.9 : 1;
+      ctx.fillRect(x + 4 + k * 12.5, fy + 2, 8, wh);
+      ctx.globalAlpha = 1;
+    }
+    // server heat recovery: warm radiator strips, on more floors per level (bottom up)
+    if (L.heating && i < Math.ceil((uppers * L.heating) / 3)) {
+      ctx.fillStyle = C.orange;
+      ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * 2 + i);
+      ctx.fillRect(x + 3, fy + floorH - 3, w - 6, 1.5);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ----- roof: parapet, AC unit, generator lights -----
+  ctx.fillStyle = C.s200;
+  ctx.fillRect(x - 1, top - 2, w + 2, 2);
+  if (L.aircon) drawAircon(ctx, x + w - 6, top - 2, L.aircon, t);
+  if (L.generator) drawRoofLights(ctx, x + 9, top - 2, L.generator, t);
+
+  // ----- ground floor -----
+  // sign band
+  ctx.fillStyle = C.white;
+  ctx.fillRect(x, groundTop, w, 12);
+  ctx.fillStyle = C.blue;
+  ctx.fillRect(x, groundTop + 11, w, 1);
+  ctx.fillStyle = C.navy;
+  ctx.font = `900 8px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('NEXIOS', x + w / 2 + 2, groundTop + 6.5);
+  // lobby glass
+  ctx.fillStyle = C.glass;
+  ctx.fillRect(x + 12, groundTop + 16, w - 16, 22);
+  ctx.fillStyle = C.navy3;
+  for (let k = 1; k < 3; k++) ctx.fillRect(x + 12 + ((w - 16) / 3) * k, groundTop + 16, 1, 22);
+  // fridge windows (energy drinks), one per level, glowing fuchsia
+  for (let k = 0; k < (L.fridge || 0); k++) {
+    const fx = x + w - 4 - (k + 1) * 11, fy = groundTop + 18;
+    ctx.fillStyle = C.fuchsia;
+    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 3 + k);
+    ctx.fillRect(fx - 2, fy - 2, 11, 22);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#F0ABFC';
+    ctx.fillRect(fx, fy, 7, 18);
+    ctx.fillStyle = C.fuchsia;
+    for (let s = 0; s < 3; s++) ctx.fillRect(fx + 1, fy + 3 + s * 5, 5, 2);
+  }
+  // door facing the path
+  ctx.fillStyle = C.navy;
+  ctx.fillRect(x, 128, 10, 24);
+  ctx.fillStyle = C.green;
+  ctx.fillRect(x, 128, 10, 2);
+  ctx.fillStyle = C.s400;
+  ctx.fillRect(x + 7, 140, 1.5, 4);
+  // coffee awning over the entrance
+  // lower band: the server room. With heat recovery its racks glow warm and blink.
+  ctx.fillStyle = C.navy3;
+  ctx.fillRect(x, ground - 6, w, 6);
+  if (L.heating) {
+    ctx.fillStyle = C.orange;
+    ctx.globalAlpha = 0.05 * L.heating;
+    ctx.fillRect(x + 12, groundTop + 16, w - 16, 22);   // warm lobby
+    ctx.globalAlpha = 1;
+    const racks = 3 + L.heating * 2;
+    for (let k = 0; k < racks; k++) {
+      const on = Math.sin(t * 6 + k * 1.7) > 0;
+      ctx.fillStyle = on ? (k % 3 ? C.orange : C.greenL) : C.navy2;
+      ctx.fillRect(x + 12 + k * 3.5, ground - 4, 2, 2);
+    }
+  }
+  // generator annex at the right foot
+  if (L.generator) drawGenerator(ctx, x + w - 2, ground, L.generator, t);
+
+  // outline
+  ctx.strokeStyle = C.s200; ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, top + 0.5, w - 1, ground - top - 1);
+
+  // coffee sign sticking out over the entrance, like a cafe sign
+  if (L.coffee) drawCoffeeSign(ctx, x, groundTop - 2, L.coffee, t);
+
+  // ----- production bar (optional: the game draws its own so it survives the collapse) -----
+  if (b.bar === false) { ctx.restore(); return; }
+  const frac = Math.max(0, (b.lives ?? 1) / (b.maxLives || 1));
+  ctx.fillStyle = C.navy3;
+  ctx.fillRect(x, ground + 5, w, 4);
+  ctx.fillStyle = frac <= 0.4 ? C.orange : C.green;
+  ctx.fillRect(x, ground + 5, w * frac, 4);
+  ctx.fillStyle = C.s400;
+  ctx.font = `700 7px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(`${Math.ceil(b.lives ?? 0)} / ${b.maxLives ?? 0}`, x + w / 2, ground + 17);
+  ctx.restore();
+}
+
+function drawAircon(ctx, rightX, roofY, level, t) {
+  // sleek white rooftop unit, one round fan per level, cool air drifting up
+  const fan = 9, uw = 4 + level * fan, uh = 10;
+  const ux = rightX - uw, uy = roofY - uh;
+  ctx.fillStyle = C.s200;
+  roundRect(ctx, ux, uy, uw, uh, 2); ctx.fill();
+  ctx.fillStyle = C.s400;
+  ctx.fillRect(ux + 1, uy + uh - 2, uw - 2, 1);          // base line
+  for (let k = 0; k < level; k++) {
+    const cx = ux + 2 + fan / 2 + k * fan, cy = uy + uh / 2 - 0.5, r = 3.4;
+    ctx.fillStyle = C.navy2;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = C.s400; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let j = 0; j < 3; j++) {
+      const a = t * 9 + k + (j * Math.PI * 2) / 3;
+      ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (r - 0.6), cy + Math.sin(a) * (r - 0.6));
+    }
+    ctx.stroke();
+    // cool air wisp
+    const p = (t * 0.8 + k * 0.37) % 1;
+    ctx.strokeStyle = C.blue; ctx.globalAlpha = 0.8 * (1 - p); ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - 2, uy - 1 - p * 7);
+    ctx.quadraticCurveTo(cx, uy - 3 - p * 7, cx + 2, uy - 1 - p * 7);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawRoofLights(ctx, cx, roofY, level, t) {
+  ctx.fillStyle = C.s400;
+  ctx.fillRect(cx - 0.5, roofY - 8, 1, 8);
+  const spread = 4;
+  for (let k = 0; k < level; k++) {
+    const lx = cx + (k - (level - 1) / 2) * spread, ly = roofY - 9;
+    const on = 0.7 + 0.3 * Math.sin(t * 4 + k * 2);
+    ctx.fillStyle = C.light;
+    ctx.globalAlpha = 0.25 * on;
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = on;
+    ctx.beginPath(); ctx.arc(lx, ly, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCoffeeSign(ctx, wallX, y, level, t) {
+  // bracket from the wall, then a round orange sign with a white steaming cup (the Java icon)
+  const r = 5 + level * 1.5;
+  const cx = wallX - r - 3, cy = y - r + 2;
+  ctx.fillStyle = C.s400;
+  ctx.fillRect(cx, y - 2 * r - 1, wallX - cx + 1, 1.5);            // bracket arm
+  ctx.fillRect(cx - 0.5, y - 2 * r - 1, 1, 2);                     // hanger
+  if (level >= 3) {
+    ctx.fillStyle = C.orange;
+    ctx.globalAlpha = 0.25 + 0.1 * Math.sin(t * 3);
+    ctx.beginPath(); ctx.arc(cx, cy, r + 3, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = C.orange;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C.white; ctx.lineWidth = 1;
+  ctx.stroke();
+  // cup
+  const s = r / 7;
+  ctx.fillStyle = C.white;
+  ctx.beginPath();
+  ctx.moveTo(cx - 3.5 * s, cy - 0.5 * s);
+  ctx.lineTo(cx + 2.5 * s, cy - 0.5 * s);
+  ctx.lineTo(cx + 2 * s, cy + 3 * s);
+  ctx.lineTo(cx - 3 * s, cy + 3 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.lineWidth = Math.max(0.8, s);
+  ctx.beginPath(); ctx.arc(cx + 3 * s, cy + 1 * s, 1.3 * s, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+  ctx.fillRect(cx - 4 * s, cy + 3.6 * s, 7 * s, 0.9 * s);           // saucer
+  // steam (level 2+), gently waving
+  if (level >= 2) {
+    ctx.lineWidth = Math.max(0.7, 0.8 * s);
+    ctx.globalAlpha = 0.9;
+    for (const dx of [-1.5, 1]) {
+      const wv = Math.sin(t * 3 + dx) * 0.8 * s;
+      ctx.beginPath();
+      ctx.moveTo(cx + dx * s, cy - 1.5 * s);
+      ctx.quadraticCurveTo(cx + dx * s - 1.2 * s + wv, cy - 3 * s, cx + dx * s + wv, cy - 4.5 * s);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawGenerator(ctx, rightX, groundY, level, t) {
+  // grows with the level: wider and taller, one status LED per level
+  const gw = 11 + level * 3, gh = 9 + level * 2;
+  const gx = rightX - gw, gy = groundY - gh;
+  ctx.fillStyle = C.s500;
+  ctx.fillRect(gx, gy, gw, gh);
+  ctx.fillStyle = C.s400;
+  ctx.fillRect(gx, gy, gw, 2);
+  ctx.fillStyle = C.navy;
+  for (let k = 0; k < level + 1; k++) ctx.fillRect(gx + 2, gy + 4 + k * 2.5, gw - 7, 1.2);
+  for (let k = 0; k < level; k++) {
+    ctx.fillStyle = Math.sin(t * 5 + k) > -0.6 ? C.greenL : C.green;
+    ctx.fillRect(gx + gw - 4, gy + 4 + k * 3, 2, 2);
+  }
+}
