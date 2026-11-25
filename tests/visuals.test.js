@@ -5,7 +5,7 @@ import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/game.js';
 import { placeDev, tickDevs } from '../src/engine/devs.js';
 import { render, hitFlash, MAP_TILE } from '../src/engine/render.js';
-import { stubCtx } from './stub-ctx.js';
+import { stubCtx, recordingCtx } from './stub-ctx.js';
 
 let calls;
 beforeEach(() => {
@@ -68,7 +68,7 @@ test('render: drawAttack gets progress in 0..1 and the shot details', () => {
   render(stubCtx(), g, {});
   assert.equal(calls.length, 1);
   assert.ok(calls[0].progress > 0 && calls[0].progress <= 1);
-  assert.deepEqual(Object.keys(calls[0]).sort(), ['accent', 'from', 'progress', 'seed', 'shot', 'time', 'to']);
+  assert.deepEqual(Object.keys(calls[0]).sort(), ['accent', 'counter', 'from', 'progress', 'seed', 'shot', 'time', 'to']);
 });
 
 test('render: a throwing drawAttack is logged and the frame finishes', () => {
@@ -205,4 +205,56 @@ test('hitJolt: a developer with attackJolt knocks the bug back a little when it 
   const { g: g2, bug: b2 } = setup('plain');
   tickDevs(g2, 0.01);
   assert.deepEqual(hitJolt(g2, b2), { x: 0, y: 0 });
+});
+
+test('render: developer without drawAttack draws a straight beam from the developer to the bug', () => {
+  const { g, dev, bug } = setup('plain');
+  tickDevs(g, 0.01);
+  const ctx = recordingCtx();
+  render(ctx, g, {});
+  const moveIdx = ctx.calls.findIndex(c => c[0] === 'moveTo' && c[1] === dev.x && c[2] === dev.y);
+  assert.ok(moveIdx >= 0, 'beam starts at the developer');
+  assert.deepEqual(ctx.calls[moveIdx + 1], ['lineTo', bug.x, bug.y]);
+});
+
+test('render: a bug without a draw hook gets the default oval in its size', () => {
+  const { g } = setup();
+  const ctx = recordingCtx();
+  render(ctx, g, {});
+  assert.ok(ctx.calls.some(c => c[0] === 'ellipse' && c[3] === 9 * 1.1 && c[4] === 9 * 0.85), 'oval r*1.1 × r*0.85');
+});
+
+test('attack effect: knows whether it was a counter hit', () => {
+  R.registerDeveloper({ id: 'counterer', accent: '#fff', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'b' });
+  const { g } = setup('counterer');
+  tickDevs(g, 0.01);
+  assert.equal(attacks(g)[0].counter, true);
+  const { g: g2 } = setup('plain');
+  tickDevs(g2, 0.01);
+  assert.equal(attacks(g2)[0].counter, false);
+});
+
+test('attack effect: firing does not use the game\'s random numbers', () => {
+  const { g } = setup();
+  let used = 0;
+  g.random = () => { used++; return 0.5; };
+  tickDevs(g, 0.01);
+  assert.equal(attacks(g).length, 1);
+  assert.equal(used, 0);
+  const s = attacks(g)[0].seed;
+  assert.ok(s >= 0 && s < 1, 'seed is 0..1');
+});
+
+test('render: the hit flash turns with a self-drawn bug', () => {
+  R.registerBug({ id: 'drawn2', ring: '#fff', hp: 1000, speed: 0, livesLost: 1, reward: 1, radius: 7, draw() {} });
+  const { g, dev } = setup('plain');
+  g.bugs.length = 0;
+  const bug = spawnBug(g, 'drawn2', 260);   // on the lane going down, right of the developer
+  dev.x = bug.x - 40; dev.y = bug.y;
+  tickDevs(g, 0.01);
+  const ctx = recordingCtx();
+  render(ctx, g, {});
+  const flash = ctx.calls.find(c => c[0] === 'ellipse' && c[3] === 7 * 1.1);
+  assert.ok(flash, 'flash drawn');
+  assert.equal(flash[5], Math.PI / 2);
 });

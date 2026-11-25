@@ -136,6 +136,11 @@ export function hitBug(game, dev, bug, damage) {
   return true;
 }
 
+const shotSeed = (dev, target) => {
+  const n = Math.sin((dev.shots ?? 0) * 12.9898 + (target.id ?? 0) * 78.233 + (dev.col ?? 0) * 37.719 + (dev.row ?? 0) * 4.581) * 43758.5453;
+  return n - Math.floor(n);
+};
+
 // The animation of one hit. Damage is dealt by the caller, at once; this is only what you see.
 // The effect follows `target` while it lives (see tickEffects) and the developer may draw it (drawAttack).
 // `damage` sets the fallback beam's width; `color` overrides its colour.
@@ -143,7 +148,9 @@ export function addAttack(game, dev, from, target, { color, damage } = {}) {
   const def = getDeveloper(dev.type);
   addEffect(game, {
     kind: 'attack', dev: dev.type, from, to: { x: target.x, y: target.y }, target,
-    seed: game.random(), shot: dev.shots ?? 0,
+    // Visual-only randomness, worked out from the shot itself so the game's own random numbers
+    // (events, mails, Claude's backfire) aren't used up by animations.
+    seed: shotSeed(dev, target), shot: dev.shots ?? 0, counter: target.type === def?.counters,
     ttl: def?.attackDuration ?? 0.12, hitAt: def?.attackHitAt ?? 0,
     color, width: Math.min(5, 1.5 + (damage ?? devStats(game, dev).damage) / 15),
   });

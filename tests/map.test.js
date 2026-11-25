@@ -27,3 +27,14 @@ test('headingAt: the direction a bug walks, 0 = right, π/2 = down', () => {
   assert.equal(headingAt(PATH_LENGTH + 10), 0);
   assert.equal(headingAt(-5), 0);
 });
+
+test('headingAt: bugs turn smoothly through a corner instead of snapping', () => {
+  assert.equal(headingAt(180 - 13), 0);
+  assert.ok(Math.abs(headingAt(180) - Math.PI / 4) < 1e-9, 'halfway round at the corner');
+  assert.ok(headingAt(180 - 6) > 0 && headingAt(180 - 6) < Math.PI / 4);
+  assert.equal(headingAt(180 + 13), Math.PI / 2);
+  // turning left (down → right) goes the short way round
+  assert.ok(Math.abs(headingAt(380) - Math.PI / 4) < 1e-9);
+  // right → up at (420, 260): halfway is -π/4
+  assert.ok(Math.abs(headingAt(620) + Math.PI / 4) < 1e-9);
+});

@@ -430,16 +430,17 @@ function drawBug(ctx, game, bug) {
   const jolt = hitJolt(game, bug);
   const x = bug.x + (bug.jitter || 0) * 0.7 + jolt.x, y = bug.y + (bug.jitter || 0) + jolt.y;
   const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
+  const heading = def.draw ? headingAt(bug.distance || 0) : 0;   // self-drawn bugs face where they walk
   ctx.save();
   ctx.translate(x, y);
   if (def.draw) {
     // The bug draws its own body, facing +x; turn it towards where it walks.
-    safeDraw(ctx, `[bug ${bug.type}] draw`, () => { ctx.rotate(headingAt(bug.distance || 0)); def.draw(ctx, r, bug, game.time); });
+    safeDraw(ctx, `[bug ${bug.type}] draw`, () => { ctx.rotate(heading); def.draw(ctx, r, bug, game.time); });
   } else drawDefaultBug(ctx, def, bug, r);
   const flash = hitFlash(game, bug);
   if (flash > 0) {
     ctx.globalAlpha = 0.7 * flash; ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.85, heading, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
   }
   ctx.restore();
@@ -455,7 +456,7 @@ function drawAttack(ctx, game, e, t) {
   const def = getDeveloper(e.dev);
   const accent = def?.accent || '#fff';
   if (def?.drawAttack) {
-    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, accent };
+    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, accent };
     safeDraw(ctx, `[developer ${e.dev}] drawAttack`, () => def.drawAttack(ctx, a));
     return;
   }

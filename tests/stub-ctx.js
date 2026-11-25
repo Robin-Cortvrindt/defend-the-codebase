@@ -12,3 +12,18 @@ export function stubCtx() {
     set: (t, k, v) => { t[k] = v; return true; },
   });
 }
+
+// Like stubCtx, but logs every method call as [name, ...args] in `ctx.calls`.
+export function recordingCtx() {
+  const calls = [];
+  const base = stubCtx();
+  return new Proxy(base, {
+    get: (t, k) => {
+      if (k === 'calls') return calls;
+      const v = t[k];
+      if (typeof v !== 'function') return v;
+      return (...args) => { calls.push([k, ...args]); return v(...args); };
+    },
+    set: (t, k, v) => { t[k] = v; return true; },
+  });
+}

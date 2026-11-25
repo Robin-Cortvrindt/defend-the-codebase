@@ -60,7 +60,8 @@ export function sideTraces() {
   return traces;
 }
 
-// The code as one long tape of coloured tokens, laid out once per context (it needs measureText).
+// The code as one long tape of coloured tokens, laid out once and shared by the whole module
+// (it needs a context's measureText; there is one game canvas).
 let tape = null;
 // Lay it out again once the code font has loaded (the first frames may measure a fallback font).
 globalThis.document?.fonts?.ready?.then(() => { tape = null; });
