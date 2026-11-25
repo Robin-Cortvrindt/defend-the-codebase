@@ -44,7 +44,7 @@ export function devStats(game, dev) {
   const def = getDeveloper(dev.type);
   return {
     damage: def.damage * LEVEL_DAMAGE ** dev.level * game.mods.damageMultiplier,
-    fireRate: def.fireRate * LEVEL_FIRE_RATE ** dev.level * game.mods.fireRateMultiplier,
+    fireRate: def.fireRate * LEVEL_FIRE_RATE ** dev.level * game.mods.fireRateMultiplier * (game.mods.devFireRate?.[dev.type] ?? 1),
     range: def.range * CELL * game.mods.rangeMultiplier,
   };
 }

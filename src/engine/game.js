@@ -23,6 +23,7 @@ export function createGame() {
     mods: {
       xpMultiplier: 1, warrantMultiplier: 1, fireRateMultiplier: 1,
       damageMultiplier: 1, bugSpeedMultiplier: 1, rangeMultiplier: 1,
+      timeScale: 1, devFireRate: {},
     },
     powerups: {},
     stats: { squashed: 0, warrantsEarned: 0, seniors: 0, backfires: 0 },
@@ -129,6 +130,7 @@ export function step(game, dt) {
     tickEffects(game, dt);
     return;
   }
+  dt *= game.mods.timeScale ?? 1;
   game.time += dt;
   if (game.phase === 'wave') {
     game.waveTime += dt;

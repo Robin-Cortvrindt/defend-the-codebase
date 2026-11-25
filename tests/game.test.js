@@ -84,3 +84,12 @@ test('wave hp multiplier scales bug health', () => {
   const b = spawnBug(g, 'b', 0);
   assert.equal(b.hp, 20); assert.equal(b.maxHp, 20);
 });
+
+test('timeScale 0.5 halves how far bugs move', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  g.spawnQueue = []; g.bugs = [];
+  const bug = spawnBug(g, 'b', 0);
+  g.mods.timeScale = 0.5;
+  step(g, 0.1);
+  assert.equal(bug.distance, 5);
+});
