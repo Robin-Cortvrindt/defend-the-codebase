@@ -84,7 +84,7 @@ export function updateMenu() {
 
 const STEPS = [
   ['Hire next to the path', 'Developers squash bugs in range. Each type counters one kind of bug.'],
-  ['Earn drinks', 'Every squashed bug drops drinks. Spend them on more hires.'],
+  ['Grab drinks', 'Squashed bugs drop Coffee, White Monster or Red Bull. Click them within 10 s. Each developer is paid in its own drink.'],
   ['Ring the bell', 'After each sprint, ring the Nexios bell to start the next one.'],
   ['Quarterly review', 'Every 7 sprints, spend Warrants on the building.'],
 ];

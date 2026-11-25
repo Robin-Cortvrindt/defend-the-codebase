@@ -57,6 +57,7 @@ on('bug:killed', ({ game, bug }) => {
   if (game !== app.game) return;
   playSound('squash', 40);
 });
+on('drop:collected', ({ game }) => { if (game === app.game) playSound('place', 30); });
 on('bug:leaked', () => playSound('leak', 80));
 on('dev:levelup', ({ game, dev, upgrade }) => {
   addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#16A34A', ttl: 0.6 });

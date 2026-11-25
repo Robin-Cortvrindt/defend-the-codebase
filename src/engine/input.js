@@ -2,6 +2,7 @@
 import { getDevelopers } from './registry.js';
 import { WIDTH, HEIGHT, cellAt } from './map.js';
 import { placeDev, devAt } from './devs.js';
+import { clickDrop } from './drops.js';
 import { playSound } from './sound.js';
 import { selectHire, uiActions, isQuitOpen, closeQuit } from './ui.js';
 
@@ -22,6 +23,7 @@ export function initInput(canvas, app) {
     const g = app.game;
     if (!['building', 'wave', 'bell', 'review'].includes(g.phase)) return;
     const { x, y } = toLogical(ev);
+    if (clickDrop(g, app.view, x, y)) return;
     const { col, row } = cellAt(x, y);
     const existing = devAt(g, col, row);
     if (existing) { app.view.selected = existing; app.view.hire = null; return; }

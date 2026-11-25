@@ -339,3 +339,8 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .mb-claim { grid-column: 1 / -1; margin-top: 4px; padding: 5px 0; border: 0; border-radius: 6px; background: var(--green); color: #fff; font-size: 11px; font-weight: 700; }
 .mb-claim:hover:not(:disabled) { background: #15803D; }
 .mb-claim:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
+
+.stat .drinks { display: flex; gap: 10px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.stat .drinks .drink { display: inline-flex; gap: 3px; align-items: baseline; font-weight: 900; }
+.stat .drinks .drink i { font-style: normal; font-size: 14px; }
+.stat .drinks .drink b { font-size: 18px; color: inherit; }

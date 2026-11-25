@@ -1,5 +1,6 @@
 // Canvas rendering. Reads game state, never changes it.
-import { getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
+import { DROP_TTL, BLINK_AT } from './drops.js';
+import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
@@ -18,6 +19,7 @@ export function render(ctx, game, view) {
   for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, bug);
+  drawDrops(ctx, game);
   drawActiveEvent(ctx, game, view);
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
@@ -27,6 +29,31 @@ export function render(ctx, game, view) {
     ctx.restore();
   }
   ctx.restore();
+}
+
+export function drawDrops(ctx, game) {
+  for (const d of game.drops ?? []) {
+    if (d.ttl < BLINK_AT && Math.floor(d.ttl * 5) % 2 === 0) continue; // blink
+    const age = DROP_TTL - d.ttl;
+    const k = age < 0.2 ? 0.4 + 0.6 * (age / 0.2) : 1;                 // pop-in
+    const def = getDrink(d.drink);
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.scale(k, k);
+    ctx.beginPath();
+    ctx.arc(0, 0, 11, 0, Math.PI * 2);
+    ctx.fillStyle = def?.color ?? COLORS.s500;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.stroke();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `700 12px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(def?.icon ?? '', 0, 1);
+    ctx.restore();
+  }
 }
 
 // The running random event can draw over the map (e.g. PROD down), below banners and effects.

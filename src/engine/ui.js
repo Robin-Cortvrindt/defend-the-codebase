@@ -207,6 +207,7 @@ export function updateUI() {
     let desc = def.description;
     try { if (def.describe) desc = def.describe(g); } catch (e) { console.error(`[powerup ${def.id}]`, e); }
     if (st.active) { text = `${desc} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
+    else if (st.cooldownLeft > 0 && usable && def.id === 'claude') text = `${desc} · free Claude ready`;
     else if (st.cooldownLeft > 0) { text = `${desc} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / (effectiveCooldown(g, def.id) || 1); }
     else text = `${desc} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
     set(status, 'textContent', text);
@@ -228,11 +229,10 @@ export function updateUI() {
   updateMenu();
 }
 
-// Plain per-drink counters; Task 8 styles them.
 function updateDrinks(g) {
   const list = getDrinks();
   if (refs.drinks.children.length !== list.length) {
-    refs.drinks.replaceChildren(...list.map(d => h('span', { class: 'drink', title: d.name }, `${d.icon ?? d.name} `, h('b', { 'data-drink': d.id }, '0'))));
+    refs.drinks.replaceChildren(...list.map(d => h('span', { class: 'drink', title: d.name, style: `color:${d.color}` }, h('i', {}, d.icon ?? d.name), h('b', { 'data-drink': d.id }, '0'))));
   }
   for (const b of refs.drinks.querySelectorAll('b[data-drink]')) set(b, 'textContent', String(Math.floor(g.drinks[b.dataset.drink] ?? 0)));
 }
