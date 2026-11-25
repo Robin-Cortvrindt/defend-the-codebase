@@ -20,7 +20,7 @@ export function initInput(canvas, app) {
 
   canvas.addEventListener('click', ev => {
     const g = app.game;
-    if (!['building', 'wave', 'bell'].includes(g.phase)) return;
+    if (!['building', 'wave', 'bell', 'review'].includes(g.phase)) return;
     const { x, y } = toLogical(ev);
     const { col, row } = cellAt(x, y);
     const existing = devAt(g, col, row);

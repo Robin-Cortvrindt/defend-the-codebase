@@ -238,6 +238,7 @@ function showOverlay(phase) {
       ),
     ));
   } else if (phase === 'review') {
+    reviewMinimized = false;
     renderReview(ov, g);
   } else if (phase === 'won') {
     ov.className = 'screen won';
@@ -272,12 +273,32 @@ export function resetUI() { lastPhase = null; buildPowerups(); }
 
 // ---------- quarter review ----------
 
+// The review can shrink to a corner card so the map is free for hiring, placing and selling developers.
+let reviewMinimized = false;
+
 function renderReview(ov, g) {
-  ov.className = 'screen review';
   ov.innerHTML = '';
   const done = sprintInfo(g.sprint - 1);
   const next = sprintInfo(g.sprint);
   const rerender = () => renderReview(ov, g);
+  const setMin = m => { reviewMinimized = m; app.view.selected = null; if (!m) app.view.hire = null; rerender(); };
+  const ringLabel = `Ring the bell to start Q${next.quarter}${next.quarter === 1 ? ` of year ${next.year}` : ''}`;
+
+  if (reviewMinimized) {
+    ov.className = 'review-min-overlay';
+    const bell = h('div', { class: 'bell-wrap', html: BELL_SVG, onclick: swingBell, title: 'Ring the bell' });
+    ov.append(h('div', { class: `review-min${g.pendingYearReview ? ' locked' : ''}` },
+      bell,
+      h('div', {},
+        h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.coins} coins`),
+        h('h2', {}, g.pendingYearReview ? 'Yearly review still open' : ringLabel),
+        h('small', {}, 'Hire, place and sell developers on the map'),
+      ),
+      h('button', { class: 'btn ghost', onclick: () => setMin(false) }, 'Back to review'),
+    ));
+    return;
+  }
+  ov.className = 'screen review';
   const card = h('div', { class: 'review-card' },
     h('div', {},
       h('div', { class: 'eyebrow' }, `Quarter review · Year ${done.year} · Q${done.quarter}`),
@@ -333,9 +354,10 @@ function renderReview(ov, g) {
   card.append(h('div', { class: `review-foot${g.pendingYearReview ? ' locked' : ''}` },
     bellWrap,
     h('div', {},
-      h('h2', {}, g.pendingYearReview ? 'Finish the yearly review first' : `Ring the bell to start Q${next.quarter}${next.quarter === 1 ? ` of year ${next.year}` : ''}`),
+      h('h2', {}, g.pendingYearReview ? 'Finish the yearly review first' : ringLabel),
       h('small', {}, 'Sprints get harder every quarter'),
     ),
+    h('button', { class: 'btn ghost hire-from-review', onclick: () => setMin(true) }, 'Hire developers →'),
   ));
   ov.append(card);
 }
