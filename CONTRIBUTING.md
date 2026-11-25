@@ -31,7 +31,7 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost` · `investment:bought` (passes `{ id, level }`, no game: it happens between runs)
+`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `dev:hit` (passes `{ game, dev, bug, damage, counter }` after every developer hit) · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost` · `investment:bought` (passes `{ id, level }`, no game: it happens between runs)
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`.
 

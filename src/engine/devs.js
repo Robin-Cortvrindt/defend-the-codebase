@@ -87,6 +87,8 @@ export function tickDevs(game, dt) {
       dev.kills++;
       grantXp(game, dev, 1);
     }
+    // After the kill check, so a listener (e.g. a bounce) never kills the same bug twice.
+    emit('dev:hit', { game, dev, bug: target, damage: damage * (counter ? 2 : 1), counter });
     dev.cooldown = 1 / fireRate;
   }
 }

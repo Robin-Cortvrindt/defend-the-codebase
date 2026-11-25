@@ -45,6 +45,7 @@ export const CONTENT = [
   './investments/enterprise-plan.js',
   './investments/security-training.js',   // unlock: .NET firewall
   './investments/cross-functional.js',    // unlock: balanced team bonus
+  './investments/full-stack-squad.js',    // unlock: React hits bounce
   // Features (teammates' add-ons, Nexios references, ...)
   './features/mailbox.js',
 ];
