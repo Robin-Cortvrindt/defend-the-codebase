@@ -130,7 +130,7 @@ export function showShop(back) {
       const level = investmentLevel(def.id);
       const max = def.maxLevel ?? Infinity;
       const maxed = level >= max;
-      const unlock = group === 'unlocks';
+      const unlock = group === 'unlocks' && max === 1;   // one-off unlocks say "Owned"; multi-level ones show pips
       const btnProps = { class: `buy${maxed ? ' own' : ''}`, onclick: () => { if (invest(def.id)) { playSound('powerup'); rerender(); } } };
       if (maxed || !canInvest(def.id)) btnProps.disabled = '';
       const pips = unlock || !Number.isFinite(max) ? null

@@ -6,7 +6,7 @@ import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, isLocked, lockedView } from '../src/engine/game.js';
 import { placeDev, sellDev, buyUpgrade } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
-import mailbox, { makeOffer, acceptOffer, tickOffer, claimMail, canClaim } from '../src/content/features/mailbox.js';
+import mailbox, { makeOffer, acceptOffer, tickOffer, claimMail, canClaim, offerHeld } from '../src/content/features/mailbox.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 
 let g;
@@ -80,6 +80,14 @@ test('an offer showing at the bell waits: no accept, its countdown pauses, then 
   assert.equal(g.mailbox.offer.remaining, left);
   g.phase = 'wave';
   assert.ok(acceptOffer(g));
+});
+
+test('offerHeld tells the card to show it waits for the bell', () => {
+  assert.equal(offerHeld(g), false);
+  makeOffer(g);
+  assert.equal(offerHeld(g), false);
+  g.phase = 'bell';
+  assert.equal(offerHeld(g), true);
 });
 
 test('bell clears selection and hire mode', () => {

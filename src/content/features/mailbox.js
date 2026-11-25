@@ -117,6 +117,8 @@ export function tickMailbox(game, dt) {
 }
 
 export const canClaim = game => CLAIM_PHASES.includes(game.phase);
+// An offer that is showing but waits for the bell (unclickable, countdown paused).
+export const offerHeld = game => !!game.mailbox?.offer && HOLD_PHASES.includes(game.phase);
 
 export const isDone = mail => mail.progress >= mail.target;
 
@@ -231,7 +233,11 @@ export function claimMail(game, mailId) {
   const i = box?.mails.findIndex(m => m.id === mailId) ?? -1;
   if (i < 0 || !isDone(box.mails[i])) return null;
   const [mail] = box.mails.splice(i, 1);
-  if (mail.phishing) return applyPenalty(game, mail);
+  if (mail.phishing) {
+    const kind = applyPenalty(game, mail);
+    emit('mail:phished', { game, mail, kind });   // the retrospective counts these
+    return kind;
+  }
   payReward(game, mail);
   return 'reward';
 }
@@ -382,6 +388,15 @@ function syncTasks(game, paused, now) {
   if (box.offer && box.offer.mail.id !== ui.offerId) showOffer(box.offer.mail);
   else if (!box.offer && ui.card) hideOffer();
   if (box.offer && ui.bar) ui.bar.style.width = `${Math.max(0, (box.offer.remaining / OFFER_SECONDS) * 100).toFixed(1)}%`;
+  if (ui.card) {
+    const held = offerHeld(ui.game);
+    if (ui.card.classList.contains('held') !== held) {
+      ui.card.classList.toggle('held', held);
+      ui.card.disabled = held;
+      const label = ui.card.querySelector('.mb-accept');
+      if (label) label.textContent = held ? 'Accept after the bell' : 'Click to accept';
+    }
+  }
   const key = box.mails.map(m => `${m.id}:${isDone(m) ? 1 : 0}`).join(',');
   if (key !== ui.key) { ui.key = key; renderTasks(box); }
   updateTasks(box, canClaim(game) && !paused, now);

@@ -143,13 +143,13 @@ test('dotnet: names and stats', () => {
   assert.equal(devStats(g, v).fireRate, 0.6);
 });
 
-test('dotnet: Azure splashes everything within 1 cell of the target', () => {
+test('dotnet: Azure splashes 3× damage on everything within 1 cell of the target', () => {
   const g = waveGame();
   devAt(g, 'dotnet', 6, 3, 'core', 'azure');
   const [t, n, f] = [420, 390, 340].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
   tickDevs(g, 0.05);
-  assert.equal(1000 - t.hp, 55);
-  assert.equal(1000 - n.hp, 55);
+  assert.equal(1000 - t.hp, 165);
+  assert.equal(1000 - n.hp, 165);
   assert.equal(1000 - f.hp, 0);
 });
 
@@ -190,6 +190,17 @@ test('dotnet: Azure toggle', () => {
   for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
   assert.equal(b.hp, 100000);
   assert.equal(g.drinks.monster, 5);
+});
+
+test('dotnet: the Azure toggle refuses while the bell waits', () => {
+  const g = waveGame();
+  const d = devAt(g, 'dotnet', 6, 3, 'core', 'azure');
+  g.phase = 'bell';
+  d.upgrade.panelButtons(g, d)[0].onClick(g, d);
+  assert.equal(d.upgrade.panelButtons(g, d)[0].label, 'Azure on');
+  g.phase = 'wave';
+  d.upgrade.panelButtons(g, d)[0].onClick(g, d);
+  assert.equal(d.upgrade.panelButtons(g, d)[0].label, 'Azure off');
 });
 
 test('Review Focus 2: Azure with 1 monster bills once, resets the bill, stops at 0', () => {

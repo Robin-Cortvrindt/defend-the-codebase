@@ -52,6 +52,9 @@ export function initInput(canvas, app) {
     if (isQuitOpen()) { if (ev.key === 'Escape') closeQuit(); return; }
     const devs = getDevelopers();
     const n = Number(ev.key);
+    const ae = document.activeElement;
+    const hotkey = (n >= 1 && n <= devs.length) || ev.key === 'Escape';
+    if (hotkey && ae && ae.classList && ae.classList.contains('hire-btn')) ae.blur(); // drop stale focus so its hover card hides
     if (n >= 1 && n <= devs.length) { if (!isLocked(app.game)) selectHire(devs[n - 1].id); }
     else if (ev.key === 'Escape') { app.view.hire = null; app.view.selected = null; }
     else if (ev.key === 'p' || ev.key === 'P') uiActions.togglePause();

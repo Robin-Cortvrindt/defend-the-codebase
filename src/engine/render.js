@@ -1,11 +1,12 @@
 // Canvas rendering. Reads game state, never changes it.
-import { DROP_TTL, BLINK_AT } from './drops.js';
+import { DROP_TTL, BLINK_AT, FLIGHT } from './drops.js';
 import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawLane } from './lane.js';
 import { drawOffice } from './office.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop, BUILDING } from './building.js';
+import { drawDrinkIcon } from './drink-icons.js';
 
 export const COLORS = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', pathLine: '#1E4A6A',
@@ -21,8 +22,12 @@ export function render(ctx, game, view) {
   for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, game, bug);
+  drawDrops(ctx, game);   // under the event, so in the PROD-is-down darkness only the flashlight shows them
+  for (const f of getFeatures()) {   // things on the floor (goblin, vacuum): also under the event's darkness
+    if (!f.drawUnder) continue;
+    safeDraw(ctx, `[feature ${f.id}] drawUnder`, () => f.drawUnder(ctx, game));
+  }
   drawActiveEvent(ctx, game, view);
-  drawDrops(ctx, game);   // after the event so drops stay visible in the PROD-is-down darkness
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
     if (!f.draw) continue;
@@ -33,6 +38,7 @@ export function render(ctx, game, view) {
 
 export function drawDrops(ctx, game) {
   for (const d of game.drops ?? []) {
+    if (d.flight > 0) { drawFlyingDrop(ctx, d); continue; }
     if (d.ttl < BLINK_AT && Math.floor(d.ttl * 5) % 2 === 0) continue; // blink
     const age = DROP_TTL - d.ttl;
     const k = age < 0.2 ? 0.4 + 0.6 * (age / 0.2) : 1;                 // pop-in
@@ -40,20 +46,39 @@ export function drawDrops(ctx, game) {
     ctx.save();
     ctx.translate(d.x, d.y);
     ctx.scale(k, k);
-    ctx.beginPath();
-    ctx.arc(0, 0, 11, 0, Math.PI * 2);
-    ctx.fillStyle = def?.color ?? COLORS.s500;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.stroke();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `700 12px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(def?.icon ?? '', 0, 1);
+    if (def?.drawIcon) {
+      // a white halo so the lid stands out on the dark map
+      ctx.beginPath();
+      ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fill();
+    }
+    drawDrinkIcon(ctx, def, 22);
     ctx.restore();
   }
+}
+
+// A drop on its way from the bug to its landing spot: an arc with a shadow sliding along the floor.
+function drawFlyingDrop(ctx, d) {
+  const s = 1 - d.flight / FLIGHT, e = s * (2 - s);
+  const gx = d.fromX + (d.x - d.fromX) * e, gy = d.fromY + (d.y - d.fromY) * e;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(gx, gy + 6, 7 * (0.5 + 0.5 * s), 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.translate(gx, gy - Math.sin(Math.PI * s) * 30);
+  ctx.rotate(s * 4);
+  ctx.scale(0.8, 0.8);
+  const def = getDrink(d.drink);
+  if (def?.drawIcon) {
+    ctx.beginPath();
+    ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fill();
+  }
+  drawDrinkIcon(ctx, def, 22);
+  ctx.restore();
 }
 
 // The running random event can draw over the map (e.g. PROD down), below banners and effects.
@@ -85,7 +110,7 @@ function buildingSpec(game) {
   const u = game.upgrades || {};
   return {
     floors: game.floors, lives: game.lives, maxLives: game.maxLives, time: game.time,
-    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0 },
+    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0, water: u.water || 0, trap: u.trap || 0 },
   };
 }
 
@@ -148,7 +173,7 @@ function drawCollapse(ctx, game) {
     ctx.fillStyle = `rgba(0, 10, 20, ${0.55 * heat})`;
     ctx.fillRect(x, top, w, height);
     // windows lit by the fire
-    for (let fy = 110; fy > top + 2; fy -= 12) {
+    for (let fy = BUILDING.groundTop - 8; fy > top + 2; fy -= 12) {
       for (let k = 0; k < 4; k++) {
         const seed = fy * 7 + k;
         if (rnd(seed) > heat * 1.1) continue;
@@ -159,8 +184,8 @@ function drawCollapse(ctx, game) {
     }
     for (let k = 0; k < 3; k++) {
       ctx.fillStyle = hexA('#F59E0B', heat * (0.6 + 0.4 * Math.sin(t * 13 + k)));
-      ctx.fillRect(x + 16 + k * 11, 134, 7, 8);
-      ctx.fillRect(x + 16 + k * 11, 150, 7, 8);
+      ctx.fillRect(x + 16 + k * 11, BUILDING.groundTop + 16, 7, 8);
+      ctx.fillRect(x + 16 + k * 11, BUILDING.groundTop + 32, 7, 8);
     }
     // flames licking out of the roof and the sides
     for (let i = 0; i < 6; i++) {
@@ -477,7 +502,7 @@ function drawAttack(ctx, game, e, t) {
   const def = getDeveloper(e.dev);
   const accent = def?.accent || '#fff';
   if (def?.drawAttack) {
-    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, accent };
+    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, tipsy: !!e.tipsy, accent };
     safeDraw(ctx, `[developer ${e.dev}] drawAttack`, () => def.drawAttack(ctx, a));
     return;
   }

@@ -44,7 +44,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* stage */
 #stage { position: relative; line-height: 0; justify-self: center; align-self: start; max-width: 100%; }
-#game { display: block; width: 100%; cursor: crosshair; }
+/* debug magnifier: hotspot is the centre of the lens */
+#game { display: block; width: 100%; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M20 20l8 8' stroke='%23001E32' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M20 20l7.5 7.5' stroke='%23CBD5E1' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='13' cy='13' r='9' fill='rgba(74,222,128,.15)' stroke='%23001E32' stroke-width='5'/%3E%3Ccircle cx='13' cy='13' r='9' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='M13 8.5v3M13 14.5v3M8.5 13h3M14.5 13h3' stroke='%234ADE80' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") 13 13, crosshair; }
 /* While the bell waits nothing can change: the board ignores clicks and the bars are greyed out. */
 #app.bell-locked #game { cursor: default; }
 #app.bell-locked :is(#powerups, #hire) { pointer-events: none; }
@@ -75,16 +76,28 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* hire bar */
 #hire { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 16px 12px; }
-.hire-btn { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--navy2); border: 1px solid var(--navy3); border-top: 2px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
+.hire-btn { position: relative; display: flex; align-items: center; gap: 10px; text-align: left; background: var(--navy2); border: 1px solid var(--navy3); border-top: 2px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
 .hire-btn:hover { background: var(--navy3); }
 .hire-btn.active { background: #fff; color: var(--navy); border-color: #fff; border-top-color: var(--accent); }
 .hire-btn.active small { color: var(--s600); }
-.hire-btn.poor { opacity: .5; }
+.hire-btn.poor > :not(.hire-card) { opacity: .5; }
+.hire-card { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; gap: 2px; white-space: nowrap; background: var(--navy); color: #fff; border: 1px solid var(--navy3); border-radius: 6px; padding: 6px 10px; font-size: 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); pointer-events: none; opacity: 0; }
+.hire-card::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--navy); }
+.hire-btn:hover .hire-card, .hire-btn:focus-visible .hire-card { opacity: 1; }
+.hire-btn:nth-child(3n+1) .hire-card { left: 0; transform: none; }
+.hire-btn:nth-child(3n) .hire-card { left: auto; right: 0; transform: none; }
+.hire-btn:nth-child(3n+1) .hire-card::after { left: 24px; }
+.hire-btn:nth-child(3n) .hire-card::after { left: auto; right: 24px; margin-left: 0; margin-right: -5px; }
+.hire-card .hc-strong { display: flex; align-items: center; gap: 5px; }
+/* .active turns every button small dark; keep the card's hotkey light */
+.hire-card small, .hire-btn.active .hire-card small { font-size: 12px; color: var(--s400); }
+.hc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .hire-icon { width: 32px; height: 32px; flex: none; }
 .hire-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .hire-text b { font-size: 14px; }
 .hire-text small { font-size: 12px; color: var(--s400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cost { font-weight: 900; font-variant-numeric: tabular-nums; }
+.cost { display: inline-flex; align-items: center; gap: 4px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.drink-ico { display: inline-block; flex: none; }
 .sel-panel { flex-wrap: wrap; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
 .sel-panel div { display: flex; flex-direction: column; min-width: 0; }
 .sel-panel b { font-size: 14px; }
@@ -323,6 +336,8 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
   border-radius: 8px; background: #0b3320; box-shadow: 0 0 0 2px rgba(74, 222, 128, .25); animation: mb-in .25s ease-out; }
 .mb-offer:hover { background: #0e3d27; }
 .mb-offer.leaving { animation: mb-out .25s ease-in forwards; pointer-events: none; }
+.mb-offer.held { cursor: default; opacity: .6; filter: grayscale(.6); }
+.mb-offer.held:hover { background: inherit; }
 .mb-offer .mb-from { color: var(--green-l); }
 .mb-offer .mb-from { display: block; }
 .mb-offer b { display: block; font-size: 13px; margin: 1px 0; }
@@ -347,9 +362,9 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .mb-claim:hover:not(:disabled) { background: #15803D; }
 .mb-claim:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
 
-.stat .drinks { display: flex; gap: 10px; align-items: baseline; font-variant-numeric: tabular-nums; }
-.stat .drinks .drink { display: inline-flex; gap: 3px; align-items: baseline; font-weight: 900; }
-.stat .drinks .drink i { font-style: normal; font-size: 14px; }
+.stat .drinks { display: flex; gap: 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.stat .drinks .drink { display: inline-flex; gap: 4px; align-items: center; font-weight: 900; }
+.stat .drinks .drink i { font-style: normal; font-size: 14px; line-height: 0; }
 .stat .drinks .drink b { font-size: 18px; color: inherit; }
 
 /* year roadmap in the HUD: 4 quarters x 7 sprints (docs/mockups/top-bar.html, option B) */

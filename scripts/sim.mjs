@@ -14,7 +14,7 @@ import { PICKUP, mulberry32, trackPickups, tickPickups } from './pickup.mjs';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH, COLS, ROWS } from '../src/engine/map.js';
 import { getInvestments } from '../src/engine/registry.js';
-import { setStorage, saveProgress, loadProgress, awardCapital, investmentCost, invest } from '../src/engine/investments.js';
+import { setStorage, saveProgress, loadProgress, awardCapital, investmentCost, invest, investmentLevel } from '../src/engine/investments.js';
 
 await loadModules(CONTENT_URLS);
 setStorage(null);
@@ -76,9 +76,9 @@ if (args.includes('--meta')) {
   for (let run = 1; run <= runs; run++) {
     const g = play(STRATEGIES[2][1], true);
     const earned = awardCapital(g);
-    for (;;) {   // buy unlocks first (a player wants new mechanics), then the cheapest affordable investment
+    for (;;) {   // buy new unlocks first (a player wants new mechanics), then the cheapest affordable investment; a multi-level unlock's later levels count as ordinary upgrades
       const { capital } = loadProgress();
-      const rank = d => (d.group === 'unlocks' ? 0 : 1);
+      const rank = d => (d.group === 'unlocks' && !investmentLevel(d.id) ? 0 : 1);
       const next = getInvestments().map(d => ({ id: d.id, rank: rank(d), cost: investmentCost(d.id) })).filter(x => x.cost <= capital).sort((a, b) => a.rank - b.rank || a.cost - b.cost)[0];
       if (!next || !invest(next.id)) break;
     }

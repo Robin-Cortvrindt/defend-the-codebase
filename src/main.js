@@ -18,8 +18,8 @@ const CORE = [
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
   'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',
-  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js',
-  'upgrades/floor.js', 'upgrades/aircon.js', 'upgrades/heating.js', 'upgrades/coffee.js', 'upgrades/fridge.js', 'upgrades/generator.js',
+  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js', 'events/wine-tasting.js', 'events/goblin.js',
+  'upgrades/floor.js', 'upgrades/aircon.js', 'upgrades/heating.js', 'upgrades/coffee.js', 'upgrades/fridge.js', 'upgrades/generator.js', 'upgrades/water.js', 'upgrades/trap.js',
 ].map(p => new URL(`./content/${p}`, import.meta.url).href);
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);
@@ -57,7 +57,7 @@ on('bug:killed', ({ game, bug }) => {
   if (game !== app.game) return;
   playSound('squash', 40);
 });
-on('drop:collected', ({ game }) => { if (game === app.game) playSound('place', 30); });
+on('drop:collected', ({ game, by }) => { if (game === app.game && by === 'player') playSound('place', 30); });   // the vacuum works quietly
 on('bug:leaked', () => playSound('leak', 80));
 on('dev:levelup', ({ game, dev, upgrade }) => {
   addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#16A34A', ttl: 0.6 });

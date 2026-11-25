@@ -8,7 +8,7 @@ const EDGE = 'rgba(0,0,0,.25)';
 
 // Fixed cells, chosen away from the lane and the PROD column (tests check they stay buildable).
 export const DECORATIONS = [
-  { kind: 'plant', col: 0, row: 11 }, { kind: 'plant', col: 11, row: 0 }, { kind: 'plant', col: 12, row: 0 },
+  { kind: 'plant', col: 2, row: 11 }, { kind: 'plant', col: 11, row: 0 }, { kind: 'plant', col: 12, row: 0 },
   { kind: 'desk', col: 1, row: 9 }, { kind: 'desk', col: 2, row: 9 },
   { kind: 'desk', col: 20, row: 0 }, { kind: 'desk', col: 21, row: 0 },
   { kind: 'coffee', col: 22, row: 11 },

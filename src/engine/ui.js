@@ -10,9 +10,11 @@ import { quarterHoldLeft } from './drops.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
 import { roadmapModel } from './roadmap.js';
+import { hireCardInfo } from './hire-card.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
+import { drawDrinkIcon } from './drink-icons.js';
 import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
 
 let app;
@@ -100,6 +102,26 @@ function stat(label, valueEl, extra) {
   return h('div', { class: 'stat' }, h('small', {}, label, extra), valueEl);
 }
 
+// A drink's icon as a small crisp canvas (or its text icon for a drink that doesn't draw one).
+function drinkIconEl(id, px) {
+  const def = getDrink(id);
+  if (!def?.drawIcon) return h('span', { class: 'drink-ico' }, def?.icon ?? '');
+  const cv = h('canvas', { width: px * 2, height: px * 2, class: 'drink-ico', style: `width:${px}px;height:${px}px` });
+  const c = cv.getContext('2d');
+  c.scale(2, 2);
+  c.translate(px / 2, px / 2);
+  drawDrinkIcon(c, def, px - 1);
+  return cv;
+}
+
+// Hover card: which bug this developer counters, plus its hotkey.
+function hireCard(def, i) {
+  const { strong, hotkey } = hireCardInfo(def, i);
+  return h('span', { class: 'hire-card' },
+    strong ? h('span', { class: 'hc-strong' }, 'Strong vs ', h('i', { class: 'hc-dot', style: `background:${strong.ring}` }), h('b', {}, strong.name), ' · 2× damage') : null,
+    h('small', {}, hotkey));
+}
+
 function buildHire() {
   const bar = $('#hire');
   bar.innerHTML = '';
@@ -108,11 +130,12 @@ function buildHire() {
     const c = cv.getContext('2d');
     c.scale(2, 2);
     drawDevTile(c, def, 16, 16, 28);
-    const cost = h('span', { class: 'cost' }, String(def.cost));
-    const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, title: `Hotkey ${i + 1}`, onclick: () => selectHire(def.id) },
-      cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost);
+    const price = h('span', {}, String(def.cost));
+    const cost = h('span', { class: 'cost' }, drinkIconEl(drinkFor(def.id), 16), price);
+    const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, onclick: () => selectHire(def.id) },
+      cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost, hireCard(def, i));
     bar.append(btn);
-    return { def, btn, cost };
+    return { def, btn, price };
   });
   // The selected-developer panel lives on the map, before #overlay so overlay screens stay on top.
   if (!refs.selPanel) {
@@ -252,11 +275,11 @@ export function updateUI() {
   setIcon(refs.mute, isMuted() ? 'soundOff' : 'soundOn');
   set(refs.mute, 'title', isMuted() ? 'Sound off (M)' : 'Sound on (M)');
 
-  for (const { def, btn, cost } of refs.hire) {
+  for (const { def, btn, price: priceEl } of refs.hire) {
     const price = hireCost(g, def.id);
     toggle(btn, 'active', v.hire === def.id);
     toggle(btn, 'poor', !canAfford(g, drinkFor(def.id), price));
-    set(cost, 'textContent', `${getDrink(drinkFor(def.id))?.icon ?? ''} ${price}`.trim());
+    set(priceEl, 'textContent', String(price));
   }
 
   for (const { def, card, status, cd } of refs.powerups) {
@@ -294,7 +317,7 @@ export function updateUI() {
 function updateDrinks(g) {
   const list = getDrinks();
   if (refs.drinks.children.length !== list.length) {
-    refs.drinks.replaceChildren(...list.map(d => h('span', { class: 'drink', title: d.name, style: `color:${d.color}` }, h('i', {}, d.icon ?? d.name), h('b', { 'data-drink': d.id }, '0'))));
+    refs.drinks.replaceChildren(...list.map(d => h('span', { class: 'drink', title: d.name, style: `color:${d.color}` }, h('i', {}, drinkIconEl(d.id, 16)), h('b', { 'data-drink': d.id }, '0'))));
   }
   for (const b of refs.drinks.querySelectorAll('b[data-drink]')) set(b, 'textContent', String(Math.floor(g.drinks[b.dataset.drink] ?? 0)));
 }
@@ -303,7 +326,7 @@ function upgradeBtn({ up, status }, dev, gate) {
   const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
   const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} ${drinkName(drinkFor(dev.type))}`;
   const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
-    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, `${getDrink(drinkFor(dev.type))?.icon ?? ''} ${up.cost}`.trim())),
+    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, drinkIconEl(drinkFor(dev.type), 14), String(up.cost))),
     h('small', {}, kind + line));
   btn.disabled = !status.ok;
   if (up.tooltip) btn.title = up.tooltip;

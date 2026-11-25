@@ -21,7 +21,7 @@ registerFeature({
   init(game) { /* runs at game start and on every restart: reset your own state here, don't call on() */ },
   update(game, dt) { /* runs every simulation step */ },
   draw(ctx, game) {
-    // draw on the 640 x 320 map, on top of everything else
+    // draw on the 960 x 480 map, on top of everything else
     // ctx.fillStyle = '#fff'; ctx.fillText('hello', 10, 310);
   },
   hudButtons: [
