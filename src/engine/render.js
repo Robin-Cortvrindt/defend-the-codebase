@@ -62,23 +62,91 @@ function drawMap(ctx, game) {
   tracePath(); ctx.stroke();
   ctx.setLineDash([]);
 
-  // PROD box with production health bars
-  roundRect(ctx, PROD.x, PROD.y, PROD.w, PROD.h, 10);
-  ctx.fillStyle = COLORS.navy2; ctx.fill();
-  ctx.strokeStyle = COLORS.s200; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = COLORS.s400;
-  ctx.font = `700 10px ${FONT}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('PROD', PROD.x + PROD.w / 2, PROD.y + 22);
-  const frac = game.lives / game.maxLives;
-  const bars = 5;
-  const lit = Math.ceil(frac * bars);
-  for (let i = 0; i < bars; i++) {
-    const y = PROD.y + PROD.h - 12 - i * 7;
-    ctx.fillStyle = i < lit ? (frac <= 0.4 ? COLORS.orange : COLORS.green) : COLORS.navy3;
-    ctx.fillRect(PROD.x + 14, y, PROD.w - 28, 4);
+  drawBuilding(ctx, game);
+}
+
+// The Nexios building (your base) at the end of the path: one storey per floor bought,
+// an air-conditioning unit on the roof, and a production bar underneath.
+function drawBuilding(ctx, game) {
+  const x = PROD.x + 2, w = PROD.w - 4;
+  const ground = 178;              // bottom of the building
+  const groundTop = 120;           // ground floor: 120..178 (the path enters at y 140)
+  const ac = Math.round((game.heatResistance || 0) * 3);
+  const acH = ac ? 6 + ac * 2 : 0;
+  const uppers = Math.max(0, (game.floors || 1) - 1);
+  const floorH = uppers ? Math.min(12, (groundTop - 6 - acH) / uppers) : 12;
+  const top = groundTop - uppers * floorH;
+
+  // body
+  ctx.fillStyle = COLORS.navy2;
+  ctx.fillRect(x, top, w, ground - top);
+  ctx.strokeStyle = COLORS.s200; ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, top + 0.5, w - 1, ground - top - 1);
+
+  // upper floors: a separator and a row of windows each
+  for (let i = 0; i < uppers; i++) {
+    const fy = groundTop - (i + 1) * floorH;
+    ctx.fillStyle = COLORS.navy3;
+    ctx.fillRect(x + 1, fy + floorH - 1, w - 2, 1);
+    const wh = Math.max(2, floorH - 5);
+    for (let k = 0; k < 4; k++) {
+      ctx.fillStyle = (i + k + Math.floor(game.time / 3)) % 5 === 0 ? COLORS.s400 : COLORS.s200;
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(x + 6 + k * 11, fy + 2, 7, wh);
+      ctx.globalAlpha = 1;
+    }
   }
+
+  // ground floor: sign, door facing the path, windows
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x + 1, groundTop + 1, w - 2, 11);
+  ctx.fillStyle = COLORS.navy;
+  ctx.font = `900 8px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('NEXIOS', x + w / 2, groundTop + 7);
+  ctx.fillStyle = COLORS.navy3;
+  ctx.fillRect(x, 130, 9, 22);
+  ctx.fillStyle = COLORS.green;
+  ctx.fillRect(x, 130, 9, 2);
+  for (let k = 0; k < 3; k++) {
+    ctx.fillStyle = COLORS.s200; ctx.globalAlpha = 0.85;
+    ctx.fillRect(x + 16 + k * 11, 134, 7, 8);
+    ctx.fillRect(x + 16 + k * 11, 150, 7, 8);
+    ctx.globalAlpha = 1;
+  }
+
+  // air conditioning on the roof, bigger per level, fan spinning
+  if (ac) {
+    const uw = 12 + ac * 4, ux = x + w - uw - 4, uy = top - acH;
+    ctx.fillStyle = COLORS.s400;
+    ctx.fillRect(ux, uy, uw, acH);
+    ctx.fillStyle = COLORS.navy;
+    const r = acH / 2 - 1.5, cx = ux + uw / 2, cy = uy + acH / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = COLORS.s200; ctx.lineWidth = 1;
+    const a0 = game.time * 8;
+    ctx.beginPath();
+    for (let k = 0; k < 3; k++) {
+      const a1 = a0 + (k * Math.PI * 2) / 3;
+      ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r);
+    }
+    ctx.stroke();
+    ctx.fillStyle = COLORS.blue;
+    ctx.font = `900 6px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`AC ${ac}`, x + 3, uy + acH / 2);
+  }
+
+  // production bar
+  const frac = Math.max(0, game.lives / game.maxLives);
+  ctx.fillStyle = COLORS.navy3;
+  ctx.fillRect(x, ground + 4, w, 4);
+  ctx.fillStyle = frac <= 0.4 ? COLORS.orange : COLORS.green;
+  ctx.fillRect(x, ground + 4, w * frac, 4);
+  ctx.fillStyle = COLORS.s400;
+  ctx.font = `700 7px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(`${Math.ceil(game.lives)} / ${game.maxLives}`, x + w / 2, ground + 16);
 }
 
 function drawRanges(ctx, game, view) {

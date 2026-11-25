@@ -1,7 +1,8 @@
 // Headless balance check: a simple bot plays all 10 waves. Run: node scripts/sim.mjs [seed-count]
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
-import { createGame, startGame, startWave, ringBell, step } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
+import { buyUpgrade } from '../src/engine/upgrades.js';
 import { placeDev, grantXp } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
@@ -34,12 +35,13 @@ function play(strategy, usePowers) {
   };
   buy(); startWave(g);
   let t = 0;
-  while (!['won', 'lost'].includes(g.phase) && t < 3600) {
+  while (!['won', 'lost'].includes(g.phase) && t < 20000) {
     step(g, 0.05); t += 0.05;
     if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
-    if (g.phase === 'bell') { buy(); ringBell(g); }
+    if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
+    if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
   }
-  return `${g.phase.padEnd(4)} wave ${g.wave + 1} lives ${g.lives} devs ${g.devs.length} warrants ${g.warrants} seniors ${g.stats.seniors}`;
+  return `${g.phase.padEnd(4)} ${sprintInfo(g.sprint).label.padEnd(26)} floors ${g.floors} devs ${g.devs.length} seniors ${g.stats.seniors}`;
 }
 
 for (const [name, s] of [['react only', ['react']], ['java only', ['java']], ['mixed', ['react', 'java', 'react', 'dotnet']], ['dotnet only', ['dotnet']]]) {

@@ -23,13 +23,14 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), activate(game), deactivate?(game) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
 | `registerEvent` | `{ id, name, description, accent?, weight? /*default 1*/, minWave? /*default 2*/, start(game), end(game), draw?(ctx, game, view) }`: a random event. Each wave from wave 2 has a 25% chance to start one; it lasts until the wave ends. `view.cursor` is the mouse position or `null` (`src/content/events/`) |
+| `registerUpgrade` | `{ id, name, description, maxLevel?, getCost(game, level), apply(game, level) }` — appears in the quarter-review shop |
 | `registerWaves` | `[{ hp /*health multiplier*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
 
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost`
+`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost`
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`.
 
@@ -61,3 +62,9 @@ Use the Nexios palette: navy `#001E32`, blue `#2563EB` (React), orange `#EA580C`
 - Pushing to `main` deploys the live site within about a minute: https://robin-cortvrindt.github.io/defend-the-codebase/
 - **Freeze at 15:30.** After that, only push fixes.
 - Something that worked broke? Log it in `REGRET.md`.
+
+## Sprints, quarters and the building
+
+- `game.sprint` is the 0-based global sprint index (`game.wave` is an alias). `sprintInfo(n)` from `src/engine/game.js` gives `{ year, quarter, sprint, label }`.
+- Hand-made sprints come from `waves.js`; after those, `getSprintDef(n)` generates harder ones forever.
+- `game.coins`, `game.floors`, `game.heatResistance` (0..1, from air conditioning) and `game.raise` (total yearly-review multiplier) are plain fields on the game.

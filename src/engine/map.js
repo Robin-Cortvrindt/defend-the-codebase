@@ -46,6 +46,7 @@ export function isBuildable(col, row) {
   const minDist = PATH_WIDTH / 2 + CELL / 2 - 2;
   if (SEGMENTS.some(({ a, b }) => distToSegment(c, a, b) < minDist)) return false;
   const x0 = col * CELL, y0 = row * CELL;
-  const overlapsProd = x0 < PROD.x + PROD.w && x0 + CELL > PROD.x && y0 < PROD.y + PROD.h && y0 + CELL > PROD.y;
+  // The Nexios building grows upward with floors, so the whole column above PROD stays free.
+  const overlapsProd = x0 < PROD.x + PROD.w && x0 + CELL > PROD.x && y0 < PROD.y + PROD.h;
   return !overlapsProd;
 }

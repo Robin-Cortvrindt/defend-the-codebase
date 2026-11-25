@@ -65,10 +65,10 @@ export function getSprintDef(n) {
   const last = waves[waves.length - 1];
   const k = n - (waves.length - 1);
   return {
-    hp: (last.hp ?? 1) * 1.15 ** k,
+    hp: (last.hp ?? 1) * 1.05 ** k,
     groups: last.groups.map(g => ({
       ...g,
-      count: Math.max(1, Math.round(g.count * (1 + 0.12 * k))),
+      count: Math.max(1, Math.round(g.count * (1 + 0.05 * k))),
       interval: Math.max(0.12, (g.interval || 1) * 0.97 ** k),
     })),
   };
