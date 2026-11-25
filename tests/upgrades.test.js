@@ -129,3 +129,65 @@ test('react: useEffect Hell chains at 20%, capped at 10', () => {
   assert.ok(a.hp <= 0 || a.dead);
   assert.ok(c.hp < 1000);
 });
+
+test('dotnet: names and stats', () => {
+  const g = waveGame();
+  const d = devAt(g, 'dotnet', 3, 3);
+  assert.equal(levelName(d), '.NET Framework 4.8');
+  buyUpgrade(g, d, 'core');
+  assert.equal(levelName(d), '.NET Core');
+  assert.equal(devStats(g, d).fireRate, 0.9);
+  const v = devAt(g, 'dotnet', 3, 4, 'core', 'vs');
+  assert.equal(levelName(v), 'Visual Studio Enterprise');
+  assert.equal(devStats(g, v).damage, 160);
+  assert.equal(devStats(g, v).fireRate, 0.6);
+});
+
+test('dotnet: Azure splashes everything within 1 cell of the target', () => {
+  const g = waveGame();
+  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
+  const [t, n, f] = [300, 270, 220].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
+  tickDevs(g, 0.05);
+  assert.equal(1000 - t.hp, 55);
+  assert.equal(1000 - n.hp, 55);
+  assert.equal(1000 - f.hp, 0);
+});
+
+test('Review Focus 3: Azure bills 1 Warrant per 0.5 s with a bug in range, never below 0, stops at 0', () => {
+  const g = waveGame();
+  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
+  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
+  g.warrants = 3;
+  for (let i = 0; i < 40; i++) {
+    tickDevs(g, 0.05);
+    assert.ok(g.warrants >= 0 && Number.isInteger(g.warrants));
+  }
+  assert.equal(g.warrants, 0);
+  const hp = b.hp;
+  assert.ok(hp < 100000);
+  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
+  assert.equal(b.hp, hp);
+  g.warrants = 5;
+  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
+  assert.ok(b.hp < hp);
+
+  const g2 = waveGame();
+  devAt(g2, 'dotnet', 3, 3, 'core', 'azure');
+  g2.warrants = 5;
+  for (let i = 0; i < 40; i++) tickDevs(g2, 0.05);
+  assert.equal(g2.warrants, 5);
+});
+
+test('dotnet: Azure toggle', () => {
+  const g = waveGame();
+  const d = devAt(g, 'dotnet', 3, 3, 'core', 'azure');
+  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
+  assert.equal(d.upgrade.panelButtons(g, d)[0].label, 'Azure on');
+  const btn = () => d.upgrade.panelButtons(g, d)[0];
+  btn().onClick(g, d);
+  assert.equal(btn().label, 'Azure off');
+  g.warrants = 5;
+  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
+  assert.equal(b.hp, 100000);
+  assert.equal(g.warrants, 5);
+});
