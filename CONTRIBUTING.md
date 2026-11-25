@@ -28,6 +28,8 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in Warrants.
 
+In code, `dev.level` is 0-based: 0 for level 1, 1 after the level-2 upgrade, 2 after level 3.
+
 | Field | Shape |
 |---|---|
 | `levelName` | Name shown at level 1, e.g. `'Junior Java Dev'`. Each upgrade's `name` replaces it once bought. |
@@ -55,25 +57,24 @@ registerDeveloper({
   id: 'java', /* ...base stats... */
   levelName: 'Junior Java Dev',
   upgrades: {
-    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 30, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
     level3: [
       {
-        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 30,
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
         description: '+15% damage to developers nearby',
-        modifyStats(game, dev, stats) { stats.damage *= 0.6; },
-        aura: { radius: 2, apply(game, dev, stats) { stats.damage *= 1.15; } },
+        aura: { radius: 4, apply(game, dev, stats) { stats.damage *= 1.15; } },
       },
       {
-        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 60,
         description: 'Stop-the-World, then a pulse',
-        update(game, dev, dt, stats) { /* hold fire 1 s every 8 s, then hitBug every bug in range for 3x */ },
+        update(game, dev, dt, stats) { /* hold fire 1 s every 8 s, then hitBug every bug in range */ },
       },
     ],
   },
 });
 ```
 
-Check a change with `node scripts/sim.mjs`: the `{type} A` and `{type} B` lines should stay close. For .NET, compare the `react+dotnet A` and `react+dotnet B` lines, because .NET only can't hire before wave 1.
+Check a change with `node scripts/sim.mjs`: the `{type} A` and `{type} B` lines should stay close, mainly the no-powers ones, and up-first should not clearly beat hire-first. For .NET, compare the `react+dotnet A` and `react+dotnet B` lines, because .NET only can't hire before wave 1.
 
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
@@ -81,7 +82,7 @@ Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `
 
 `game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `game:won` · `game:lost`
 
-Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`. `dev:upgradeready` gives `{ game, dev, level }` when XP unlocks the next upgrade. `dev:levelup` fires when an upgrade is bought and gives `{ game, dev, level, upgrade }`.
+Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`. `dev:upgradeready` gives `{ game, dev, level }` when XP unlocks the next upgrade. `dev:levelup` fires when an upgrade is bought and gives `{ game, dev, level, upgrade }`. In both, `level` is 0-based like `dev.level`: 1 for the level-2 upgrade, 2 for level 3.
 
 ## Changing the rules: `game.mods`
 
