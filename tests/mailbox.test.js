@@ -4,8 +4,8 @@ import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame } from '../src/engine/game.js';
 import mailbox, {
-  createMailbox, deliverMail, tickMailbox, attachListeners,
-  MAX_MAILS, FIRST_MAIL_DELAY, MAIL_INTERVAL, PHISH_CHANCE,
+  createMailbox, makeOffer, acceptOffer, tickOffer, missOffer, canClaim, tickMailbox, attachListeners,
+  MAX_MAILS, FIRST_MAIL_DELAY, MAIL_INTERVAL, PHISH_CHANCE, OFFER_SECONDS,
 } from '../src/content/features/mailbox.js';
 
 let g;
@@ -28,44 +28,108 @@ function rolls(...values) {
   let i = 0;
   return () => values[Math.min(i++, values.length - 1)];
 }
+// Make an offer and accept it straight away.
+const takeOffer = () => { makeOffer(g); return acceptOffer(g); };
+const events = name => { const got = []; on(name, d => got.push(d)); return got; };
 
 test('constants match the spec', () => {
   assert.equal(MAX_MAILS, 4);
   assert.equal(FIRST_MAIL_DELAY, 5);
   assert.equal(MAIL_INTERVAL, 30);
   assert.equal(PHISH_CHANCE, 1 / 6);
+  assert.equal(OFFER_SECONDS, 6);
 });
 
-test('first mail arrives after 5 s', () => {
+test('the timer makes an offer, not a task', () => {
   tickMailbox(g, 4.9);
+  assert.equal(g.mailbox.offer, null);
+  tickMailbox(g, 0.2);
+  assert.ok(g.mailbox.offer);
+  assert.equal(g.mailbox.offer.remaining, OFFER_SECONDS);
   assert.equal(g.mailbox.mails.length, 0);
-  tickMailbox(g, 0.2);
-  assert.equal(g.mailbox.mails.length, 1);
 });
 
-test('then one every 30 s', () => {
+test('makeOffer emits mail:offered', () => {
+  const got = events('mail:offered');
+  const m = makeOffer(g);
+  assert.equal(got.length, 1);
+  assert.equal(got[0].mail, m);
+  assert.equal(got[0].game, g);
+});
+
+test('accepting an offer adds the task at the front with progress 0', () => {
+  takeOffer();
+  const got = events('mail:accepted');
+  const m = makeOffer(g);
+  assert.equal(acceptOffer(g), m);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(g.mailbox.mails[0], m);
+  assert.equal(m.progress, 0);
+  assert.equal(got.length, 1);
+  assert.equal(got[0].mail, m);
+});
+
+test('acceptOffer without an offer returns null', () => {
+  assert.equal(acceptOffer(g), null);
+});
+
+test('an offer expires after 6 real seconds and adds nothing', () => {
+  const got = events('mail:missed');
+  const m = makeOffer(g);
+  tickOffer(g, 5.9);
+  assert.ok(g.mailbox.offer);
+  tickOffer(g, 0.2);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(g.mailbox.mails.length, 0);
+  assert.equal(got.length, 1);
+  assert.equal(got[0].mail, m);
+});
+
+test('missOffer drops the offer', () => {
+  makeOffer(g);
+  missOffer(g);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(g.mailbox.mails.length, 0);
+});
+
+test('game time does not expire an offer', () => {
+  makeOffer(g);
+  tickMailbox(g, 1000);
+  assert.ok(g.mailbox.offer);
+  assert.equal(g.mailbox.offer.remaining, OFFER_SECONDS);
+});
+
+test('no new offer while one is pending', () => {
+  const m = makeOffer(g);
+  assert.equal(makeOffer(g), null);
+  tickMailbox(g, 100);
+  assert.equal(g.mailbox.offer.mail.id, m.id);
+});
+
+test('the next offer comes 30 s after the previous one was made', () => {
   tickMailbox(g, 5);
-  assert.equal(g.mailbox.mails.length, 1);
+  missOffer(g);
   tickMailbox(g, 29.9);
-  assert.equal(g.mailbox.mails.length, 1);
+  assert.equal(g.mailbox.offer, null);
   tickMailbox(g, 0.2);
-  assert.equal(g.mailbox.mails.length, 2);
+  assert.ok(g.mailbox.offer);
 });
 
-test('inbox caps at 4 and the timer pauses while full', () => {
-  for (let i = 0; i < 4; i++) deliverMail(g);
+test('no offers while 4 tasks are accepted', () => {
+  for (let i = 0; i < 4; i++) takeOffer();
+  assert.equal(g.mailbox.mails.length, 4);
+  assert.equal(makeOffer(g), null);
   const timer = g.mailbox.timer;
   tickMailbox(g, 100);
-  assert.equal(g.mailbox.mails.length, 4);
+  assert.equal(g.mailbox.offer, null);
   assert.equal(g.mailbox.timer, timer);
-  assert.equal(deliverMail(g), null);
 });
 
 test('timer does not run in menu, review or lost', () => {
   for (const phase of ['menu', 'review', 'lost']) {
     g.phase = phase;
     tickMailbox(g, 100);
-    assert.equal(g.mailbox.mails.length, 0, phase);
+    assert.equal(g.mailbox.offer, null, phase);
     assert.equal(g.mailbox.timer, FIRST_MAIL_DELAY, phase);
   }
 });
@@ -75,50 +139,68 @@ test('timer runs in building, wave and bell', () => {
     mailbox.init(g);
     g.phase = phase;
     tickMailbox(g, 5);
-    assert.equal(g.mailbox.mails.length, 1, phase);
+    assert.ok(g.mailbox.offer, phase);
   }
 });
 
-test('no template open twice', () => {
+test('no template offered twice: accepted tasks and the pending offer are excluded', () => {
   g.random = () => 0;
-  for (let i = 0; i < 4; i++) deliverMail(g);
-  const ids = g.mailbox.mails.map(m => m.template);
+  for (let i = 0; i < 3; i++) takeOffer();
+  makeOffer(g);
+  const ids = [...g.mailbox.mails.map(m => m.template), g.mailbox.offer.mail.template];
   assert.equal(new Set(ids).size, 4);
 });
 
 test('phishing roll uses PHISH_CHANCE', () => {
   g.random = rolls(0, 0.1);
-  assert.equal(deliverMail(g).phishing, true);
+  assert.equal(makeOffer(g).phishing, true);
+  missOffer(g);
   g.random = rolls(0, 0.5);
-  assert.equal(deliverMail(g).phishing, false);
+  assert.equal(makeOffer(g).phishing, false);
 });
 
-test('a new mail is unread, starts at 0 and has a Warrants reward', () => {
-  const m = deliverMail(g);
-  assert.equal(m.unread, true);
+test('an accepted task starts at 0 and has a Warrants reward', () => {
+  const m = takeOffer();
   assert.equal(m.progress, 0);
   assert.ok(m.target > 0);
   assert.equal(m.reward.kind, 'warrants');
   assert.ok(m.reward.amount > 0);
   assert.ok(m.from && m.subject);
+  assert.equal('unread' in m, false);
 });
 
-test('deliverMail emits mail:received', () => {
-  let got = null;
-  on('mail:received', d => { got = d; });
-  const m = deliverMail(g);
-  assert.equal(got.game, g);
-  assert.equal(got.mail, m);
+test('an offer pending when the review opens is missed', () => {
+  const got = events('mail:missed');
+  makeOffer(g);
+  g.phase = 'review';
+  tickMailbox(g, 0.016);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(got.length, 1);
+  makeOffer(g);                         // makeOffer itself does not check the phase
+  g.phase = 'menu';
+  tickOffer(g, 0.016);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(got.length, 2);
+});
+
+test('canClaim is true only while playing', () => {
+  for (const phase of ['building', 'wave', 'bell', 'review']) { g.phase = phase; assert.equal(canClaim(g), true, phase); }
+  for (const phase of ['menu', 'lost']) { g.phase = phase; assert.equal(canClaim(g), false, phase); }
 });
 
 test('init resets state', () => {
-  deliverMail(g); deliverMail(g);
+  takeOffer(); takeOffer();
+  makeOffer(g);
   g.mailbox.vouchers = 2;
   g.mailbox.pendingMalware = 3;
-  g.mailbox.locks.push({ devId: 1, until: 10 });
-  g.mailbox.open = true;
+  g.mailbox.locks.push({ devId: 1 });
   mailbox.init(g);
   assert.deepEqual(g.mailbox, createMailbox());
+  assert.equal(g.mailbox.offer, null);
+});
+
+test('the mailbox no longer adds a HUD button', () => {
+  assert.equal(mailbox.hudButtons, undefined);
 });
 
 // ---------- Task 2: progress, claiming and real rewards ----------
@@ -126,13 +208,14 @@ import { TEMPLATES, trackMail, isDone, claimMail } from '../src/content/features
 import { emit } from '../src/engine/events.js';
 import { powerupCost } from '../src/engine/powerups.js';
 
-// Deliver a specific template (real unless phishing: true, Warrants reward unless claude: true).
+// Offer and accept a specific template (real unless phishing: true, Warrants reward unless claude: true).
 function give(id, { phishing = false, claude = false } = {}) {
   const open = new Set(g.mailbox.mails.map(m => m.template));
   const pool = TEMPLATES.filter(t => !open.has(t.id) && (t.available?.(g) ?? true));
   const i = pool.findIndex(t => t.id === id);
   g.random = rolls((i + 0.5) / pool.length, phishing ? 0 : 0.5, claude ? 0 : 0.5);
-  const m = deliverMail(g);
+  makeOffer(g);
+  const m = acceptOffer(g);
   assert.equal(m.template, id);
   return m;
 }
@@ -244,7 +327,7 @@ test('claiming a claude mail gives a voucher', () => {
 
 test('no claude reward without a claude power-up', () => {
   g.random = () => 0;
-  assert.equal(deliverMail(g).reward.kind, 'warrants');
+  assert.equal(makeOffer(g).reward.kind, 'warrants');
 });
 
 test('wrapClaude does not double-wrap across inits', () => {
@@ -436,15 +519,35 @@ test('queued malware is capped by lives when it spawns', () => {
   assert.equal(g.bugs.length, 1);
 });
 
-test('the inbox closes when a sprint is cleared and the bell shows up', () => {
-  g.mailbox.open = true;
-  emit('sprint:cleared', { game: g, sprint: 1 });
-  assert.equal(g.mailbox.open, false);
+// ---------- Side panel: offers, phishing and when Claim works ----------
+test('a phishing offer can be accepted and penalises only on Claim', () => {
+  g.warrants = 100;
+  const m = give('hire-dotnet', { phishing: true });
+  assert.equal(m.phishing, true);
+  assert.equal(g.warrants, 100);
+  m.progress = m.target;
+  g.random = rolls(0.1);
+  assert.equal(claimMail(g, m.id), 'stolen');
+  assert.equal(g.warrants, 40);
 });
 
-test('the inbox can be opened again while the bell shows', () => {
-  emit('sprint:cleared', { game: g, sprint: 1 });
-  g.phase = 'bell';
-  mailbox.hudButtons[0].onClick(g);
-  assert.equal(g.mailbox.open, true);
+test('claim is refused on the start and game-over screens', () => {
+  for (const phase of ['menu', 'lost']) {
+    mailbox.init(g);
+    g.phase = 'wave';
+    const m = give('hire-dotnet');
+    m.progress = m.target;
+    g.phase = phase;
+    const w = g.warrants;
+    assert.equal(claimMail(g, m.id), null, phase);
+    assert.equal(g.warrants, w, phase);
+    assert.equal(g.mailbox.mails.length, 1, phase);
+  }
+});
+
+test('claim works during the quarter review', () => {
+  const m = give('hire-dotnet');
+  m.progress = m.target;
+  g.phase = 'review';
+  assert.equal(claimMail(g, m.id), 'reward');
 });
