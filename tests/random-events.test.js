@@ -91,12 +91,21 @@ test('event ends when the game is lost', () => {
   assert.equal(g.mods.timeScale, 1);
 });
 
-test('event ends when the last wave is won', () => {
+test('event ends when the last hand-made wave is cleared (game is endless now)', () => {
   const g = gameAt(2, [0]);
   startWave(g);
   assert.equal(g.activeEvent, 'cold');
   clearWave(g);
-  assert.equal(g.phase, 'won');
+  assert.equal(g.phase, 'bell');
+  assert.equal(g.activeEvent, null);
+});
+
+test('event ends when sprint 7 is cleared and the quarter review opens', () => {
+  const g = gameAt(6, [0]);
+  startWave(g);
+  assert.equal(g.activeEvent, 'cold');
+  clearWave(g);
+  assert.equal(g.phase, 'review');
   assert.equal(g.activeEvent, null);
 });
 

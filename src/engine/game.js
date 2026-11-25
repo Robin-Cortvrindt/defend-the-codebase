@@ -11,8 +11,17 @@ export const START_LIVES = 20;
 
 export function createGame() {
   return {
-    phase: 'menu',            // menu | building | wave | bell | won | lost
-    wave: 0,                  // index of the current (or next) wave
+    phase: 'menu',            // menu | building | wave | bell | review | lost  (won is no longer reached)
+    sprint: 0,                // global index of the current (or next) sprint, 0-based
+    get wave() { return this.sprint; },      // old name, kept so existing code and features keep working
+    set wave(v) { this.sprint = v; },
+    coins: 0,                 // Nexios Coins, earned per sprint, spent in the quarter review
+    pendingYearReview: false,
+    floors: 1,                // Nexios building floors (upgrade)
+    heatResistance: 0,        // 0..1, set by the air-conditioning upgrade; read by the heat wave event
+    raise: 1,                 // total yearly-review Warrant multiplier
+    upgrades: {},
+    quarterStats: { squashed: 0, leaked: 0 },
     warrants: START_WARRANTS,
     lives: START_LIVES,
     maxLives: START_LIVES,
@@ -36,6 +45,34 @@ export function createGame() {
 }
 
 export const totalWaves = () => getWaves().length;
+export const SPRINTS_PER_QUARTER = 7;
+export const QUARTERS_PER_YEAR = 4;
+
+// Global sprint index (0-based) -> calendar position.
+export function sprintInfo(n) {
+  const quarterIndex = Math.floor(n / SPRINTS_PER_QUARTER);
+  const sprint = (n % SPRINTS_PER_QUARTER) + 1;
+  const quarter = (quarterIndex % QUARTERS_PER_YEAR) + 1;
+  const year = Math.floor(quarterIndex / QUARTERS_PER_YEAR) + 1;
+  return { year, quarter, sprint, quarterIndex, label: `Year ${year} · Q${quarter} · Sprint ${sprint} / ${SPRINTS_PER_QUARTER}` };
+}
+
+// Hand-made sprints come from waves.js; after those the game keeps generating harder ones.
+export function getSprintDef(n) {
+  const waves = getWaves();
+  if (!waves.length) return null;
+  if (n < waves.length) return waves[n];
+  const last = waves[waves.length - 1];
+  const k = n - (waves.length - 1);
+  return {
+    hp: (last.hp ?? 1) * 1.15 ** k,
+    groups: last.groups.map(g => ({
+      ...g,
+      count: Math.max(1, Math.round(g.count * (1 + 0.12 * k))),
+      interval: Math.max(0.12, (g.interval || 1) * 0.97 ** k),
+    })),
+  };
+}
 
 export function startGame(game) {
   game.phase = 'building';
@@ -43,8 +80,9 @@ export function startGame(game) {
 }
 
 export function startWave(game) {
-  if (game.phase !== 'building' && game.phase !== 'bell') return false;
-  const wave = getWaves()[game.wave];
+  if (game.phase !== 'building' && game.phase !== 'bell' && game.phase !== 'review') return false;
+  if (game.pendingYearReview) return false;
+  const wave = getSprintDef(game.sprint);
   if (!wave) return false;
   const queue = [];
   for (const g of wave.groups) {
@@ -54,13 +92,15 @@ export function startWave(game) {
   game.spawnQueue = queue;
   game.waveTime = 0;
   game.phase = 'wave';
+  if (game.sprint % SPRINTS_PER_QUARTER === 0) game.quarterStats = { squashed: 0, leaked: 0 };
   rollEvent(game);
+  emit('sprint:start', { game, sprint: game.sprint + 1, info: sprintInfo(game.sprint) });
   emit('wave:start', { game, wave: game.wave + 1 });
   return true;
 }
 
 export function ringBell(game) {
-  if (game.phase !== 'bell') return false;
+  if ((game.phase !== 'bell' && game.phase !== 'review') || game.pendingYearReview) return false;
   emit('bell:rung', { game, wave: game.wave + 1 });
   return startWave(game);
 }
@@ -69,7 +109,7 @@ export function spawnBug(game, bugId, distance = 0, hp) {
   const def = getBug(bugId);
   if (!def) { console.warn(`[game] unknown bug "${bugId}"`); return null; }
   const p = pointAt(distance);
-  const maxHp = Math.round(def.hp * (getWaves()[game.wave]?.hp ?? 1));
+  const maxHp = Math.round(def.hp * (getSprintDef(game.sprint)?.hp ?? 1));
   const bug = { id: game.nextId++, type: bugId, hp: hp ?? maxHp, maxHp, distance, x: p.x, y: p.y, slow: 1 };
   game.bugs.push(bug);
   emit('bug:spawned', { game, bug });
@@ -89,6 +129,7 @@ export function killBug(game, bug, dev = null) {
   const def = getBug(bug.type);
   addWarrants(game, Math.round((def?.reward ?? 0) * game.mods.warrantMultiplier));
   game.stats.squashed++;
+  game.quarterStats.squashed++;
   try { def?.onDeath?.(bug, game); } catch (e) { console.error(e); }
   emit('bug:killed', { game, bug, dev });
 }
@@ -103,7 +144,9 @@ function moveBugs(game, dt) {
     if (bug.distance >= PATH_LENGTH) {
       bug.dead = true;
       game.bugs.splice(game.bugs.indexOf(bug), 1);
-      game.lives = Math.max(0, game.lives - (def?.livesLost ?? 1));
+      const lost = Math.min(game.lives, def?.livesLost ?? 1);
+      game.lives -= lost;
+      game.quarterStats.leaked += lost;
       emit('bug:leaked', { game, bug });
     }
   }
@@ -113,22 +156,27 @@ function checkEnd(game) {
   if (game.lives <= 0) {
     endEvent(game);
     game.phase = 'lost';
-    emit('game:lost', { game, wave: game.wave + 1 });
+    emit('game:lost', { game, wave: game.wave + 1, sprint: game.sprint + 1, info: sprintInfo(game.sprint) });
     return;
   }
   if (game.spawnQueue.length || game.bugs.length) return;
-  if (game.wave >= totalWaves() - 1) {
-    endEvent(game);
-    game.phase = 'won';
-    emit('game:won', { game });
-    return;
-  }
   endEvent(game);
-  const bonus = 20 + 5 * (game.wave + 1);
+  const info = sprintInfo(game.sprint);
+  const bonus = 20 + 5 * (game.sprint + 1);
   addWarrants(game, bonus);
-  emit('wave:cleared', { game, wave: game.wave + 1, bonus });
-  game.wave++;
-  game.phase = 'bell';
+  game.coins += 1;
+  const cleared = { game, sprint: game.sprint + 1, wave: game.sprint + 1, bonus, info };
+  emit('sprint:cleared', cleared);
+  emit('wave:cleared', cleared);
+  game.sprint++;
+  if (info.sprint === SPRINTS_PER_QUARTER) {
+    game.coins += 3;
+    game.pendingYearReview = info.quarter === QUARTERS_PER_YEAR;
+    game.phase = 'review';
+    emit('quarter:review', { game, info, yearReview: game.pendingYearReview });
+  } else {
+    game.phase = 'bell';
+  }
 }
 
 export function step(game, dt) {
