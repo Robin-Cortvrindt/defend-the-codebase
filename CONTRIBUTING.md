@@ -11,6 +11,7 @@ python -m http.server 8000     # then open http://localhost:8000
 node --test                    # engine tests (Node 20+)
 node scripts/sim.mjs           # bot plays until production goes down; --profile max / --meta for investments
 node scripts/sim-upgrades.mjs [seeds] [sprints]   # developer-upgrade balance: seeded strategies per level-3 branch
+# sim.mjs also takes --trials N (default 30): seeded trials per row, prints mean / median / p10 of sprints cleared
 # both sims take --pickup <p> (default 1): the bot collects each drop with chance p, 1 s after it appears
 ```
 

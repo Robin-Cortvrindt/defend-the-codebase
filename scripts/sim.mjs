@@ -2,6 +2,7 @@
 //   node scripts/sim.mjs                  every strategy, with and without power-ups, no investments
 //   node scripts/sim.mjs --profile max    the same, with every investment at max level
 //   node scripts/sim.mjs --pickup 0.7     collect only 70% of the drops (default 1), each 1 s after it appears
+//   node scripts/sim.mjs --trials N      seeded trials per row (default 30): prints mean / median / p10 of sprints cleared
 //   node scripts/sim.mjs --meta [runs]    run after run from zero: earn Investor Capital, buy the cheapest investment, repeat
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
@@ -9,7 +10,7 @@ import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYea
 import { buyUpgrade } from '../src/engine/upgrades.js';
 import { placeDev, hireCost } from '../src/engine/devs.js';
 import { canAfford, drinkFor } from '../src/engine/drinks.js';
-import { PICKUP, trackPickups, tickPickups } from './pickup.mjs';
+import { PICKUP, mulberry32, trackPickups, tickPickups } from './pickup.mjs';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
 import { getInvestments } from '../src/engine/registry.js';
@@ -37,8 +38,8 @@ for (const a of cells) {
   }
 }
 
-function play(strategy, usePowers) {
-  const g = createGame(); startGame(g); trackPickups(g);
+function play(strategy, usePowers, seed = 1) {
+  const g = createGame(); g.random = mulberry32(seed); startGame(g); trackPickups(g, seed);
   const free = x => !g.devs.some(d => d.col === x.c && d.row === x.r);
   let i = 0;
   const buy = () => {
@@ -90,8 +91,18 @@ if (args.includes('--meta')) {
   console.log(`pickup ${PICKUP}`);
   const max = args.includes('--profile') && args[args.indexOf('--profile') + 1] === 'max';
   if (max) saveProgress({ capital: 0, levels: Object.fromEntries(getInvestments().map(d => [d.id, d.maxLevel ?? 1])) });
+  const trialsAt = args.indexOf('--trials');
+  const trials = Math.max(1, Number(trialsAt >= 0 ? args[trialsAt + 1] : NaN) || 30);
+  const stats = xs => {
+    const v = [...xs].sort((a, b) => a - b), at = q => v[Math.min(v.length - 1, Math.floor(q * v.length))];
+    return { mean: v.reduce((a, b) => a + b, 0) / v.length, median: at(0.5), p10: at(0.1) };
+  };
+  console.log(`${trials} seeded trials per row (seeds 1..${trials}); sprints cleared = global sprint count at the end; sample = trial 1`);
   for (const [name, s] of STRATEGIES) {
-    console.log(name.padEnd(12), 'no powers :', describe(play(s, false)));
-    console.log(name.padEnd(12), 'powers    :', describe(play(s, true)));
+    for (const [label, powers] of [['no powers ', false], ['powers    ', true]]) {
+      const games = Array.from({ length: trials }, (_, k) => play(s, powers, k + 1));
+      const { mean, median, p10 } = stats(games.map(g => g.sprint));
+      console.log(name.padEnd(12), label + ':', `mean ${mean.toFixed(1).padStart(5)} median ${String(median).padStart(3)} p10 ${String(p10).padStart(3)} | sample ${describe(games[0])}`);
+    }
   }
 }

@@ -69,7 +69,7 @@ function choices(g, dev, branch) {
 
 // bell: 'up' buys upgrades before hiring, 'hire' hires before upgrading.
 function play({ order, powers, branch, bell }, seed) {
-  const g = createGame(); g.random = mulberry32(seed); startGame(g); trackPickups(g);
+  const g = createGame(); g.random = mulberry32(seed); startGame(g); trackPickups(g, seed);
   const bought = {};
   let i = 0;
   const upgrade = () => {
