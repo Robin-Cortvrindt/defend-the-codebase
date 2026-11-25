@@ -88,7 +88,7 @@ function buildingSpec(game) {
   const u = game.upgrades || {};
   return {
     floors: game.floors, lives: game.lives, maxLives: game.maxLives, time: game.time,
-    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0 },
+    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0, water: u.water || 0 },
   };
 }
 

@@ -82,3 +82,16 @@ test('a tipsy shot marks its attack effect tipsy; the developer is sober again a
   tickDevs(sober.g, 0.01);
   assert.equal(sober.g.effects.find(e => e.kind === 'attack').tipsy, false);
 });
+
+test('the building draws a water cooler that fills a third per level, also next to every other upgrade', async () => {
+  const { drawBuilding } = await import('../src/engine/building.js');
+  const { recordingCtx } = await import('./stub-ctx.js');
+  const waterFills = level => {
+    const ctx = recordingCtx();
+    drawBuilding(ctx, { floors: 1, lives: 5, maxLives: 10, time: 1, levels: { aircon: 3, heating: 3, coffee: 3, fridge: 3, generator: 3, water: level } });
+    return ctx.calls.filter(c => c[0] === 'fillRect' && c[1] >= 578 && c[1] < 590 && c[2] > 150 && c[2] < 172).length;
+  };
+  const none = waterFills(0);
+  assert.ok(waterFills(1) > none, 'level 1 adds the cooler');
+  for (const l of [1, 2, 3]) assert.doesNotThrow(() => waterFills(l));
+});
