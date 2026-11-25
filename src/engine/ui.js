@@ -200,7 +200,8 @@ function updateSelPanel() {
   refs.selXp = h('small', {}, xpLine);
   p.append(
     h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
-    ups.map(({ up, status }) => {
+    // Element.append does not flatten arrays (h() does), so spread them.
+    ...ups.map(({ up, status }) => {
       const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
       const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
       const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
@@ -210,7 +211,7 @@ function updateSelPanel() {
       if (up.tooltip) btn.title = up.tooltip;
       return btn;
     }),
-    extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
+    ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
       try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
     } }, b.label)),
     h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
