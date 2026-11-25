@@ -45,6 +45,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* stage */
 #stage { position: relative; line-height: 0; justify-self: center; align-self: start; max-width: 100%; }
 #game { display: block; width: 100%; cursor: crosshair; }
+/* While the bell waits nothing can change: the board ignores clicks and the bars are greyed out. */
+#app.bell-locked #game { cursor: default; }
+#app.bell-locked :is(#powerups, #hire) { pointer-events: none; }
+#app.bell-locked :is(#powerups, #hire) > * { opacity: .4; filter: grayscale(.7); }
+#hire { position: relative; }
+#app.bell-locked #hire::before { content: 'Locked until you ring the bell'; position: absolute; left: 50%; top: -8px; transform: translate(-50%, -50%); z-index: 1; padding: 5px 14px 5px 32px; border-radius: 99px; border: 1px solid var(--navy3); background: rgba(0, 30, 50, .95) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='7' width='10' height='8' rx='1.5' fill='%23E2E8F0'/%3E%3Cpath d='M5 7V5a3 3 0 0 1 6 0v2' fill='none' stroke='%23E2E8F0' stroke-width='1.8'/%3E%3C/svg%3E") no-repeat 12px center / 13px 13px; font-size: 12px; font-weight: 700; color: var(--s200); white-space: nowrap; }
 #overlay { position: absolute; inset: 0; z-index: 9; line-height: 1.4; }
 #overlay:empty { pointer-events: none; }
 /* Corner cards (bell, minimized review) stack below the popover (8) and the inbox (5, toast 6); full-screen screens stay above (9). */
@@ -120,9 +126,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stats small { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin-top: 4px; }
 .trace { font: 12px/1.5 ui-monospace, Consolas, monospace; color: var(--s200); background: var(--navy); border: 1px solid var(--navy3); border-radius: 8px; padding: 10px 14px; margin: 0 0 18px; }
 
-/* bell: tucked into the bottom-right corner so the build area stays clickable */
-.bell-overlay { display: flex; align-items: flex-end; justify-content: flex-end; padding: 10px; background: rgba(0, 30, 50, .35); pointer-events: none; }
-.bell-card { pointer-events: auto; display: flex; align-items: center; gap: 12px; text-align: left; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 8px 18px 8px 8px; max-width: 46%; }
+/* bell: a stacked card in the middle of the board; the game is locked while it waits */
+.bell-overlay { display: flex; align-items: center; justify-content: center; padding: 10px; background: rgba(0, 30, 50, .55); pointer-events: none; }
+.bell-card { pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 12px 20px 16px; width: clamp(220px, 26%, 300px); }
+.bell-card .bell-svg { width: 48%; min-width: 96px; }
 .bell-card h2 { margin: 2px 0; font-size: clamp(14px, 1.7vw, 18px); font-weight: 900; line-height: 1.2; }
 .bell-card small { color: var(--s400); font-size: 12px; }
 .bell-card .eyebrow { font-size: 10px; }

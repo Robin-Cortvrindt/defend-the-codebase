@@ -174,6 +174,7 @@ export function updateUI() {
   const g = app.game, v = app.view;
   // The bell locks the game: drop any selection or hire in progress (the view object is shared, so mutate it).
   if (isLocked(g) && (v.selected || v.hire)) Object.assign(v, lockedView(v));
+  toggle($('#app'), 'bell-locked', isLocked(g));
   updateDrinks(g);
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
@@ -357,7 +358,7 @@ function showOverlay(phase) {
       h('div', {},
         h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 Warrant`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
-        h('small', {}, 'Hiring and selling still work'),
+        h('small', {}, 'Click the bell or press Space'),
       ),
     ));
   } else if (phase === 'review') {
