@@ -1,6 +1,6 @@
 # Adding to Defend the Codebase
 
-**The rule: one new file plus one line in `src/content/manifest.js`.** Don't edit `src/engine/` to add content. A file that fails to load is skipped and logged in the browser console, so it can't take the game down. Your feature just won't show up.
+**The rule: one new file plus one line in `src/content/manifest.js`.** To add an upgrade, edit your developer's own file. Don't edit `src/engine/` to add content. A file that fails to load is skipped and logged in the browser console, so it can't take the game down. Your feature just won't show up.
 
 Start from `src/content/features/example-feature.js`. It has a working example of every type.
 
@@ -9,7 +9,8 @@ Start from `src/content/features/example-feature.js`. It has a working example o
 ```
 python -m http.server 8000     # then open http://localhost:8000
 node --test                    # engine tests (Node 20+)
-node scripts/sim.mjs           # bot plays all 10 waves: balance check
+node scripts/sim.mjs           # bot plays until production goes down; --profile max / --meta for investments
+node scripts/sim-upgrades.mjs [seeds] [sprints]   # developer-upgrade balance: seeded strategies per level-3 branch
 ```
 
 Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of each type and 1000 Warrants. In the browser console, `game.game` is the live state, e.g. `game.game.warrants = 9999`.
@@ -18,7 +19,7 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 | Call | Shape |
 |---|---|
-| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size) }` |
+| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
 | `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?, drawIcon?(ctx, radius) }` |
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), describe?(game) /*button text, overrides description*/, activate(game, st), deactivate?(game, st) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
@@ -27,13 +28,66 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 | `registerInvestment` | `{ id, name, description, group: 'developers' \| 'powerups' \| 'unlocks', maxLevel, getCost(level), apply(game, level), effectText?(level) }`: a permanent upgrade bought between runs with Investor Capital. `apply` runs once at the start of every run (`src/content/investments/`) |
 | `registerWaves` | `[{ hp /*health multiplier*/, boss? /*bug id, spawns 3 s after the last bug*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
 
+## Developer upgrades
+
+These are the developers' own upgrades, bought with Warrants. (Building upgrades in the quarter-review shop are separate: see `registerUpgrade`.) Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in Warrants.
+
+In code, `dev.level` is 0-based: 0 for level 1, 1 after the level-2 upgrade, 2 after level 3.
+
+| Field | Shape |
+|---|---|
+| `levelName` | Name shown at level 1, e.g. `'Junior Java Dev'`. Each upgrade's `name` replaces it once bought. |
+| `modifyStats?(game, dev, stats)` | On the developer itself: changes `stats` at every level (React's ecosystem bonus). |
+| `upgrades` | `{ level2: Upgrade, level3: [Upgrade, Upgrade] }`. `level3[0]` is the steady branch, `level3[1]` the gamble. |
+| `Upgrade` | `{ id, name, cost, kind /*'steady' or 'gamble', level 3 only*/, description, tooltip?, ...hooks }` |
+
+Hooks on an upgrade, all optional and all guarded (a hook that throws is logged and skipped):
+
+| Hook | Does |
+|---|---|
+| `stats: { damage?, fireRate?, range? }` | Absolute stats from this level on. Level 3 keeps level 2's stats unless it overrides them. |
+| `modifyStats(game, dev, stats)` | Changes this developer's own stats. |
+| `aura: { radius /*cells*/, apply(game, other, stats) }` | Changes the stats of other developers in range. The same upgrade's aura applies once, however many there are. |
+| `update(game, dev, dt, stats)` | Runs every tick. Return `false` to hold fire. |
+| `fire(game, dev, target, stats)` | Replaces the normal shot. |
+| `panelButtons(game, dev)` | Returns `[{ label, onClick(game, dev) }]`, extra buttons in the selection panel. |
+
+For `fire` and `update`, use the helpers in `src/engine/devs.js`: `bugsInRange(game, dev, range)` (furthest along first), `hitBug(game, dev, bug, damage)` (counter damage, reward, XP and kill in one call) and `shotBeam(game, dev, bug)`.
+
+A short example, trimmed from `src/content/developers/java.js`:
+
+```js
+registerDeveloper({
+  id: 'java', /* ...base stats... */
+  levelName: 'Junior Java Dev',
+  upgrades: {
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
+    level3: [
+      {
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
+        description: 'Less damage itself, +15% damage to developers nearby',
+        modifyStats(game, dev, stats) { stats.damage *= 0.9; },
+        aura: { radius: 5, apply(game, dev, stats) { stats.damage *= 1.15; } },
+      },
+      {
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,
+        description: 'Stop-the-World, then a pulse',
+        update(game, dev, dt, stats) { /* hold fire 1 s every 8 s, then hitBug every bug in range for 2x */ },
+      },
+    ],
+  },
+});
+```
+
+Check a change with `node scripts/sim-upgrades.mjs`: the `{type} A` and `{type} B` lines should stay close, mainly the no-powers ones, and up-first should not clearly beat hire-first. For .NET, compare the `react+dotnet A` and `react+dotnet B` lines, because .NET only can't hire before the first sprint.
+
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `dev:hit` (passes `{ game, dev, bug, damage, counter }` after every developer hit) · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost` · `investment:bought` (passes `{ id, level }`, no game: it happens between runs)
+`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `dev:hit` (passes `{ game, dev, bug, damage, counter }` once per shot, after the shot's hits and kills; `bug` is the shot's main target, also for upgrades that pierce, chain or splash) · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost` · `investment:bought` (passes `{ id, level }`, no game: it happens between runs)
 
-Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`.
+Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`. `dev:upgradeready` gives `{ game, dev, level }` when XP unlocks the next upgrade. `dev:levelup` fires when an upgrade is bought and gives `{ game, dev, level, upgrade }`. In both, `level` is 0-based like `dev.level`: 1 for the level-2 upgrade, 2 for level 3.
 
 ## Changing the rules: `game.mods`
 

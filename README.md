@@ -9,7 +9,15 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 - **Hire developers** next to the path with Warrants, the currency. Squashed bugs pay Warrants.
 - **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's ring colour shows which developer counters it, and counters do double damage.
 - **Boss:** every sprint ends with a **security risk** (red ring, padlock). It's big, slow and tough, no developer counters it, and letting it through costs 5 lives.
-- **Levels:** developers go from Junior Consultant to Consultant to Senior Consultant as they squash bugs.
+- **Developer upgrades:** squashing bugs earns XP. 10 XP unlocks level 2 and 30 XP unlocks a choice of two level-3 branches, one steady and one a gamble. Levels here count from 1; in code and events they count from 0, so level 2 is `level: 1`. You pay for each upgrade in Warrants, so every sprint is a choice between hiring and upgrading.
+
+  | Developer | Level 1 | Level 2 | Level 3 steady | Level 3 gamble |
+  |---|---|---|---|---|
+  | Java | Junior Java Dev | Spring Boot Dev: more damage and range | Enterprise Architect: a little less damage itself, +15% damage to developers nearby | Garbage Collector: stops for 1 s every 8 s, then a big pulse hits every bug in range for 2× |
+  | React | Create React App | Vite: faster fire | Next.js: each shot also hits the next 2 bugs | useEffect Hell: harder hits, and each hit has a 20% chance to hit again, up to 10 times |
+  | .NET | .NET Framework 4.8 | .NET Core: faster fire | Visual Studio Enterprise: one huge hit | Azure Function: area damage, billed 1 Warrant every 0.5 s while it fires. Toggle it in the panel. |
+
+  React developers fire 10% faster for each other React developer on the map, up to +50%.
 - **Power-ups:**
   - **Training manager:** double XP.
   - **Business manager:** double Warrants.

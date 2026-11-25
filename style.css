@@ -34,9 +34,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* stage */
 #stage { position: relative; line-height: 0; }
 #game { display: block; width: 100%; cursor: crosshair; }
-#overlay { position: absolute; inset: 0; line-height: 1.4; }
+#overlay { position: absolute; inset: 0; z-index: 9; line-height: 1.4; }
 #overlay:empty { pointer-events: none; }
-.pause-veil { display: none; position: absolute; inset: 0; background: rgba(0, 30, 50, .7); align-items: center; justify-content: center; font-size: 14px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s200); line-height: 1; pointer-events: none; }
+/* Corner cards (bell, minimized review) stack below the popover (8) and the inbox (5, toast 6); full-screen screens stay above (9). */
+#overlay.bell-overlay, #overlay.review-min-overlay { z-index: 4; }
+.pause-veil { display: none; position: absolute; inset: 0; z-index: 10; background: rgba(0, 30, 50, .7); align-items: center; justify-content: center; font-size: 14px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s200); line-height: 1; pointer-events: none; }
 #stage.paused .pause-veil { display: flex; }
 
 /* power-ups */
@@ -55,7 +57,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pu.feature { border-style: dashed; }
 
 /* hire bar */
-#hire { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 8px; padding: 0 16px 12px; }
+#hire { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 16px 12px; }
 .hire-btn { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--navy2); border: 1px solid var(--navy3); border-top: 2px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
 .hire-btn:hover { background: var(--navy3); }
 .hire-btn.active { background: #fff; color: var(--navy); border-color: #fff; border-top-color: var(--accent); }
@@ -66,11 +68,29 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hire-text b { font-size: 14px; }
 .hire-text small { font-size: 12px; color: var(--s400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cost { font-weight: 900; font-variant-numeric: tabular-nums; }
-.sel-panel { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
+.sel-panel { flex-wrap: wrap; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
 .sel-panel div { display: flex; flex-direction: column; min-width: 0; }
 .sel-panel b { font-size: 14px; }
 .sel-panel small { font-size: 12px; color: var(--s400); }
-.sel-panel.hidden { visibility: hidden; }
+.upgrade-btn { display: flex; flex-direction: column; gap: 2px; text-align: left; color: inherit; font: inherit; cursor: pointer; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; min-width: 140px; max-width: 280px; flex: 1 1 140px; }
+.upgrade-btn:hover:not(:disabled) { background: var(--navy3); }
+.upgrade-btn:disabled { opacity: .5; cursor: default; }
+.upgrade-top { display: flex; justify-content: space-between; gap: 10px; }
+.upgrade-btn b { font-size: 13px; font-weight: 700; }
+.upgrade-btn small { font-size: 12px; color: var(--s400); }
+.sel-panel.hidden { visibility: hidden; pointer-events: none; }
+.sel-panel.popover { position: absolute; left: 0; top: 0; z-index: 8; width: 260px; line-height: 1.4; flex-direction: column; align-items: stretch; flex-wrap: nowrap; justify-content: flex-start; gap: 0; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.popover-arrow { position: absolute; left: -6px; width: 12px; height: 12px; margin-top: -6px; background: var(--navy2); border-left: 3px solid var(--accent); border-bottom: 3px solid var(--accent); transform: rotate(45deg); }
+.sel-panel.popover.left { border-left-width: 1px; border-right: 3px solid var(--accent); }
+.popover.left .popover-arrow { left: auto; right: -6px; transform: rotate(225deg); }
+.popover-body { flex: 1 1 auto; min-height: 0; overflow: auto; gap: 8px; }
+.sel-panel.popover .upgrade-btn { max-width: none; flex: none; }
+.sel-panel .choice { display: flex; flex-direction: row; gap: 6px; align-items: stretch; }
+.sel-panel .choice .upgrade-btn { min-width: 0; flex: 1 1 0; }
+.sel-panel .choice .upgrade-top { flex-direction: column; align-items: flex-start; gap: 0; }
+.sel-panel .choice .upgrade-btn b { overflow-wrap: anywhere; min-width: 0; }
+.sel-panel .choice-or { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--s400); }
+.sel-panel .choice-head small { font-size: 12px; color: var(--s400); }
 
 .help { font-size: 12px; color: var(--s500); padding: 10px 16px; border-top: 1px solid var(--navy3); background: #001726; }
 
@@ -113,7 +133,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   #app { border-radius: 0; }
   #hud { gap: 12px; }
   #hire { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .sel-panel { grid-column: 1 / -1; }
+  .sel-panel.popover { width: min(240px, 70%); }
   .help { display: none; }
 }
 

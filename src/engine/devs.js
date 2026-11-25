@@ -4,13 +4,7 @@ import { emit } from './events.js';
 import { isBuildable, cellCenter, CELL } from './map.js';
 import { killBug, addEffect } from './game.js';
 
-export const LEVELS = [
-  { name: 'Junior Consultant', badge: 'J', xp: 0 },
-  { name: 'Consultant', badge: 'C', xp: 10 },
-  { name: 'Senior Consultant', badge: 'S', xp: 30 },
-];
-const LEVEL_DAMAGE = 1.25;
-const LEVEL_FIRE_RATE = 1.15;
+export const XP_GATES = [0, 10, 30];
 
 export const devAt = (game, col, row) => game.devs.find(d => d.col === col && d.row === row);
 
@@ -30,7 +24,7 @@ export function placeDev(game, typeId, col, row) {
   const def = getDeveloper(typeId);
   const { x, y } = cellCenter(col, row);
   const cost = hireCost(game, typeId);
-  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, xp: 0, cooldown: 0, spent: cost, kills: 0 };
+  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, upgrade: null, state: {}, xp: 0, cooldown: 0, spent: cost, kills: 0 };
   game.warrants -= cost;
   game.devs.push(dev);
   emit('dev:placed', { game, dev });
@@ -47,48 +41,115 @@ export function sellDev(game, dev) {
   return refund;
 }
 
+export function nextUpgrades(dev) {
+  const ups = getDeveloper(dev.type)?.upgrades;
+  if (!ups) return [];
+  if (dev.level === 0) return ups.level2 ? [ups.level2] : [];
+  if (dev.level === 1) return ups.level3 ?? [];
+  return [];
+}
+
+export const upgradeUnlocked = dev => nextUpgrades(dev).length > 0 && dev.xp >= XP_GATES[dev.level + 1];
+
+export function upgradeStatus(game, dev, upgrade) {
+  if (dev.xp < XP_GATES[dev.level + 1]) return { ok: false, reason: 'xp' };
+  if (game.warrants < upgrade.cost) return { ok: false, reason: 'warrants' };
+  return { ok: true, reason: null };
+}
+
+export function buyUpgrade(game, dev, upgradeId) {
+  const upgrade = nextUpgrades(dev).find(u => u.id === upgradeId);
+  if (!upgrade || !upgradeStatus(game, dev, upgrade).ok) return false;
+  game.warrants -= upgrade.cost;
+  dev.spent += upgrade.cost;
+  dev.level++;
+  dev.upgrade = upgrade;
+  if (dev.level === 2) game.stats.seniors++;
+  emit('dev:levelup', { game, dev, level: dev.level, upgrade });
+  // XP may already be past the next gate (earned while waiting to buy this one)
+  if (nextUpgrades(dev).length > 0 && dev.xp >= XP_GATES[dev.level + 1]) emit('dev:upgradeready', { game, dev, level: dev.level + 1 });
+  return true;
+}
+
+export function levelName(dev) {
+  const def = getDeveloper(dev.type);
+  return dev.upgrade?.name ?? def?.levelName ?? def?.name;
+}
+
 export function devStats(game, dev) {
   const def = getDeveloper(dev.type);
+  const ups = def.upgrades;
+  const stats = { damage: def.damage, fireRate: def.fireRate, range: def.range };
+  if (dev.level >= 1 && ups?.level2?.stats) Object.assign(stats, ups.level2.stats);
+  if (dev.level === 2 && dev.upgrade?.stats) Object.assign(stats, dev.upgrade.stats);
+  try { def.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] modifyStats failed`, e); }
+  try { dev.upgrade?.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] upgrade modifyStats failed`, e); }
+  // Aura step: each distinct upgrade id with an aura applies once if another dev with it is in radius.
+  const applied = new Set();
+  for (const other of game.devs) {
+    const aura = other.upgrade?.aura;
+    if (other === dev || !aura || applied.has(other.upgrade.id)) continue;
+    if (Math.hypot(other.x - dev.x, other.y - dev.y) > aura.radius * CELL) continue;
+    applied.add(other.upgrade.id);
+    try { aura.apply(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] aura failed`, e); }
+  }
   return {
-    damage: def.damage * LEVEL_DAMAGE ** dev.level * game.mods.damageMultiplier,
-    fireRate: def.fireRate * LEVEL_FIRE_RATE ** dev.level * game.mods.fireRateMultiplier * (game.mods.devFireRate?.[dev.type] ?? 1),
-    range: def.range * CELL * game.mods.rangeMultiplier,
+    ...stats,
+    damage: stats.damage * game.mods.damageMultiplier,
+    fireRate: stats.fireRate * game.mods.fireRateMultiplier * (game.mods.devFireRate?.[dev.type] ?? 1),
+    range: stats.range * CELL * game.mods.rangeMultiplier,
   };
 }
 
 export function grantXp(game, dev, amount) {
+  const before = dev.xp;
   dev.xp += amount * game.mods.xpMultiplier;
-  while (dev.level < LEVELS.length - 1 && dev.xp >= LEVELS[dev.level + 1].xp) {
-    dev.level++;
-    if (dev.level === LEVELS.length - 1) game.stats.seniors++;
-    emit('dev:levelup', { game, dev, level: dev.level });
+  const gate = XP_GATES[dev.level + 1];
+  if (nextUpgrades(dev).length > 0 && before < gate && dev.xp >= gate) {
+    emit('dev:upgradeready', { game, dev, level: dev.level + 1 });
   }
+}
+
+export function bugsInRange(game, dev, range) {
+  return game.bugs
+    .filter(b => !b.dead && Math.hypot(b.x - dev.x, b.y - dev.y) <= range)
+    .sort((a, b) => b.distance - a.distance);
+}
+
+export function shotBeam(game, dev, bug, color, damage = getDeveloper(dev.type).damage) {
+  addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: bug.x, y: bug.y }, color: color ?? getDeveloper(dev.type).accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
+}
+
+export function hitBug(game, dev, bug, damage) {
+  if (bug.dead) return false;
+  const counter = bug.type === getDeveloper(dev.type).counters;
+  bug.hp -= damage * (counter ? 2 : 1);
+  if (counter) addEffect(game, { kind: 'pop', x: bug.x, y: bug.y - 12, text: '×2', ttl: 0.6 });
+  try { getBug(bug.type)?.onHit?.(bug, game); } catch (e) { console.error(`[bug ${bug.type}] onHit failed`, e); }
+  if (bug.hp > 0) return false;
+  killBug(game, bug, dev);
+  dev.kills++;
+  grantXp(game, dev, 1);
+  return true;
 }
 
 export function tickDevs(game, dt) {
   for (const dev of game.devs) {
     dev.cooldown -= dt;
+    const stats = devStats(game, dev);
+    let hold = false;
+    try { hold = dev.upgrade?.update?.(game, dev, dt, stats) === false; } catch (e) { console.error(`[dev ${dev.type}] update failed`, e); }
+    if (hold) { dev.cooldown = 0; continue; }
     if (dev.cooldown > 0) continue;
-    const { damage, fireRate, range } = devStats(game, dev);
-    let target = null;
-    for (const bug of game.bugs) {
-      if (Math.hypot(bug.x - dev.x, bug.y - dev.y) > range) continue;
-      if (!target || bug.distance > target.distance) target = bug;
-    }
+    const target = bugsInRange(game, dev, stats.range)[0];
     if (!target) { dev.cooldown = 0; continue; }
-    const def = getDeveloper(dev.type);
-    const counter = target.type === def.counters;
-    target.hp -= damage * (counter ? 2 : 1);
-    addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: target.x, y: target.y }, color: def.accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
-    if (counter) addEffect(game, { kind: 'pop', x: target.x, y: target.y - 12, text: '×2', ttl: 0.6 });
-    try { getBug(target.type)?.onHit?.(target, game); } catch (e) { console.error(e); }
-    if (target.hp <= 0) {
-      killBug(game, target, dev);
-      dev.kills++;
-      grantXp(game, dev, 1);
-    }
-    // After the kill check, so a listener (e.g. a bounce) never kills the same bug twice.
-    emit('dev:hit', { game, dev, bug: target, damage: damage * (counter ? 2 : 1), counter });
-    dev.cooldown = 1 / fireRate;
+    try {
+      if (dev.upgrade?.fire) dev.upgrade.fire(game, dev, target, stats);
+      else { shotBeam(game, dev, target, undefined, stats.damage); hitBug(game, dev, target, stats.damage); }
+    } catch (e) { console.error(`[dev ${dev.type}] fire failed`, e); }
+    // Once per shot, after the kill check, so a listener (e.g. a bounce) never kills the same bug twice.
+    const counter = target.type === getDeveloper(dev.type)?.counters;
+    emit('dev:hit', { game, dev, bug: target, damage: stats.damage * (counter ? 2 : 1), counter });
+    dev.cooldown = 1 / stats.fireRate;
   }
 }

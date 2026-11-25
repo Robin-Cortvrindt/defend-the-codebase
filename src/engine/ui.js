@@ -3,8 +3,10 @@ import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEven
 import { loadProgress, investmentLevel, investmentCost, canInvest, invest, resetProgress } from './investments.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
-import { LEVELS, sellDev, hireCost } from './devs.js';
+import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
+import { WIDTH } from './map.js';
+import { popoverPosition } from './popover.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 
@@ -73,8 +75,14 @@ function buildHire() {
     bar.append(btn);
     return { def, btn, cost };
   });
-  refs.selPanel = h('div', { class: 'sel-panel hidden' });
-  bar.append(refs.selPanel);
+  // The selected-developer panel lives on the map, before #overlay so overlay screens stay on top.
+  if (!refs.selPanel) {
+    refs.selPanel = h('div', { class: 'sel-panel popover hidden' });
+    refs.selArrow = h('i', { class: 'popover-arrow' });
+    refs.selPanel.dataset.key = '';
+  }
+  const stage = $('#stage');
+  if (refs.selPanel.parentNode !== stage) stage.insertBefore(refs.selPanel, $('#overlay'));
 }
 
 function buildPowerups() {
@@ -185,23 +193,84 @@ export function updateUI() {
   toggle($('#stage'), 'paused', v.paused);
 }
 
+function upgradeBtn({ up, status }, dev, gate) {
+  const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
+  const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
+  const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
+    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
+    h('small', {}, kind + line));
+  btn.disabled = !status.ok;
+  if (up.tooltip) btn.title = up.tooltip;
+  return btn;
+}
+
 function updateSelPanel() {
   const dev = app.view.selected;
   const p = refs.selPanel;
   if (!dev || !app.game.devs.includes(dev)) { toggle(p, 'hidden', true); p.dataset.key = ''; return; }
   const def = getDeveloper(dev.type);
-  const lvl = LEVELS[dev.level], next = LEVELS[dev.level + 1];
-  const key = `${dev.id}:${dev.level}:${Math.floor(dev.xp)}:${dev.kills}`;
+  const gate = XP_GATES[dev.level + 1];
+  const ups = nextUpgrades(dev).map(up => ({ up, status: upgradeStatus(app.game, dev, up) }));
+  let extra = [];
+  try { extra = dev.upgrade?.panelButtons?.(app.game, dev) ?? []; } catch (e) { console.error(`panelButtons failed for ${dev.type}`, e); }
+  const key = [dev.id, dev.level,
+    ups.map(u => `${u.up.id}=${u.status.reason}`).join(','), extra.map(b => b.label).join('|')].join(':');
   toggle(p, 'hidden', false);
-  if (p.dataset.key === key) return;
+  const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
+  if (p.dataset.key === key && refs.selXp) { set(refs.selXp, 'textContent', xpLine); positionPopover(dev); return; }
   p.dataset.key = key;
+  refs.popSize = null;
   p.style.setProperty('--accent', def.accent);
   p.innerHTML = '';
+  refs.selXp = h('small', {}, xpLine);
+  // The arrow sits outside the box, so scrolling happens in an inner body, not on the popover.
   p.append(
-    h('div', {}, h('b', {}, `${def.name} · ${lvl.name}`),
-      h('small', {}, next ? `XP ${Math.floor(dev.xp)} / ${next.xp} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`)),
-    h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
+    h('div', { class: 'popover-body' },
+      h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
+      // Element.append does not flatten arrays (h() does), so spread them.
+      ...(ups.length === 2 ? [
+        h('div', { class: 'choice-head' }, h('b', {}, 'Choose one'), h('small', {}, "You can't change this later.")),
+        h('div', { class: 'choice' }, upgradeBtn(ups[0], dev, gate), h('span', { class: 'choice-or' }, 'or'), upgradeBtn(ups[1], dev, gate)),
+      ] : ups.map(u => upgradeBtn(u, dev, gate))),
+      ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
+        try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
+      } }, b.label)),
+      h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
+    ),
+    refs.selArrow,
   );
+  positionPopover(dev);
+}
+
+// Place the popover next to its tower. The natural size is measured without touching the caps
+// (clearing them would un-overflow .popover-body and reset its scroll), cached, and re-measured
+// only after a rebuild or a stage resize; styles are rewritten only when an input changes.
+function positionPopover(dev) {
+  const p = refs.selPanel;
+  const stage = $('#stage');
+  const stageW = stage.clientWidth;
+  const stageH = stage.clientHeight;
+  const sizeKey = `${stageW}x${stageH}`;
+  if (!refs.popSize || refs.popSizeKey !== sizeKey) {
+    const body = p.querySelector('.popover-body');
+    const extra = body ? body.scrollHeight - body.clientHeight : 0;
+    refs.popSize = { w: p.offsetWidth, h: p.offsetHeight + extra };
+    refs.popSizeKey = sizeKey;
+    refs.popPosKey = '';
+  }
+  const posKey = `${dev.x},${dev.y},${sizeKey}`;
+  if (refs.popPosKey === posKey) return;
+  refs.popPosKey = posKey;
+  const { left, top, side, arrowY, maxW, maxH } = popoverPosition({
+    x: dev.x, y: dev.y, scale: stageW / WIDTH, stageW, stageH,
+    popW: refs.popSize.w, popH: refs.popSize.h,
+  });
+  set(p.style, 'maxWidth', `${maxW}px`);
+  set(p.style, 'maxHeight', `${maxH}px`);
+  set(p.style, 'left', `${left}px`);
+  set(p.style, 'top', `${top}px`);
+  toggle(p, 'left', side === 'left');
+  set(refs.selArrow.style, 'top', `${arrowY}px`);
 }
 
 // ---------- overlays ----------
@@ -259,7 +328,7 @@ function showOverlay(phase) {
   } else if (phase === 'won') {
     ov.className = 'screen won';
     ov.append(endCard('#16A34A', 'All sprints done', 'Codebase defended', [
-      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Seniors'], [Math.floor(g.stats.warrantsEarned), 'Warrants earned'],
+      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Level 3 upgrades'], [Math.floor(g.stats.warrantsEarned), 'Warrants earned'],
     ], h('button', { class: 'btn primary big', onclick: () => app.restart() }, 'Play again →')));
   } else if (phase === 'lost') {
     ov.className = 'screen lost';

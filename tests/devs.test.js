@@ -2,13 +2,20 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.js';
-import { placeDev, sellDev, tickDevs, grantXp, devStats } from '../src/engine/devs.js';
+import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/game.js';
+import { placeDev, sellDev, tickDevs, grantXp, devStats, nextUpgrades, upgradeUnlocked, upgradeStatus, buyUpgrade, levelName, bugsInRange, hitBug } from '../src/engine/devs.js';
 import { pointAt } from '../src/engine/map.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll();
   R.registerDeveloper({ id: 'r', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'small' });
+  R.registerDeveloper({ id: 'u', cost: 50, damage: 10, fireRate: 1, range: 2, counters: 'small', levelName: 'Base',
+    upgrades: {
+      level2: { id: 'two', name: 'Two', cost: 40, description: 'd', stats: { damage: 20, range: 3 } },
+      level3: [
+        { id: 'a', name: 'A', cost: 60, kind: 'steady', description: 'd', stats: { fireRate: 2 } },
+        { id: 'b', name: 'B', cost: 70, kind: 'gamble', description: 'd' },
+      ] } });
   R.registerBug({ id: 'small', hp: 100, speed: 0, livesLost: 1, reward: 1, radius: 5 });
   R.registerBug({ id: 'other', hp: 100, speed: 0, livesLost: 1, reward: 1, radius: 5 });
   R.registerWaves([{ groups: [] }, { groups: [] }]);
@@ -62,7 +69,7 @@ test('counter hit deals double damage', () => {
   assert.equal(b.hp, 88);
 });
 
-test('kill grants reward and 1 xp; levels at 10 and 30', () => {
+test('kill grants reward and 1 xp; xp alone never levels up', () => {
   const g = waveGame();
   const d = placeDev(g, 'r', 3, 3);
   const b = spawnBug(g, 'other', 300, 1);
@@ -71,16 +78,11 @@ test('kill grants reward and 1 xp; levels at 10 and 30', () => {
   assert.equal(g.bugs.length, 0);
   assert.equal(g.warrants, w + 1);
   assert.equal(d.xp, 1);
-  const ups = []; on('dev:levelup', e => ups.push(e.level));
-  grantXp(g, d, 9);
-  assert.equal(d.level, 1);
-  grantXp(g, d, 20);
-  assert.equal(d.level, 2);
-  assert.deepEqual(ups, [1, 2]);
-  assert.equal(g.stats.seniors, 1);
+  grantXp(g, d, 40);
+  assert.equal(d.level, 0);
 });
 
-test('xpMultiplier 2 doubles xp; fireRateMultiplier 1.5 raises fire rate; level boosts damage', () => {
+test('xpMultiplier 2 doubles xp; fireRateMultiplier 1.5 raises fire rate', () => {
   const g = waveGame();
   const d = placeDev(g, 'r', 3, 3);
   g.mods.xpMultiplier = 2;
@@ -88,8 +90,119 @@ test('xpMultiplier 2 doubles xp; fireRateMultiplier 1.5 raises fire rate; level 
   assert.equal(d.xp, 6);
   g.mods.fireRateMultiplier = 1.5;
   assert.equal(devStats(g, d).fireRate, 6);
-  d.level = 1;
-  assert.equal(devStats(g, d).damage, 7.5);
+});
+
+test('upgrade is gated by xp then warrants; spent grows; refund includes upgrades', () => {
+  const g = waveGame(); g.warrants = 1000;
+  const d = placeDev(g, 'u', 3, 3);
+  assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'xp' });
+  assert.equal(buyUpgrade(g, d, 'two'), false);
+  grantXp(g, d, 10);
+  g.warrants = 39;
+  assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'warrants' });
+  g.warrants = 1000;
+  assert.equal(buyUpgrade(g, d, 'two'), true);
+  assert.equal(g.warrants, 960);
+  assert.equal(d.level, 1);
+  assert.equal(levelName(d), 'Two');
+  assert.equal(d.spent, 90);
+  assert.equal(sellDev(g, d), 45);
+});
+
+test('level 3 needs 30 xp, is one branch only, inherits level-2 stats', () => {
+  const g = waveGame(); g.warrants = 1000;
+  const d = placeDev(g, 'u', 3, 3);
+  grantXp(g, d, 35);
+  assert.equal(buyUpgrade(g, d, 'a'), false);            // must buy level 2 first
+  assert.ok(buyUpgrade(g, d, 'two'));
+  assert.ok(buyUpgrade(g, d, 'a'));
+  assert.equal(buyUpgrade(g, d, 'b'), false);
+  assert.deepEqual(nextUpgrades(d), []);
+  const s = devStats(g, d);
+  assert.equal(s.damage, 20); assert.equal(s.fireRate, 2); assert.equal(s.range, 3 * 40);
+  assert.equal(g.stats.seniors, 1);
+});
+
+test('events: upgradeready fires on purchase when xp already passed the next gate', () => {
+  const g = waveGame(); g.warrants = 1000;
+  const d = placeDev(g, 'u', 3, 3);
+  grantXp(g, d, 10); grantXp(g, d, 25);
+  const ready = [];
+  on('dev:upgradeready', e => ready.push(e.level));
+  buyUpgrade(g, d, 'two');
+  assert.deepEqual(ready, [2]);
+  buyUpgrade(g, d, 'a');
+  assert.deepEqual(ready, [2]);                          // maxed: nothing further to unlock
+});
+
+test('events: upgradeready on crossing a gate, levelup on purchase', () => {
+  const g = waveGame(); g.warrants = 1000;
+  const d = placeDev(g, 'u', 3, 3);
+  const ready = [], ups = [];
+  on('dev:upgradeready', e => ready.push(e.level));
+  on('dev:levelup', e => ups.push([e.level, e.upgrade.id]));
+  grantXp(g, d, 9); grantXp(g, d, 1); grantXp(g, d, 5);
+  assert.deepEqual(ready, [1]);
+  buyUpgrade(g, d, 'two');
+  grantXp(g, d, 15);
+  assert.deepEqual(ready, [1, 2]);
+  assert.deepEqual(ups, [[1, 'two']]);
+});
+
+test('Review Focus 1: a type without upgrades has none and still fires', () => {
+  const g = waveGame();
+  const d = placeDev(g, 'r', 3, 3);
+  grantXp(g, d, 50);
+  assert.deepEqual(nextUpgrades(d), []);
+  assert.equal(upgradeUnlocked(d), false);
+  assert.equal(buyUpgrade(g, d, 'two'), false);
+  const b = spawnBug(g, 'other', 300);
+  tickDevs(g, 0.01);
+  assert.equal(b.hp, 94);
+});
+
+test('update returning false holds fire; fire hook replaces the default shot', () => {
+  R.registerDeveloper({ id: 'h', cost: 10, damage: 10, fireRate: 1, range: 2, counters: 'small',
+    upgrades: { level2: { id: 'h2', name: 'H2', cost: 0, description: 'd',
+      update: (game, dev) => dev.state.on === true,
+      fire: (game, dev, target, stats) => { for (const b of bugsInRange(game, dev, stats.range)) hitBug(game, dev, b, 5); } },
+      level3: [] } });
+  const g = waveGame();
+  const d = placeDev(g, 'h', 3, 3); d.xp = 10; buyUpgrade(g, d, 'h2');
+  const b1 = spawnBug(g, 'other', 260), b2 = spawnBug(g, 'other', 300);
+  tickDevs(g, 0.01);
+  assert.equal(b1.hp, 100);
+  d.state.on = true; tickDevs(g, 0.01);
+  assert.deepEqual([b1.hp, b2.hp], [95, 95]);
+});
+
+test('Review Focus 2: hitting an already-dead bug gives no second reward or xp', () => {
+  const g = waveGame();
+  const d = placeDev(g, 'r', 3, 3);
+  const b = spawnBug(g, 'other', 300, 1);
+  const w = g.warrants;
+  assert.equal(hitBug(g, d, b, 10), true);
+  assert.equal(hitBug(g, d, b, 10), false);
+  assert.equal(g.warrants, w + 1);
+  assert.equal(d.xp, 1);
+  assert.equal(d.kills, 1);
+});
+
+test('Review Focus 5: throwing hooks are logged and the game keeps stepping', () => {
+  const boom = () => { throw new Error('boom'); };
+  R.registerDeveloper({ id: 'x', cost: 10, damage: 10, fireRate: 1, range: 2, counters: 'small', modifyStats: boom,
+    upgrades: { level2: { id: 'x2', name: 'X2', cost: 0, description: 'd', update: boom, fire: boom, modifyStats: boom,
+      aura: { radius: 2, apply: boom } }, level3: [] } });
+  const g = waveGame();
+  const d = placeDev(g, 'x', 3, 3); d.xp = 10; buyUpgrade(g, d, 'x2');
+  placeDev(g, 'r', 2, 3);
+  spawnBug(g, 'other', 300);
+  const errors = []; const orig = console.error; console.error = (...a) => errors.push(a);
+  try {
+    for (let i = 0; i < 5; i++) step(g, 0.1);
+    assert.ok(errors.length > 0);
+    assert.ok(devStats(g, d).damage > 0);
+  } finally { console.error = orig; }
 });
 
 test('devFireRate scales only the named developer type', () => {
