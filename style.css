@@ -34,9 +34,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* stage */
 #stage { position: relative; line-height: 0; }
 #game { display: block; width: 100%; cursor: crosshair; }
-#overlay { position: absolute; inset: 0; z-index: 7; line-height: 1.4; }
+#overlay { position: absolute; inset: 0; z-index: 9; line-height: 1.4; }
 #overlay:empty { pointer-events: none; }
-.pause-veil { display: none; position: absolute; inset: 0; background: rgba(0, 30, 50, .7); align-items: center; justify-content: center; font-size: 14px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s200); line-height: 1; pointer-events: none; }
+/* Corner cards (bell, minimized review) stack below the popover (8) and the inbox (5, toast 6); full-screen screens stay above (9). */
+#overlay.bell-overlay, #overlay.review-min-overlay { z-index: 4; }
+.pause-veil { display: none; position: absolute; inset: 0; z-index: 10; background: rgba(0, 30, 50, .7); align-items: center; justify-content: center; font-size: 14px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s200); line-height: 1; pointer-events: none; }
 #stage.paused .pause-veil { display: flex; }
 
 /* power-ups */
@@ -77,8 +79,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .upgrade-btn b { font-size: 13px; font-weight: 700; }
 .upgrade-btn small { font-size: 12px; color: var(--s400); }
 .sel-panel.hidden { visibility: hidden; pointer-events: none; }
-.sel-panel.popover { position: absolute; left: 0; top: 0; z-index: 5; width: 260px; line-height: 1.4; flex-direction: column; align-items: stretch; flex-wrap: nowrap; justify-content: flex-start; gap: 0; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.sel-panel.popover { position: absolute; left: 0; top: 0; z-index: 8; width: 260px; line-height: 1.4; flex-direction: column; align-items: stretch; flex-wrap: nowrap; justify-content: flex-start; gap: 0; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
 .popover-arrow { position: absolute; left: -6px; width: 12px; height: 12px; margin-top: -6px; background: var(--navy2); border-left: 3px solid var(--accent); border-bottom: 3px solid var(--accent); transform: rotate(45deg); }
+.sel-panel.popover.left { border-left-width: 1px; border-right: 3px solid var(--accent); }
 .popover.left .popover-arrow { left: auto; right: -6px; transform: rotate(225deg); }
 .popover-body { flex: 1 1 auto; min-height: 0; overflow: auto; gap: 8px; }
 .sel-panel.popover .upgrade-btn { max-width: none; flex: none; }

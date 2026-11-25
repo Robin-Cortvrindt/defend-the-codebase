@@ -214,6 +214,7 @@ function updateSelPanel() {
   const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
   if (p.dataset.key === key && refs.selXp) { set(refs.selXp, 'textContent', xpLine); positionPopover(dev); return; }
   p.dataset.key = key;
+  refs.popSize = null;
   p.style.setProperty('--accent', def.accent);
   p.innerHTML = '';
   refs.selXp = h('small', {}, xpLine);
@@ -236,17 +237,28 @@ function updateSelPanel() {
   positionPopover(dev);
 }
 
-// Place the popover next to its tower. Measure its natural size first (caps cleared) so the
-// capped size from the previous frame cannot feed back into the side choice.
+// Place the popover next to its tower. The natural size is measured without touching the caps
+// (clearing them would un-overflow .popover-body and reset its scroll), cached, and re-measured
+// only after a rebuild or a stage resize; styles are rewritten only when an input changes.
 function positionPopover(dev) {
   const p = refs.selPanel;
   const stage = $('#stage');
-  set(p.style, 'maxWidth', '');
-  set(p.style, 'maxHeight', '');
   const stageW = stage.clientWidth;
+  const stageH = stage.clientHeight;
+  const sizeKey = `${stageW}x${stageH}`;
+  if (!refs.popSize || refs.popSizeKey !== sizeKey) {
+    const body = p.querySelector('.popover-body');
+    const extra = body ? body.scrollHeight - body.clientHeight : 0;
+    refs.popSize = { w: p.offsetWidth, h: p.offsetHeight + extra };
+    refs.popSizeKey = sizeKey;
+    refs.popPosKey = '';
+  }
+  const posKey = `${dev.x},${dev.y},${sizeKey}`;
+  if (refs.popPosKey === posKey) return;
+  refs.popPosKey = posKey;
   const { left, top, side, arrowY, maxW, maxH } = popoverPosition({
-    x: dev.x, y: dev.y, scale: stageW / WIDTH, stageW, stageH: stage.clientHeight,
-    popW: p.offsetWidth, popH: p.offsetHeight,
+    x: dev.x, y: dev.y, scale: stageW / WIDTH, stageW, stageH,
+    popW: refs.popSize.w, popH: refs.popSize.h,
   });
   set(p.style, 'maxWidth', `${maxW}px`);
   set(p.style, 'maxHeight', `${maxH}px`);
