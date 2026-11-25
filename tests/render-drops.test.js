@@ -46,3 +46,12 @@ test('drops are drawn under the running event, so PROD-is-down darkness hides th
   assert.ok(dropAt >= 0 && darkAt >= 0, 'both drawn');
   assert.ok(dropAt < darkAt, 'drop drawn before the event overlay');
 });
+
+test('a drop still in the air renders without throwing', () => {
+  R.resetRegistry(); clearAll(); registerTestDrinks();
+  const game = createGame();
+  game.phase = 'wave';
+  const [a] = R.getDrinks();
+  game.drops.push({ id: 1, x: 300, y: 200, fromX: 100, fromY: 60, flight: 0.25, drink: a.id, amount: 2, ttl: DROP_TTL });
+  assert.doesNotThrow(() => render(stubCtx(), game, { selected: null, hover: null, hire: null, paused: false }));
+});
