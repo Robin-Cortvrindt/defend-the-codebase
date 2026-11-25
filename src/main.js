@@ -14,7 +14,7 @@ import { playSound } from './engine/sound.js';
 const CORE = [
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
-  'powerups/thomas.js', 'powerups/jeroen.js', 'powerups/bart.js', 'powerups/claude.js',
+  'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',
 ].map(p => new URL(`./content/${p}`, import.meta.url).href);
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);

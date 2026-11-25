@@ -12,9 +12,9 @@ export const CONTENT = [
   // Waves
   './waves.js',
   // Power-ups
-  './powerups/thomas.js',
-  './powerups/jeroen.js',
-  './powerups/bart.js',
+  './powerups/training-manager.js',
+  './powerups/business-manager.js',
+  './powerups/ceo.js',
   './powerups/claude.js',
   // Features (teammates' add-ons, Nexios references, ...)
 ];

@@ -36,7 +36,7 @@ function play(strategy, usePowers) {
   let t = 0;
   while (!['won', 'lost'].includes(g.phase) && t < 3600) {
     step(g, 0.05); t += 0.05;
-    if (usePowers && g.phase === 'wave') { for (const p of ['bart', 'jeroen', 'thomas']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
+    if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'bell') { buy(); ringBell(g); }
   }
   return `${g.phase.padEnd(4)} wave ${g.wave + 1} lives ${g.lives} devs ${g.devs.length} warrants ${g.warrants} seniors ${g.stats.seniors}`;

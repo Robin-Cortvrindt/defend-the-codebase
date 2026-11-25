@@ -1,6 +1,6 @@
 # Defend the Codebase
 
-A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs crawl toward production. You hire React, Java and .NET developers to squash them, and Thomas, Jeroen, Bart and Claude lend a hand.
+A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs crawl toward production. You hire React, Java and .NET developers to squash them, and the training manager, business manager, CEO and Claude lend a hand.
 
 **Play:** https://robin-cortvrindt.github.io/defend-the-codebase/
 
@@ -10,9 +10,9 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 - **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's ring colour shows which developer counters it, and counters do double damage.
 - **Levels:** developers go from Junior Consultant to Consultant to Senior Consultant as they squash bugs.
 - **Power-ups:**
-  - **Thomas:** double XP.
-  - **Jeroen:** double Warrants.
-  - **Bart:** attack speed +50%.
+  - **Training manager:** double XP.
+  - **Business manager:** double Warrants.
+  - **CEO:** attack speed +50%.
   - **Claude:** squashes every bug on the map. The price goes up each use, and there's a 25% chance it backfires and doubles the bugs.
 - **Between waves**, ring the Nexios victory bell to start the next wave.
 - **Win or lose:** survive 10 waves. If too many bugs reach PROD, production is down.

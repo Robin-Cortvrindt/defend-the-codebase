@@ -38,7 +38,7 @@ The judging prizes are: most features (counted live), most fun (audience vote), 
 - ES modules don't load from `file://`, so local testing needs a static server, e.g. `python -m http.server`.
 - `REGRET.md` at the repo root, kept up to date: each time something that worked breaks, log what broke and why.
 - Nothing secret in the repo, since the page is public.
-- Thomas, Jeroen and Bart are real colleagues. The team gets their consent before demoing (this is in the brief).
+- Power-ups are named after roles (Training manager, Business manager, CEO), not real colleagues, so no consent is needed.
 
 ## 4. The game
 
@@ -91,9 +91,9 @@ Power-ups are buttons in a bar below the map. Each shows ready, active (with tim
 
 | Power-up | Effect | Duration | Cooldown |
 |---|---|---|---|
-| **Thomas** | Developers gain ×2 XP | 15 s | 45 s |
-| **Jeroen** | Warrants from kills ×2 | 15 s | 45 s |
-| **Bart** | All developers attack 50% faster | 10 s | 40 s |
+| **Training manager** | Developers gain ×2 XP | 15 s | 45 s |
+| **Business manager** | Warrants from kills ×2 | 15 s | 45 s |
+| **CEO** | All developers attack 50% faster | 10 s | 40 s |
 | **Claude** | Squash every bug on the map right away, for Warrants | instant | none, but the price rises |
 
 **Claude details:** it starts at 150 Warrants and the price is ×1.5 after each use, rounded. There's a fixed **25% chance to backfire**. On a backfire, every bug currently on the map is copied, so the bug count doubles, and the player still pays. On success, every bug on the map dies and pays out normally. The button is disabled when you can't afford it. A banner says what happened ("Claude · backfire — Hallucinated a fix — bug count doubled").
@@ -140,7 +140,7 @@ src/
   engine/events.js    tiny event bus: on(name, fn), emit(name, data)
   content/developers/ react.js, java.js, dotnet.js
   content/bugs/       typo.js, nullpointer.js, legacy.js
-  content/powerups/   thomas.js, jeroen.js, bart.js, claude.js
+  content/powerups/   training-manager.js, business-manager.js, ceo.js, claude.js
   content/waves.js
   content/features/   empty at first; teammates' add-ons (e.g. Nexios references) go here
 ```
@@ -166,7 +166,7 @@ src/
 1. **Contract first:** the registry, event bus, modifiers, guarded loader and one stub file of each kind. Push it, so teammates can start right away.
 2. Core loop: map, path, spawner, the three bugs, the three developers, placing developers, combat, Warrants, lives.
 3. The bell, the 10 waves, and the win and lose screens.
-4. Levelling, selling, and the power-ups (Thomas, Jeroen, Bart, then Claude).
+4. Levelling, selling, and the power-ups (Training manager, Business manager, CEO, then Claude).
 5. Start screen, placeholder sounds, polish.
 
 If time runs short, cut from the bottom of this list. Steps 1–3 alone are a playable demo.

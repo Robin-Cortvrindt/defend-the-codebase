@@ -4,12 +4,12 @@ import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step, killBug } from '../src/engine/game.js';
 import { usePowerup, canUse, powerupState, tickPowerups } from '../src/engine/powerups.js';
-import '../src/content/powerups/thomas.js';
+import '../src/content/powerups/training-manager.js';
 
 async function fresh() {
   R.resetRegistry(); clearAll();
   // re-register after reset (modules are cached, so import the defs directly)
-  for (const m of ['thomas', 'jeroen', 'bart', 'claude']) {
+  for (const m of ['training-manager', 'business-manager', 'ceo', 'claude']) {
     const mod = await import(`../src/content/powerups/${m}.js`);
     R.registerPowerup(mod.default);
   }
@@ -20,37 +20,37 @@ beforeEach(fresh);
 
 function waveGame() { const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; return g; }
 
-test('Thomas doubles xpMultiplier for 15s then restores; reuse only after 45s cooldown', () => {
+test('Training manager doubles xpMultiplier for 15s then restores; reuse only after 45s cooldown', () => {
   const g = waveGame(); spawnBug(g, 'b', 10);
-  assert.equal(usePowerup(g, 'thomas'), true);
+  assert.equal(usePowerup(g, 'training'), true);
   assert.equal(g.mods.xpMultiplier, 2);
-  assert.equal(canUse(g, 'thomas'), false);
+  assert.equal(canUse(g, 'training'), false);
   tickPowerups(g, 15.01);
   assert.equal(g.mods.xpMultiplier, 1);
-  assert.equal(canUse(g, 'thomas'), false);
+  assert.equal(canUse(g, 'training'), false);
   tickPowerups(g, 45);
-  assert.equal(canUse(g, 'thomas'), true);
+  assert.equal(canUse(g, 'training'), true);
 });
 
-test('Jeroen doubles warrants, Bart speeds attacks', () => {
+test('Business manager doubles warrants, CEO speeds attacks', () => {
   const g = waveGame();
-  usePowerup(g, 'jeroen'); usePowerup(g, 'bart');
+  usePowerup(g, 'business'); usePowerup(g, 'ceo');
   assert.equal(g.mods.warrantMultiplier, 2);
   assert.equal(g.mods.fireRateMultiplier, 1.5);
 });
 
 test('cooldown keeps ticking in bell phase', () => {
   const g = waveGame();
-  usePowerup(g, 'bart');
+  usePowerup(g, 'ceo');
   g.phase = 'bell';
   step(g, 0.05);
   tickPowerups(g, 60);
-  assert.equal(powerupState(g, 'bart').cooldownLeft, 0);
+  assert.equal(powerupState(g, 'ceo').cooldownLeft, 0);
 });
 
 test('power-ups refused outside wave phase', () => {
   const g = createGame(); startGame(g);
-  assert.equal(usePowerup(g, 'thomas'), false);
+  assert.equal(usePowerup(g, 'training'), false);
   assert.equal(g.mods.xpMultiplier, 1);
 });
 
