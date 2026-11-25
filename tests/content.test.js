@@ -28,6 +28,16 @@ test('manifest registers 3 developers, 3 bugs, 10 consistent waves', async () =>
     assert.equal(g.mods.devFireRate.dotnet ?? 1, 1, e.id);
   }
 
+  // heat wave is scaled down by air conditioning (game.heatResistance 0..1)
+  const hw = R.getEvent('heat-wave');
+  for (const [res, expected] of [[undefined, 1.5], [0, 1.5], [0.5, 1.25], [1, 1]]) {
+    const g = createGame(); g.heatResistance = res;
+    hw.start(g);
+    assert.equal(g.mods.bugSpeedMultiplier, expected, `heatResistance ${res}`);
+    hw.end(g);
+    assert.equal(g.mods.bugSpeedMultiplier, 1);
+  }
+
   // prod-down draws with or without a cursor
   const noop = () => {};
   const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, {
