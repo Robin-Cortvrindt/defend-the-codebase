@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint info mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#001E32;--navy2:#0A2A40;--navy3:#123650;--blue:#2563EB;--orange:#EA580C;--fuchsia:#C026D3;--green:#16A34A;--green-l:#4ADE80;--yellow:#FACC15;--red:#DC2626;
+        --s600:#475569;--s500:#64748B;--s400:#94A3B8;--s200:#E2E8F0;--tint:#EEF1F5}
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px;background:var(--tint);color:var(--navy);font-family:Lato,system-ui,sans-serif}
+  h1{font-size:26px;font-weight:900;margin:0 0 4px}
+  h2.sec-title{font-size:19px;font-weight:900;margin:36px 0 10px}
+  .intro{color:var(--s600);font-size:14px;margin:0 0 24px;max-width:860px;line-height:1.5}
+  .card{background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--s200);margin-bottom:24px}
+  .cap{padding:12px 16px;border-bottom:1px solid var(--s200)}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .cap h3{margin:2px 0 0;font-size:17px}
+  .note{font-size:13px;line-height:1.55;color:var(--s600);padding:12px 16px;background:var(--tint)}
+  .note b{color:var(--navy)}
+  .note ul{margin:4px 0 0;padding-left:18px}
+  .tag{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:2px}
+  .tag.before{background:#FEE2E2;color:#991B1B}.tag.opt{background:#DBEAFE;color:#1E3A8A}
+
+  /* game frame */
+  .app{background:var(--navy);color:#fff}
+  .hud{display:flex;align-items:center;gap:22px;padding:9px 16px;border-bottom:1px solid var(--navy3);flex-wrap:wrap}
+  .brand{font-weight:900;font-size:19px;letter-spacing:.04em}
+  .stat{display:flex;flex-direction:column;line-height:1.1}
+  .stat small{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400)}
+  .stat b{font-size:19px;font-weight:900}
+  .stat .sub{font-size:10px;color:var(--s400);margin-top:2px;font-weight:700}
+  .prodbar{display:flex;gap:3px;margin-top:5px}.prodbar i{width:9px;height:8px;border-radius:2px;background:var(--green)}
+  .spacer{flex:1}
+  .btn{font-size:12px;font-weight:700;border:1px solid var(--navy3);border-radius:8px;padding:7px 12px;color:var(--s200);background:none;font-family:inherit}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn[disabled]{opacity:.5}
+  .hl{outline:2px dashed var(--yellow);outline-offset:4px;border-radius:6px}
+
+  .stage{position:relative;aspect-ratio:2.6/1;background:#0A2A40;overflow:hidden;
+    background-image:linear-gradient(#0f3047 1px,transparent 1px),linear-gradient(90deg,#0f3047 1px,transparent 1px);background-size:6.25% 12.5%}
+  .path{position:absolute;background:#123650}
+  .dev{position:absolute;width:5%;aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff}
+  .bug{position:absolute;width:1.8%;aspect-ratio:1;border-radius:50%;background:#1f2937;border:2px solid}
+  .bld{position:absolute;right:1.5%;top:20%;width:7%;height:40%;border:2px solid #fff;background:#0A2A40}
+  .bld b{display:block;background:#fff;color:var(--navy);font-size:9px;text-align:center;font-weight:900}
+
+  /* pips: sprints in quarter */
+  .pips{display:flex;gap:4px;align-items:center;margin-top:5px}
+  .pips i{width:14px;height:8px;border-radius:2px;background:var(--navy3)}
+  .pips i.done{background:var(--green)}
+  .pips i.now{background:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.35)}
+  .pips .rev{font-size:11px;line-height:1;margin-left:2px}
+
+  /* sprint progress strip */
+  .strip{display:flex;align-items:center;gap:12px;padding:7px 16px;background:#001A2B;border-bottom:1px solid var(--navy3);font-size:12px}
+  .strip .lbl{font-weight:900;white-space:nowrap}
+  .strip .muted{color:var(--s400);white-space:nowrap}
+  .track{position:relative;flex:1;height:10px;border-radius:5px;background:var(--navy3);min-width:120px}
+  .track .fill{position:absolute;inset:0 auto 0 0;border-radius:5px;background:linear-gradient(90deg,var(--green),var(--green-l))}
+  .track .boss{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:var(--red);border:2px solid #fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}
+
+  /* quarter timeline */
+  .timeline{display:flex;align-items:stretch;gap:6px;padding:9px 16px;background:#001A2B;border-bottom:1px solid var(--navy3);overflow-x:auto}
+  .tl{flex:1;min-width:72px;border:1px solid var(--navy3);border-radius:8px;padding:6px 8px;font-size:11px;line-height:1.25}
+  .tl b{display:block;font-size:12px}
+  .tl small{color:var(--s400)}
+  .tl.done{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.5)}
+  .tl.done b::after{content:" ✓";color:var(--green-l)}
+  .tl.now{background:rgba(37,99,235,.18);border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.3)}
+  .tl.now .mini{height:4px;border-radius:2px;background:var(--navy3);margin-top:5px;overflow:hidden}.tl.now .mini i{display:block;height:100%;width:55%;background:var(--green-l)}
+  .tl.review{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.5);color:var(--yellow);min-width:96px}
+  .tl.review small{color:#fde68a}
+  .yearbar{display:flex;gap:4px;align-items:center;font-size:10px;color:var(--s400);font-weight:700;letter-spacing:.1em;white-space:nowrap;padding-right:6px;flex-direction:column;justify-content:center}
+  .yearbar .qs{display:flex;gap:3px}.yearbar .qs i{width:16px;height:6px;border-radius:2px;background:var(--navy3)}.yearbar .qs i.now{background:var(--blue)}
+
+  /* bell card */
+  .overlay{position:absolute;inset:0;background:rgba(0,30,50,.55);display:flex;align-items:center;justify-content:center}
+  .bellcard{background:var(--navy);border:1px solid var(--navy3);border-radius:14px;padding:18px 22px;display:flex;gap:18px;align-items:center;max-width:620px;width:90%}
+  .bellcard .bellico{font-size:46px}
+  .bellcard h2{margin:2px 0 4px;font-size:22px}
+  .bellcard .e{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400)}
+  .bellcard small{color:var(--s400);font-size:12px}
+  .preview{margin-top:10px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}
+  .preview span{color:var(--s400)}
+  .chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--navy3);border-radius:999px;padding:1px 8px;margin-right:4px;font-size:11px}
+  .chip.new{border-color:var(--orange);color:#fdba74}
+  .chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+  /* toast banner */
+  .banner{position:absolute;left:50%;top:14%;transform:translateX(-50%);background:rgba(0,26,43,.92);border:1px solid var(--navy3);border-radius:12px;padding:12px 26px;text-align:center}
+  .banner .e{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--s400)}
+  .banner b{display:block;font-size:26px;font-weight:900;margin:2px 0}
+  .banner small{color:var(--s400);font-size:12px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Sprint info: what's unclear and how to fix it</h1>
+<p class="intro">Today the only sprint info during play is one HUD stat, <b>Y1 · Q1 · 3 / 7</b>. It doesn't explain what the 7 means, how far you are into the running sprint, that a Security Risk boss ends every sprint, or that the quarterly review shop opens after sprint 7. Below are four ideas. They can be mixed: A is the minimum, B–D add more on top.</p>
+
+<!-- ============ BEFORE ============ -->
+<div class="card">
+  <div class="cap"><div class="eyebrow">Now <span class="tag before">Before</span></div><h3>HUD during a sprint</h3></div>
+  <div class="app">
+    <div class="hud">
+      <span class="brand">NEXIOS</span>
+      <div class="stat"><small>Warrants</small><b>142</b></div>
+      <div class="stat"><small>Production</small><div class="prodbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="stat"><small>Coins</small><b>3</b></div>
+      <div class="stat hl"><small>Sprint</small><b>Y1 · Q1 · 3 / 7</b></div>
+      <div class="stat"><small>Incident</small><b>None</b></div>
+      <span class="spacer"></span>
+      <button class="btn">1×</button><button class="btn">Pause</button><button class="btn primary" disabled>Sprint running</button>
+    </div>
+  </div>
+  <div class="note">Shorthand that needs decoding, nothing about progress inside the sprint, no hint of what "7" leads to.</div>
+</div>
+
+<!-- ============ A ============ -->
+<h2 class="sec-title">A · Clearer HUD stat</h2>
+<div class="card">
+  <div class="cap"><div class="eyebrow">Option A <span class="tag opt">Small change</span></div><h3>Spell it out, show the quarter as pips</h3></div>
+  <div class="app">
+    <div class="hud">
+      <span class="brand">NEXIOS</span>
+      <div class="stat"><small>Warrants</small><b>142</b></div>
+      <div class="stat"><small>Production</small><div class="prodbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="stat"><small>Coins</small><b>3</b></div>
+      <div class="stat hl"><small>Q1 · Year 1</small><b>Sprint 3 of 7</b>
+        <div class="pips" title="Quarterly review after sprint 7"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><span class="rev">🏢</span></div>
+      </div>
+      <div class="stat"><small>Incident</small><b>None</b></div>
+      <span class="spacer"></span>
+      <button class="btn">1×</button><button class="btn">Pause</button><button class="btn primary" disabled>Sprint running</button>
+    </div>
+  </div>
+  <div class="note"><b>Same spot, plain words.</b> "Sprint 3 of 7" in big type, quarter and year as the small label. Seven pips: green for done, blue for this one, with a building icon at the end for the quarterly review. Hover shows "Quarterly review after sprint 7".</div>
+</div>
+
+<!-- ============ B ============ -->
+<h2 class="sec-title">B · Progress bar for the running sprint</h2>
+<div class="card">
+  <div class="cap"><div class="eyebrow">Option B <span class="tag opt">Adds on top of A</span></div><h3>A thin strip under the HUD: how much of this sprint is left</h3></div>
+  <div class="app">
+    <div class="hud">
+      <span class="brand">NEXIOS</span>
+      <div class="stat"><small>Warrants</small><b>142</b></div>
+      <div class="stat"><small>Production</small><div class="prodbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="stat"><small>Coins</small><b>3</b></div>
+      <div class="stat"><small>Q1 · Year 1</small><b>Sprint 3 of 7</b></div>
+      <div class="stat"><small>Incident</small><b>None</b></div>
+      <span class="spacer"></span>
+      <button class="btn">1×</button><button class="btn">Pause</button>
+    </div>
+    <div class="strip hl">
+      <span class="lbl">Sprint 3</span>
+      <span class="muted">17 of 26 bugs in</span>
+      <div class="track"><div class="fill" style="width:65%"></div><div class="boss" title="Security Risk boss">!</div></div>
+      <span class="muted">Boss: Security Risk</span>
+    </div>
+    <div class="stage">
+      <div class="path" style="left:0;top:45%;width:60%;height:10%"></div>
+      <div class="path" style="left:55%;top:20%;width:5%;height:35%"></div>
+      <div class="path" style="left:55%;top:20%;width:38%;height:10%"></div>
+      <div class="dev" style="left:20%;top:22%;background:var(--orange)">J</div>
+      <div class="dev" style="left:40%;top:62%;background:var(--blue)">R</div>
+      <div class="bug" style="left:14%;top:47%;border-color:#f87171"></div>
+      <div class="bug" style="left:30%;top:47%;border-color:#f87171"></div>
+      <div class="bug" style="left:56%;top:32%;border-color:#fbbf24"></div>
+      <div class="bld"><b>NEXIOS</b></div>
+    </div>
+  </div>
+  <div class="note"><b>Answers "how long until this sprint ends?"</b> The bar fills as bugs walk in; the red marker at the end is the boss, so you know it's coming. When the boss is on the field the label switches to <b>"Boss on the field"</b>, and once everything is squashed the sprint ends. Hidden between sprints.</div>
+</div>
+
+<!-- ============ C ============ -->
+<h2 class="sec-title">C · Quarter timeline</h2>
+<div class="card">
+  <div class="cap"><div class="eyebrow">Option C <span class="tag opt">Bigger, replaces B's strip</span></div><h3>The whole quarter as a row of cards, review shop at the end</h3></div>
+  <div class="app">
+    <div class="hud">
+      <span class="brand">NEXIOS</span>
+      <div class="stat"><small>Warrants</small><b>142</b></div>
+      <div class="stat"><small>Production</small><div class="prodbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="stat"><small>Coins</small><b>3</b></div>
+      <div class="stat"><small>Incident</small><b>None</b></div>
+      <span class="spacer"></span>
+      <button class="btn">1×</button><button class="btn">Pause</button>
+    </div>
+    <div class="timeline hl">
+      <div class="yearbar">YEAR 1<div class="qs"><i class="now"></i><i></i><i></i><i></i></div>Q1</div>
+      <div class="tl done"><b>Sprint 1</b><small>+25 W · 1 coin</small></div>
+      <div class="tl done"><b>Sprint 2</b><small>+30 W · 1 coin</small></div>
+      <div class="tl now"><b>Sprint 3</b><small>17 / 26 bugs</small><div class="mini"><i></i></div></div>
+      <div class="tl"><b>Sprint 4</b><small>Legacy joins</small></div>
+      <div class="tl"><b>Sprint 5</b><small>Merge conflicts</small></div>
+      <div class="tl"><b>Sprint 6</b><small></small></div>
+      <div class="tl"><b>Sprint 7</b><small>Memory leaks</small></div>
+      <div class="tl review"><b>🏢 Review</b><small>Spend coins</small></div>
+    </div>
+  </div>
+  <div class="note"><b>Shows where you are and what's ahead.</b> Done sprints show what you earned, the current one shows its progress, upcoming ones flag new bug types. The yellow card at the end is the quarterly review. The small Q1–Q4 bar on the left shows the year. Takes the sprint stat out of the HUD.<br>Trade-off: uses a row of vertical space above the field.</div>
+</div>
+
+<!-- ============ D ============ -->
+<h2 class="sec-title">D · Better moments between sprints</h2>
+<div class="grid2">
+  <div class="card">
+    <div class="cap"><div class="eyebrow">Option D1 <span class="tag opt">Bell card</span></div><h3>"Up next" preview when ringing the bell</h3></div>
+    <div class="app">
+      <div class="stage" style="aspect-ratio:1.6/1">
+        <div class="path" style="left:0;top:45%;width:60%;height:10%"></div>
+        <div class="bld"><b>NEXIOS</b></div>
+        <div class="overlay">
+          <div class="bellcard">
+            <div class="bellico">🔔</div>
+            <div>
+              <div class="e">Sprint 4 done · +40 Warrants · +1 coin</div>
+              <h2>Ring the bell for sprint 5 of 7</h2>
+              <div class="pips"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><span class="rev">🏢</span></div>
+              <div class="preview">
+                <span>Up next</span><div><span class="chip"><i style="background:#f87171"></i>28 typos</span><span class="chip"><i style="background:#fbbf24"></i>10 null pointers</span><span class="chip"><i style="background:#94a3b8"></i>2 legacy</span><span class="chip new"><i style="background:#c026d3"></i>New: merge conflict</span></div>
+                <span>Boss</span><div>Security Risk</div>
+                <span>Review</span><div>after 3 more sprints</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">The bell card already appears between sprints. Add what's coming and how far the quarterly review is, so you can hire for it.</div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><div class="eyebrow">Option D2 <span class="tag opt">Start banner</span></div><h3>Short banner when a sprint starts</h3></div>
+    <div class="app">
+      <div class="stage" style="aspect-ratio:1.6/1">
+        <div class="path" style="left:0;top:45%;width:60%;height:10%"></div>
+        <div class="path" style="left:55%;top:20%;width:5%;height:35%"></div>
+        <div class="dev" style="left:20%;top:22%;background:var(--orange)">J</div>
+        <div class="bug" style="left:4%;top:47%;border-color:#f87171"></div>
+        <div class="bld"><b>NEXIOS</b></div>
+        <div class="banner">
+          <div class="e">Year 1 · Q1</div>
+          <b>Sprint 5 of 7</b>
+          <small>Merge conflicts join · boss at the end</small>
+        </div>
+      </div>
+    </div>
+    <div class="note">Fades in for ~2 s when the sprint starts, doesn't block clicks. The last sprint of a quarter says <b>"Last sprint before the quarterly review"</b>.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="cap"><div class="eyebrow">My pick</div><h3>A + B + D1</h3></div>
+  <div class="note">A fixes the confusing label at almost no cost. B answers the question you have most during play ("how much longer?"). D1 uses the pause you already get between sprints to show what's coming. C is the richest but takes vertical room from the field; D2 is nice polish but optional.</div>
+</div>
+</body>
+</html>
