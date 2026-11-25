@@ -13,6 +13,7 @@ node scripts/sim.mjs           # bot plays until production goes down; --profile
 node scripts/sim-upgrades.mjs [seeds] [sprints]   # developer-upgrade balance: seeded strategies per level-3 branch
 # sim.mjs also takes --trials N (default 30): seeded trials per row, prints mean / median / p10 of sprints cleared
 # both sims take --pickup <p> (default 1): the bot collects each drop with chance p, 1 s after it appears
+# sim.mjs --trojan: the bot summons a Trojan horse at every bell it can afford; prints squashed / leaked % and net drinks per horse
 ```
 
 Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of each type and 1000 of each drink. In the browser console, `game.game` is the live state, e.g. `game.game.drinks.coffee = 9999` (`game.game.warrants` is the building currency).
