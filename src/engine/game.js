@@ -207,6 +207,31 @@ function tickEffects(game, dt) {
   game.effects = game.effects.filter(e => e.ttl > 0);
 }
 
+// Yearly review (after every Q4): accept a safe +10%, or gamble on a raise (50% chance of +20%).
+export const REVIEW_ACCEPT = 1.1;
+export const REVIEW_RAISE = 1.2;
+export const RAISE_CHANCE = 0.5;
+
+export function chooseYearReview(game, choice) {
+  if (!game.pendingYearReview || (choice !== 'accept' && choice !== 'raise')) return null;
+  game.pendingYearReview = false;
+  let result, factor = 1;
+  if (choice === 'accept') { result = 'accepted'; factor = REVIEW_ACCEPT; }
+  else if (game.random() < RAISE_CHANCE) { result = 'approved'; factor = REVIEW_RAISE; }
+  else result = 'denied';
+  game.mods.warrantMultiplier *= factor;
+  game.raise *= factor;
+  const banners = {
+    accepted: ['Yearly review', 'Review accepted — Warrants +10%', '#2563EB'],
+    approved: ['Yearly review', 'Raise approved — Warrants +20%', '#16A34A'],
+    denied: ['Yearly review', 'Raise denied — maybe next year', '#EA580C'],
+  };
+  const [title, text, accent] = banners[result];
+  addEffect(game, { kind: 'banner', title, text, accent, ttl: 3 });
+  emit('year:review', { game, choice, result, factor });
+  return result;
+}
+
 export function addEffect(game, effect) {
   game.effects.push({ age: 0, ...effect, maxTtl: effect.ttl });
 }

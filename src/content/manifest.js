@@ -22,6 +22,9 @@ export const CONTENT = [
   './events/no-coffee.js',
   './events/no-redbull.js',
   './events/heat-wave.js',
+  // Building upgrades (quarter review shop)
+  './upgrades/floor.js',
+  './upgrades/aircon.js',
   // Features (teammates' add-ons, Nexios references, ...)
 ];
 
