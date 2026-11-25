@@ -84,7 +84,7 @@ function buildPowerups() {
     return { def, card, status, cd };
   });
   for (const f of getFeatures()) {
-    for (const b of f.hudButtons || []) {
+    for (const b of Array.isArray(f.hudButtons) ? f.hudButtons : []) {
       bar.append(h('button', { class: 'pu feature', onclick: () => { try { b.onClick(app.game); } catch (e) { console.error(e); } } }, h('b', {}, b.label), h('small', {}, b.hint || '')));
     }
   }
@@ -221,9 +221,11 @@ function showOverlay(phase) {
     const bellWrap = h('div', { class: 'bell-wrap', html: BELL_SVG, onclick: swingBell, title: 'Ring the bell' });
     ov.append(h('div', { class: 'bell-card' },
       bellWrap,
-      h('div', { class: 'eyebrow' }, `Wave ${g.wave} squashed · +${20 + 5 * g.wave} bonus`),
-      h('h2', {}, `Ring the bell to start wave ${g.wave + 1}`),
-      h('small', {}, 'You can still hire and sell developers'),
+      h('div', {},
+        h('div', { class: 'eyebrow' }, `Wave ${g.wave} squashed · +${20 + 5 * g.wave} bonus`),
+        h('h2', {}, `Ring the bell to start wave ${g.wave + 1}`),
+        h('small', {}, 'Hiring and selling still work'),
+      ),
     ));
   } else if (phase === 'won') {
     ov.className = 'screen won';

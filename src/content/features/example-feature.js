@@ -8,7 +8,8 @@ import { registerFeature } from '../../engine/registry.js';
 import { on } from '../../engine/events.js';
 import { addEffect } from '../../engine/game.js';
 
-// 1) React to events (full list in CONTRIBUTING.md)
+// 1) React to events (full list in CONTRIBUTING.md).
+//    Subscribe here at the top level, NOT inside init(): init runs again on every restart.
 on('wave:cleared', ({ game, wave }) => {
   addEffect(game, { kind: 'banner', title: 'Example feature', text: `Wave ${wave} done — have a slice of pizza`, accent: '#16A34A', ttl: 2.5 });
 });
@@ -16,7 +17,7 @@ on('wave:cleared', ({ game, wave }) => {
 // 2) Register a feature for per-frame logic, drawing and extra HUD buttons (all optional)
 registerFeature({
   id: 'example-feature',
-  init(game) { /* runs at game start and on restart */ },
+  init(game) { /* runs at game start and on every restart: reset your own state here, don't call on() */ },
   update(game, dt) { /* runs every simulation step */ },
   draw(ctx, game) {
     // draw on the 640 x 320 map, on top of everything else

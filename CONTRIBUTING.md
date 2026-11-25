@@ -26,6 +26,8 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
+Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
+
 `game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `game:won` · `game:lost`
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`.
@@ -54,7 +56,7 @@ Use the Nexios palette: navy `#001E32`, blue `#2563EB` (React), orange `#EA580C`
 
 ## Team workflow
 
-- Pull before you start. Keep commits small. Before every push, play at least one wave locally.
+- Pull before you start. Keep commits small. Before every push, run `node --test` and play at least one wave locally.
 - Pushing to `main` deploys the live site within about a minute: https://robin-cortvrindt.github.io/defend-the-codebase/
 - **Freeze at 15:30.** After that, only push fixes.
 - Something that worked broke? Log it in `REGRET.md`.

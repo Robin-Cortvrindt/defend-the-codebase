@@ -89,13 +89,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stats small { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin-top: 4px; }
 .trace { font: 12px/1.5 ui-monospace, Consolas, monospace; color: var(--s200); background: var(--navy); border: 1px solid var(--navy3); border-radius: 8px; padding: 10px 14px; margin: 0 0 18px; }
 
-/* bell: map stays usable around the card */
-.bell-overlay { display: flex; align-items: center; justify-content: center; background: rgba(0, 30, 50, .55); pointer-events: none; }
-.bell-card { pointer-events: auto; display: flex; flex-direction: column; align-items: center; text-align: center; background: rgba(0, 30, 50, .92); border: 1px solid var(--navy3); border-radius: 14px; padding: 4px 28px 18px; }
-.bell-card h2 { margin: 6px 0 2px; font-size: clamp(18px, 2.6vw, 24px); font-weight: 900; }
+/* bell: tucked into the bottom-right corner so the build area stays clickable */
+.bell-overlay { display: flex; align-items: flex-end; justify-content: flex-end; padding: 10px; background: rgba(0, 30, 50, .35); pointer-events: none; }
+.bell-card { pointer-events: auto; display: flex; align-items: center; gap: 12px; text-align: left; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 8px 18px 8px 8px; max-width: 46%; }
+.bell-card h2 { margin: 2px 0; font-size: clamp(14px, 1.7vw, 18px); font-weight: 900; line-height: 1.2; }
 .bell-card small { color: var(--s400); font-size: 12px; }
-.bell-wrap { cursor: pointer; line-height: 0; }
-.bell-svg { width: clamp(120px, 18vw, 200px); height: auto; }
+.bell-card .eyebrow { font-size: 10px; }
+.bell-wrap { cursor: pointer; line-height: 0; flex: none; }
+.bell-svg { width: clamp(64px, 9vw, 104px); height: auto; }
 .bell-svg .bell-body { transform-origin: 0 -54px; animation: idle 1.6s ease-in-out infinite; }
 .bell-svg .waves { opacity: .5; }
 .bell-wrap:hover .bell-body { animation-duration: .8s; }

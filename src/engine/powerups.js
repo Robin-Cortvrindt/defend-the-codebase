@@ -7,8 +7,14 @@ export function powerupState(game, id) {
   return game.powerups[id];
 }
 
+// Content hooks are guarded: a broken power-up becomes unusable instead of crashing the game.
+function safe(id, fn, fallback) {
+  try { return fn(); } catch (e) { console.error(`[powerup ${id}]`, e); return fallback; }
+}
+
 export function powerupCost(game, id) {
-  return getPowerup(id)?.getCost?.(game) ?? 0;
+  const def = getPowerup(id);
+  return safe(id, () => def?.getCost?.(game) ?? 0, Infinity);
 }
 
 export function canUse(game, id) {
@@ -16,7 +22,7 @@ export function canUse(game, id) {
   if (!def || game.phase !== 'wave') return false;
   const st = powerupState(game, id);
   if (st.active || st.cooldownLeft > 0) return false;
-  if (def.canActivate && !def.canActivate(game)) return false;
+  if (def.canActivate && !safe(id, () => def.canActivate(game), false)) return false;
   return game.warrants >= powerupCost(game, id);
 }
 

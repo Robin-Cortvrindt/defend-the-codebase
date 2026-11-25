@@ -1,6 +1,5 @@
 // Boots the game: loads content, wires events to sound and effects, runs the loop.
-import { CONTENT_URLS } from './content/manifest.js';
-import { loadModules } from './engine/loader.js';
+import { loadModules, loadManifest } from './engine/loader.js';
 import { getFeatures } from './engine/registry.js';
 import { on } from './engine/events.js';
 import { createGame, startGame, startWave, step, addEffect } from './engine/game.js';
@@ -11,7 +10,14 @@ import { initUI, updateUI, resetUI } from './engine/ui.js';
 import { initInput } from './engine/input.js';
 import { playSound } from './engine/sound.js';
 
-const { failed } = await loadModules(CONTENT_URLS);
+// If the manifest itself is broken (a typo in the one shared file), still load the core game.
+const CORE = [
+  'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
+  'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
+  'powerups/thomas.js', 'powerups/jeroen.js', 'powerups/bart.js', 'powerups/claude.js',
+].map(p => new URL(`./content/${p}`, import.meta.url).href);
+const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
+const { failed } = await loadModules(contentUrls);
 if (failed.length) console.warn(`[main] ${failed.length} content file(s) failed to load and were skipped`, failed);
 
 const app = {
@@ -79,15 +85,27 @@ if (new URLSearchParams(location.search).has('demo')) {
   startWave(app.game);
 }
 
+// Each part of the frame is guarded, so one broken content file can never freeze the game.
+const lastError = {};
+function guarded(name, fn) {
+  try { fn(); } catch (e) {
+    const now = performance.now();
+    if (now - (lastError[name] || 0) > 2000) { lastError[name] = now; console.error(`[main] ${name} failed`, e); }
+  }
+}
+
 let last = performance.now();
 function frame(now) {
+  requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (!app.view.paused) {
-    for (let i = 0; i < app.view.speed; i++) step(app.game, dt);
+    guarded('step', () => { for (let i = 0; i < app.view.speed; i++) step(app.game, dt); });
   }
-  render(ctx, app.game, app.view);
-  updateUI();
-  requestAnimationFrame(frame);
+  guarded('render', () => {
+    ctx.save();
+    try { render(ctx, app.game, app.view); } finally { ctx.restore(); ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0); }
+  });
+  guarded('ui', updateUI);
 }
 requestAnimationFrame(frame);

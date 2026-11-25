@@ -96,3 +96,14 @@ test('Review Focus 5: backfire doubles bugs, clones keep distance and hp, still 
   step(g, 0.01);
   assert.equal(g.phase, 'bell');
 });
+
+test('I1: a power-up whose getCost or canActivate throws is just unusable, never throws', () => {
+  R.registerPowerup({ id: 'broken', name: 'Broken', description: 'x', duration: 1, cooldown: 1, getCost() { throw new Error('boom'); }, activate() {} });
+  R.registerPowerup({ id: 'broken2', name: 'Broken2', description: 'x', duration: 1, cooldown: 1, canActivate() { throw new Error('boom'); }, activate() {} });
+  const g = waveGame();
+  const orig = console.error; console.error = () => {};
+  assert.equal(canUse(g, 'broken'), false);
+  assert.equal(canUse(g, 'broken2'), false);
+  assert.equal(usePowerup(g, 'broken'), false);
+  console.error = orig;
+});

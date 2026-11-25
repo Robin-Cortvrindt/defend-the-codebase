@@ -229,6 +229,7 @@ export function roundRect(ctx, x, y, w, h, r) {
 }
 
 function hexA(hex, a) {
+  if (typeof hex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hex)) return `rgba(255,255,255,${a})`;
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
