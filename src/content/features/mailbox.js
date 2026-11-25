@@ -21,9 +21,10 @@ export const LOCK_SECONDS = 10;        // how long a compromised developer is lo
 const FLASH_SECONDS = 0.4;
 const RED = '#DC2626';
 export const OFFER_SECONDS = 6;        // real seconds a new-mail offer stays up before it is missed
-const ACTIVE_PHASES = ['building', 'wave', 'bell'];   // an offer that is showing stays clickable here
+const ACTIVE_PHASES = ['building', 'wave', 'bell'];   // an offer that is showing stays up here
+const HOLD_PHASES = ['bell'];                          // ...but waits, unclickable and with its countdown paused
 const MAIL_PHASES = ['wave'];                          // new mail only arrives during a sprint
-const CLAIM_PHASES = ['building', 'wave', 'bell', 'review'];
+const CLAIM_PHASES = ['building', 'wave', 'review'];  // nothing changes while the bell waits
 
 const hire = type => ({ 'dev:placed': (m, d) => (d.dev?.type === type ? 1 : 0) });
 const squash = type => ({ 'bug:killed': (m, d) => (d.bug?.type === type ? 1 : 0) });
@@ -77,7 +78,7 @@ export function makeOffer(game) {
 
 export function acceptOffer(game) {
   const box = game.mailbox;
-  if (!box?.offer) return null;
+  if (!box?.offer || HOLD_PHASES.includes(game.phase)) return null;
   const { mail } = box.offer;
   box.offer = null;
   box.mails.unshift(mail);
@@ -98,6 +99,7 @@ export function tickOffer(game, realDt) {
   const box = game.mailbox;
   if (!box?.offer) return;
   if (!ACTIVE_PHASES.includes(game.phase)) { missOffer(game); return; }
+  if (HOLD_PHASES.includes(game.phase)) return;
   box.offer.remaining -= realDt;
   if (box.offer.remaining <= 0) missOffer(game);
 }
@@ -115,6 +117,8 @@ export function tickMailbox(game, dt) {
 }
 
 export const canClaim = game => CLAIM_PHASES.includes(game.phase);
+// An offer that is showing but waits for the bell (unclickable, countdown paused).
+export const offerHeld = game => !!game.mailbox?.offer && HOLD_PHASES.includes(game.phase);
 
 export const isDone = mail => mail.progress >= mail.target;
 
@@ -384,6 +388,15 @@ function syncTasks(game, paused, now) {
   if (box.offer && box.offer.mail.id !== ui.offerId) showOffer(box.offer.mail);
   else if (!box.offer && ui.card) hideOffer();
   if (box.offer && ui.bar) ui.bar.style.width = `${Math.max(0, (box.offer.remaining / OFFER_SECONDS) * 100).toFixed(1)}%`;
+  if (ui.card) {
+    const held = offerHeld(ui.game);
+    if (ui.card.classList.contains('held') !== held) {
+      ui.card.classList.toggle('held', held);
+      ui.card.disabled = held;
+      const label = ui.card.querySelector('.mb-accept');
+      if (label) label.textContent = held ? 'Accept after the bell' : 'Click to accept';
+    }
+  }
   const key = box.mails.map(m => `${m.id}:${isDone(m) ? 1 : 0}`).join(',');
   if (key !== ui.key) { ui.key = key; renderTasks(box); }
   updateTasks(box, canClaim(game) && !paused, now);

@@ -58,10 +58,10 @@ test('placeDev deducts cost; sellDev refunds floor(50%)', () => {
 
 test('targets furthest-along bug in range, ignores out-of-range', () => {
   const g = waveGame();
-  const d = placeDev(g, 'r', 3, 3); // centre (140,140); range 88px
-  const near = spawnBug(g, 'other', 260);   // (180,140) on the vertical leg
-  const further = spawnBug(g, 'other', 300); // (180,180)
-  const far = spawnBug(g, 'other', 700);     // out of range
+  const d = placeDev(g, 'r', 6, 3); // centre (260,140); range 88px
+  const near = spawnBug(g, 'other', 380);   // (300,140) on the vertical leg
+  const further = spawnBug(g, 'other', 420); // (300,180)
+  const far = spawnBug(g, 'other', 820);     // out of range
   tickDevs(g, 0.01);
   assert.equal(further.hp, 94);
   assert.equal(near.hp, 100);
@@ -70,16 +70,16 @@ test('targets furthest-along bug in range, ignores out-of-range', () => {
 
 test('counter hit deals double damage', () => {
   const g = waveGame();
-  placeDev(g, 'r', 3, 3);
-  const b = spawnBug(g, 'small', 300);
+  placeDev(g, 'r', 6, 3);
+  const b = spawnBug(g, 'small', 420);
   tickDevs(g, 0.01);
   assert.equal(b.hp, 88);
 });
 
 test('kill grants reward and 1 xp; xp alone never levels up', () => {
   const g = waveGame();
-  const d = placeDev(g, 'r', 3, 3);
-  const b = spawnBug(g, 'other', 300, 1);
+  const d = placeDev(g, 'r', 6, 3);
+  const b = spawnBug(g, 'other', 420, 1);
   const w = totalDrinks(g);
   tickDevs(g, 0.01);
   assert.equal(g.bugs.length, 0);
@@ -159,12 +159,12 @@ test('events: upgradeready on crossing a gate, levelup on purchase', () => {
 
 test('Review Focus 1: a type without upgrades has none and still fires', () => {
   const g = waveGame();
-  const d = placeDev(g, 'r', 3, 3);
+  const d = placeDev(g, 'r', 6, 3);
   grantXp(g, d, 50);
   assert.deepEqual(nextUpgrades(d), []);
   assert.equal(upgradeUnlocked(d), false);
   assert.equal(buyUpgrade(g, d, 'two'), false);
-  const b = spawnBug(g, 'other', 300);
+  const b = spawnBug(g, 'other', 420);
   tickDevs(g, 0.01);
   assert.equal(b.hp, 94);
 });
@@ -176,8 +176,8 @@ test('update returning false holds fire; fire hook replaces the default shot', (
       fire: (game, dev, target, stats) => { for (const b of bugsInRange(game, dev, stats.range)) hitBug(game, dev, b, 5); } },
       level3: [] } });
   const g = waveGame();
-  const d = placeDev(g, 'h', 3, 3); d.xp = 10; buyUpgrade(g, d, 'h2');
-  const b1 = spawnBug(g, 'other', 260), b2 = spawnBug(g, 'other', 300);
+  const d = placeDev(g, 'h', 6, 3); d.xp = 10; buyUpgrade(g, d, 'h2');
+  const b1 = spawnBug(g, 'other', 380), b2 = spawnBug(g, 'other', 420);
   tickDevs(g, 0.01);
   assert.equal(b1.hp, 100);
   d.state.on = true; tickDevs(g, 0.01);

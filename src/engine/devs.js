@@ -2,7 +2,7 @@
 import { getDeveloper, getBug } from './registry.js';
 import { emit } from './events.js';
 import { isBuildable, cellCenter, CELL } from './map.js';
-import { killBug, addEffect } from './game.js';
+import { killBug, addEffect, isLocked } from './game.js';
 import { drinkFor, canAfford, spendDrink } from './drinks.js';
 import { resistanceTo } from './upgrades.js';
 
@@ -18,7 +18,7 @@ export function hireCost(game, typeId) {
 
 export function canPlace(game, typeId, col, row) {
   const def = getDeveloper(typeId);
-  return !!def && isBuildable(col, row) && !devAt(game, col, row) && canAfford(game, drinkFor(typeId), hireCost(game, typeId));
+  return !!def && !isLocked(game) && isBuildable(col, row) && !devAt(game, col, row) && canAfford(game, drinkFor(typeId), hireCost(game, typeId));
 }
 
 export function placeDev(game, typeId, col, row) {
@@ -35,7 +35,7 @@ export function placeDev(game, typeId, col, row) {
 
 export function sellDev(game, dev) {
   const i = game.devs.indexOf(dev);
-  if (i < 0) return 0;
+  if (i < 0 || isLocked(game)) return 0;
   game.devs.splice(i, 1);
   const refund = Math.floor(dev.spent * 0.5);
   const drink = drinkFor(dev.type);
@@ -63,7 +63,7 @@ export function upgradeStatus(game, dev, upgrade) {
 
 export function buyUpgrade(game, dev, upgradeId) {
   const upgrade = nextUpgrades(dev).find(u => u.id === upgradeId);
-  if (!upgrade || !upgradeStatus(game, dev, upgrade).ok) return false;
+  if (!upgrade || isLocked(game) || !upgradeStatus(game, dev, upgrade).ok) return false;
   spendDrink(game, drinkFor(dev.type), upgrade.cost);
   dev.spent += upgrade.cost;
   dev.level++;

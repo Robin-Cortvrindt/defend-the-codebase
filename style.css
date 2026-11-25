@@ -10,7 +10,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #app { width: 100%; max-width: 1380px; background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; align-self: flex-start; }
 
 /* HUD */
-#hud { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
+#hud { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
 .wordmark { height: 20px; max-height: 20px; width: auto; align-self: center; }
 .stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .stat small { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
@@ -43,9 +43,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
 
 /* stage */
-#stage { position: relative; line-height: 0; }
+#stage { position: relative; line-height: 0; justify-self: center; align-self: start; max-width: 100%; }
 /* debug magnifier: hotspot is the centre of the lens */
 #game { display: block; width: 100%; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M20 20l8 8' stroke='%23001E32' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M20 20l7.5 7.5' stroke='%23CBD5E1' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='13' cy='13' r='9' fill='rgba(74,222,128,.15)' stroke='%23001E32' stroke-width='5'/%3E%3Ccircle cx='13' cy='13' r='9' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='M13 8.5v3M13 14.5v3M8.5 13h3M14.5 13h3' stroke='%234ADE80' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") 13 13, crosshair; }
+/* While the bell waits nothing can change: the board ignores clicks and the bars are greyed out. */
+#app.bell-locked #game { cursor: default; }
+#app.bell-locked :is(#powerups, #hire) { pointer-events: none; }
+#app.bell-locked :is(#powerups, #hire) > * { opacity: .4; filter: grayscale(.7); }
+#hire { position: relative; }
+#app.bell-locked #hire::before { content: 'Locked until you ring the bell'; position: absolute; left: 50%; top: -8px; transform: translate(-50%, -50%); z-index: 1; padding: 5px 14px 5px 32px; border-radius: 99px; border: 1px solid var(--navy3); background: rgba(0, 30, 50, .95) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='7' width='10' height='8' rx='1.5' fill='%23E2E8F0'/%3E%3Cpath d='M5 7V5a3 3 0 0 1 6 0v2' fill='none' stroke='%23E2E8F0' stroke-width='1.8'/%3E%3C/svg%3E") no-repeat 12px center / 13px 13px; font-size: 12px; font-weight: 700; color: var(--s200); white-space: nowrap; }
 #overlay { position: absolute; inset: 0; z-index: 9; line-height: 1.4; }
 #overlay:empty { pointer-events: none; }
 /* Corner cards (bell, minimized review) stack below the popover (8) and the inbox (5, toast 6); full-screen screens stay above (9). */
@@ -133,9 +139,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stats small { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin-top: 4px; }
 .trace { font: 12px/1.5 ui-monospace, Consolas, monospace; color: var(--s200); background: var(--navy); border: 1px solid var(--navy3); border-radius: 8px; padding: 10px 14px; margin: 0 0 18px; }
 
-/* bell: tucked into the bottom-right corner so the build area stays clickable */
-.bell-overlay { display: flex; align-items: flex-end; justify-content: flex-end; padding: 10px; background: rgba(0, 30, 50, .35); pointer-events: none; }
-.bell-card { pointer-events: auto; display: flex; align-items: center; gap: 12px; text-align: left; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 8px 18px 8px 8px; max-width: 46%; }
+/* bell: a stacked card in the middle of the board; the game is locked while it waits */
+.bell-overlay { display: flex; align-items: center; justify-content: center; padding: 10px; background: rgba(0, 30, 50, .55); pointer-events: none; }
+.bell-card { pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 12px 20px 16px; width: clamp(220px, 26%, 300px); }
+.bell-card .bell-svg { width: 48%; min-width: 96px; }
 .bell-card h2 { margin: 2px 0; font-size: clamp(14px, 1.7vw, 18px); font-weight: 900; line-height: 1.2; }
 .bell-card small { color: var(--s400); font-size: 12px; }
 .bell-card .eyebrow { font-size: 10px; }
@@ -307,7 +314,7 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .quit-box .lede b { color: #fff; }
 #stage:has(.quit-modal) .pause-veil { display: none; }
 /* side panel: permanent, right of the board; the board sets the row height */
-#play { display: grid; grid-template-columns: minmax(0, 1fr) 280px; }
+#play { display: grid; grid-template-columns: minmax(0, 1fr) 280px; background: #001725; }
 #side-panel { position: relative; border-left: 1px solid var(--navy3); background: #001A2B; line-height: 1.3; }
 .sp-inner { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; }
 .sp-sec { padding: 10px 14px; border-bottom: 1px solid var(--navy3); }
@@ -349,6 +356,8 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
   border-radius: 8px; background: #0b3320; box-shadow: 0 0 0 2px rgba(74, 222, 128, .25); animation: mb-in .25s ease-out; }
 .mb-offer:hover { background: #0e3d27; }
 .mb-offer.leaving { animation: mb-out .25s ease-in forwards; pointer-events: none; }
+.mb-offer.held { cursor: default; opacity: .6; filter: grayscale(.6); }
+.mb-offer.held:hover { background: inherit; }
 .mb-offer .mb-from { color: var(--green-l); }
 .mb-offer .mb-from { display: block; }
 .mb-offer b { display: block; font-size: 13px; margin: 1px 0; }
@@ -377,3 +386,24 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .stat .drinks .drink { display: inline-flex; gap: 4px; align-items: center; font-weight: 900; }
 .stat .drinks .drink i { font-style: normal; font-size: 14px; line-height: 0; }
 .stat .drinks .drink b { font-size: 18px; color: inherit; }
+
+/* year roadmap in the HUD: 4 quarters x 7 sprints (docs/mockups/top-bar.html, option B) */
+.hud-divider { width: 1px; align-self: stretch; background: var(--navy3); }
+.roadmap { flex: 1 1 280px; min-width: 270px; max-width: 400px; line-height: 1.2; }
+.rm-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--s400); margin-bottom: 4px; white-space: nowrap; }
+.rm-top b { color: #fff; font-size: 13px; font-weight: 900; }
+.rm-quarters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.rm-q { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding-bottom: 13px; }
+.rm-sprint { position: relative; height: 8px; border-radius: 2px; background: var(--navy3); overflow: hidden; }
+.rm-sprint.done { background: var(--green); }
+.rm-sprint.now { background: var(--navy3); box-shadow: 0 0 0 2px rgba(37, 99, 235, .45); overflow: visible; }
+.rm-sprint.now::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--fill, 0%); min-width: 3px; border-radius: 2px; background: var(--blue); }
+.rm-q label { position: absolute; left: 0; bottom: 0; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--s500); }
+.rm-q.current label { color: #fff; }
+.rm-mark { position: absolute; right: -2px; bottom: -1px; color: var(--s600); line-height: 0; }
+.rm-mark svg { width: 10px; height: 10px; }
+.rm-q.past .rm-mark { color: #FACC15; }
+.incident-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 99px; background: rgba(234, 88, 12, .15); color: #FDBA74; border: 1px solid rgba(234, 88, 12, .5); white-space: nowrap; }
+.incident-chip svg { width: 13px; height: 13px; }
+.incident-chip.hidden { display: none; }
+#hud .btn.icon { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 8px 9px; }

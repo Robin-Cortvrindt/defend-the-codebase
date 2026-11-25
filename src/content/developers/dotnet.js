@@ -1,5 +1,5 @@
 import { registerDeveloper } from '../../engine/registry.js';
-import { addEffect } from '../../engine/game.js';
+import { addEffect, isLocked } from '../../engine/game.js';
 import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
 import { CELL } from '../../engine/map.js';
 import { zigzagPoint } from '../../engine/zigzag.js';
@@ -81,7 +81,7 @@ registerDeveloper({
         panelButtons(game, dev) {
           return [{
             label: dev.state.azureOff ? 'Azure off' : 'Azure on',
-            onClick: (g, d) => { d.state.azureOff = !d.state.azureOff; },
+            onClick: (g, d) => { if (!isLocked(g)) d.state.azureOff = !d.state.azureOff; },
           }];
         },
       },

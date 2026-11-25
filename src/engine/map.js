@@ -1,15 +1,16 @@
-// The single map: a 16 x 8 grid with one winding path to PROD.
+// The single map: a 24 x 12 grid with one long, winding path (10 corners) to PROD.
 export const CELL = 40;
-export const COLS = 16;
-export const ROWS = 8;
+export const COLS = 24;
+export const ROWS = 12;
 export const WIDTH = COLS * CELL;
 export const HEIGHT = ROWS * CELL;
 export const PATH_WIDTH = 36;
 export const WAYPOINTS = [
-  { x: 0, y: 60 }, { x: 180, y: 60 }, { x: 180, y: 260 },
-  { x: 420, y: 260 }, { x: 420, y: 140 }, { x: 576, y: 140 },
+  { x: 0, y: 60 }, { x: 300, y: 60 }, { x: 300, y: 220 }, { x: 140, y: 220 },
+  { x: 140, y: 420 }, { x: 460, y: 420 }, { x: 460, y: 140 }, { x: 620, y: 140 },
+  { x: 620, y: 380 }, { x: 780, y: 380 }, { x: 780, y: 260 }, { x: 896, y: 260 },
 ];
-export const PROD = { x: 576, y: 106, w: 56, h: 68 };
+export const PROD = { x: 896, y: 226, w: 56, h: 68 };
 
 const SEGMENTS = WAYPOINTS.slice(1).map((b, i) => {
   const a = WAYPOINTS[i];

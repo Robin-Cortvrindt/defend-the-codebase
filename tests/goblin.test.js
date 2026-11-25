@@ -39,7 +39,7 @@ test('starts just off the right edge', () => {
 
 test('runs to the nearest landed drop and steals it, without paying', () => {
   const g = setup();
-  g.goblin.y = 100;
+  g.goblin.x = 656; g.goblin.y = 100;
   const near = drop(1, 500, 100), far = drop(2, 100, 100);
   g.drops.push(far, near);
   run(g, 1.2);
@@ -83,9 +83,9 @@ test('ignores drops still in the air', () => {
 
 test('end: it runs off the right edge without stealing, then is gone', () => {
   const g = setup();
-  g.goblin.x = 300; g.goblin.y = 100;
+  g.goblin.x = WIDTH - 340; g.goblin.y = 100;
   goblin.end(g); g.activeEvent = null;
-  g.drops.push(drop(1, 320, 100));
+  g.drops.push(drop(1, WIDTH - 320, 100));
   run(g, 3);
   assert.equal(g.goblin, null);
   assert.equal(g.drops.length, 1);

@@ -143,19 +143,24 @@ test('timer runs during a sprint', () => {
   assert.ok(g.mailbox.offer);
 });
 
-test('an offer still showing when the sprint ends can be accepted during the bell', () => {
+test('an offer still showing when the sprint ends waits through the bell, unclickable', () => {
   makeOffer(g);
   g.phase = 'bell';
   tickMailbox(g, 0.016);
-  tickOffer(g, 1);
+  tickOffer(g, 30);
   assert.ok(g.mailbox.offer);
-  assert.ok(acceptOffer(g));
+  assert.equal(acceptOffer(g), null);
 });
 
-test('an offer still showing at the bell runs out after its 6 seconds', () => {
+test('after the bell an offer that waited runs out after the rest of its 6 seconds', () => {
   makeOffer(g);
+  tickOffer(g, 2);
   g.phase = 'bell';
-  tickOffer(g, 6.1);
+  tickOffer(g, 30);
+  g.phase = 'wave';
+  tickOffer(g, 3.9);
+  assert.ok(g.mailbox.offer);
+  tickOffer(g, 0.2);
   assert.equal(g.mailbox.offer, null);
   assert.equal(g.mailbox.mails.length, 0);
 });
@@ -201,8 +206,8 @@ test('an offer pending when the review opens is missed', () => {
 });
 
 test('canClaim is true only while playing', () => {
-  for (const phase of ['building', 'wave', 'bell', 'review']) { g.phase = phase; assert.equal(canClaim(g), true, phase); }
-  for (const phase of ['menu', 'lost']) { g.phase = phase; assert.equal(canClaim(g), false, phase); }
+  for (const phase of ['building', 'wave', 'review']) { g.phase = phase; assert.equal(canClaim(g), true, phase); }
+  for (const phase of ['menu', 'lost', 'bell']) { g.phase = phase; assert.equal(canClaim(g), false, phase); }
 });
 
 test('init resets state', () => {
@@ -421,7 +426,7 @@ test('malware spawns min(8, 3 + floor(sprint/3)) non-boss bugs during a sprint',
 });
 
 test('malware outside a sprint is queued and spawns on wave:start', () => {
-  g.phase = 'bell';
+  g.phase = 'review';
   const m = phish('malware');
   claimMail(g, m.id);
   assert.equal(g.bugs.length, 0);
@@ -492,10 +497,10 @@ test('draw does not throw with a lock and a flash', () => {
 // ---------- Final review fixes ----------
 test('a lock made between sprints lasts until the developer can fire again', () => {
   const dev = addDev(7);
-  g.phase = 'bell';
+  g.phase = 'review';
   const m = phish('compromised');
   claimMail(g, m.id);
-  g.time += 30;                       // game time passes in the bell, but dev cooldown does not tick
+  g.time += 30;                       // game time passes between sprints, but dev cooldown does not tick
   mailbox.update(g, 0.016);
   assert.equal(g.mailbox.locks.length, 1);
   dev.cooldown = 0;                   // the developer has served the lock during the next sprint
@@ -532,7 +537,7 @@ test('malware with one life left steals instead', () => {
 });
 
 test('queued malware is capped by lives when it spawns', () => {
-  g.phase = 'bell';
+  g.phase = 'review';
   const m = phish('malware');
   claimMail(g, m.id);
   g.lives = 2;
