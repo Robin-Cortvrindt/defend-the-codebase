@@ -1,5 +1,6 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step, killBug } from '../src/engine/game.js';
@@ -7,7 +8,7 @@ import { usePowerup, canUse, powerupState, tickPowerups } from '../src/engine/po
 import '../src/content/powerups/training-manager.js';
 
 async function fresh() {
-  R.resetRegistry(); clearAll();
+  R.resetRegistry(); clearAll(); registerTestDrinks();
   // re-register after reset (modules are cached, so import the defs directly)
   for (const m of ['training-manager', 'business-manager', 'ceo', 'claude']) {
     const mod = await import(`../src/content/powerups/${m}.js`);
@@ -35,7 +36,7 @@ test('Training manager doubles xpMultiplier for 15s then restores; reuse only af
 test('Business manager doubles warrants, CEO speeds attacks', () => {
   const g = waveGame();
   usePowerup(g, 'business'); usePowerup(g, 'ceo');
-  assert.equal(g.mods.warrantMultiplier, 2);
+  assert.equal(g.mods.drinkMultiplier, 2);
   assert.equal(g.mods.fireRateMultiplier, 1.5);
 });
 
@@ -56,11 +57,13 @@ test('power-ups refused outside wave phase', () => {
 
 test('Claude success kills all bugs, pays rewards, price 150 → 225 → 338', () => {
   const g = waveGame(); g.random = () => 0.9; g.warrants = 1000;
+  const drinksBefore = totalDrinks(g);
   spawnBug(g, 'b', 10); spawnBug(g, 'b', 20);
   assert.equal(R.getPowerup('claude').getCost(g), 150);
   assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(g.bugs.length, 0);
-  assert.equal(g.warrants, 1000 - 150 + 8);
+  assert.equal(g.warrants, 1000 - 150);
+  assert.equal(totalDrinks(g), drinksBefore + 8);
   assert.equal(R.getPowerup('claude').getCost(g), 225);
   spawnBug(g, 'b', 10);
   usePowerup(g, 'claude');
@@ -127,10 +130,10 @@ test('effect level makes training stronger; activate→deactivate restores exact
 test('business and CEO effect levels', () => {
   const g = waveGame(); powerupMod(g, 'business').effect = 1; powerupMod(g, 'ceo').effect = 2;
   usePowerup(g, 'business'); usePowerup(g, 'ceo');
-  assert.equal(g.mods.warrantMultiplier, 2.25);
+  assert.equal(g.mods.drinkMultiplier, 2.25);
   assert.ok(Math.abs(g.mods.fireRateMultiplier - 1.7) < 1e-9);
   tickPowerups(g, 15.01);
-  assert.ok(Math.abs(g.mods.warrantMultiplier - 1) < 1e-9);
+  assert.ok(Math.abs(g.mods.drinkMultiplier - 1) < 1e-9);
   assert.ok(Math.abs(g.mods.fireRateMultiplier - 1) < 1e-9);
 });
 

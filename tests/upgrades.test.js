@@ -64,14 +64,14 @@ test('Review Focus 2: a new game starts clean after upgrades', () => {
 test('yearly review: accept → ×1.1; raise approved → ×1.2; raise denied → unchanged', () => {
   const a = reviewGame(); a.pendingYearReview = true;
   assert.equal(chooseYearReview(a, 'accept'), 'accepted');
-  assert.equal(a.mods.warrantMultiplier, 1.1);
+  assert.equal(a.mods.drinkMultiplier, 1.1);
   assert.equal(a.raise, 1.1);
   const b = reviewGame(); b.pendingYearReview = true; b.random = () => 0.2;
   assert.equal(chooseYearReview(b, 'raise'), 'approved');
-  assert.equal(b.mods.warrantMultiplier, 1.2);
+  assert.equal(b.mods.drinkMultiplier, 1.2);
   const c = reviewGame(); c.pendingYearReview = true; c.random = () => 0.8;
   assert.equal(chooseYearReview(c, 'raise'), 'denied');
-  assert.equal(c.mods.warrantMultiplier, 1);
+  assert.equal(c.mods.drinkMultiplier, 1);
   assert.equal(c.raise, 1);
 });
 
@@ -81,7 +81,7 @@ test('Review Focus 1: bell refused while year review pending; second choice retu
   assert.equal(g.phase, 'review');
   chooseYearReview(g, 'accept');
   assert.equal(chooseYearReview(g, 'raise'), null);
-  assert.equal(g.mods.warrantMultiplier, 1.1);
+  assert.equal(g.mods.drinkMultiplier, 1.1);
   assert.equal(ringBell(g), true);
   assert.equal(g.phase, 'wave');
 });

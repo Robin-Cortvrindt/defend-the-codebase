@@ -1,4 +1,4 @@
-import { registerTestDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -95,12 +95,12 @@ test('bounce kill credits the React developer: XP, kill, Warrants', () => {
   const { g, react } = squadGame();
   bugAt(g, 'b', react.x + 30, react.y);
   const weak = bugAt(g, 'b', react.x + 30 + CELL, react.y, 1);
-  const before = g.warrants;
+  const before = totalDrinks(g);
   tickDevs(g, 0.01);
   assert.equal(g.bugs.includes(weak), false);
   assert.equal(react.kills, 1);
   assert.equal(react.xp, 1);
-  assert.equal(g.warrants, before + 3);
+  assert.equal(totalDrinks(g), before + 3);
 });
 
 test('without the unlock there is no bounce', () => {

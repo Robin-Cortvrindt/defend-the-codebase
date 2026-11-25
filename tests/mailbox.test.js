@@ -265,10 +265,9 @@ test('claim before done returns null', () => {
 test('claim pays Warrants and removes the mail', () => {
   const m = give('hire-dotnet');
   m.progress = m.target;
-  const w = g.warrants, earned = g.stats.warrantsEarned;
+  const w = g.warrants;
   assert.equal(claimMail(g, m.id), 'reward');
   assert.equal(g.warrants, w + 60);
-  assert.equal(g.stats.warrantsEarned, earned + 60);
   assert.equal(g.mailbox.mails.length, 0);
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.title === 'Reward claimed'));
 });
@@ -427,11 +426,9 @@ test('compromised falls back to stolen with no developers', () => {
 
 test('phishing claim shows a Phished banner, a red flash and no reward', () => {
   const m = phish('stolen');
-  const earned = g.stats.warrantsEarned;
   claimMail(g, m.id);
   assert.ok(banners().some(b => b.title === 'Phished'));
   assert.ok(!banners().some(b => b.title === 'Reward claimed'));
-  assert.equal(g.stats.warrantsEarned, earned);
   assert.ok(g.mailbox.flash > 0);
 });
 

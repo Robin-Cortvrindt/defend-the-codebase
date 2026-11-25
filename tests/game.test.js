@@ -1,12 +1,13 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef, deathAnimDone, DEATH_ANIM, quitRun } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, chooseYearReview, killBug, getSprintDef, deathAnimDone, DEATH_ANIM, quitRun } from '../src/engine/game.js';
 import { PATH_LENGTH } from '../src/engine/map.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll();
+  R.resetRegistry(); clearAll(); registerTestDrinks();
   R.registerBug({ id: 'b', hp: 10, speed: 100, livesLost: 2, reward: 3, radius: 5 });
   R.registerWaves([
     { groups: [{ bug: 'b', count: 3, interval: 1, delay: 0 }] },
@@ -37,11 +38,11 @@ test('bug that reaches the end leaks and costs livesLost', () => {
 test('clearing a wave pays 20+5*n, moves to bell, increments wave', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.spawnQueue = []; g.bugs = [];
-  const before = g.warrants;
+  const before = { ...g.drinks };
   step(g, 0.05);
   assert.equal(g.phase, 'bell');
   assert.equal(g.wave, 1);
-  assert.equal(g.warrants, before + 25);
+  for (const id of Object.keys(before)) assert.equal(g.drinks[id], before[id] + 9);
 });
 
 test('ringBell starts next wave', () => {
@@ -182,4 +183,36 @@ test('quitRun is ignored in the menu and after a loss', () => {
   startGame(g); quitRun(g);
   assert.equal(quitRun(g), false);
   assert.equal(lost, 1);
+});
+
+test('a normal kill pays a random drink: reward x drinkMultiplier', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  g.spawnQueue = []; g.random = () => 0;
+  killBug(g, spawnBug(g, 'b'));
+  assert.equal(g.drinks.coffee, 53);
+  g.mods.drinkMultiplier = 2;
+  killBug(g, spawnBug(g, 'b'));
+  assert.equal(g.drinks.coffee, 59);
+});
+
+test('a kill pays at least 1 drink', () => {
+  R.registerBug({ id: 'tiny', hp: 1, speed: 1, reward: 1, radius: 5 });
+  const g = createGame(); startGame(g); startWave(g);
+  g.random = () => 0; g.mods.drinkMultiplier = 0.4;
+  killBug(g, spawnBug(g, 'tiny'));
+  assert.equal(g.drinks.coffee, 51);
+});
+
+test('a boss kill pays every drink reward / n', () => {
+  R.registerBug({ id: 'boss', hp: 1, speed: 1, reward: 30, boss: true, radius: 5 });
+  const g = createGame(); startGame(g); startWave(g);
+  killBug(g, spawnBug(g, 'boss'));
+  assert.deepEqual(g.drinks, { coffee: 60, monster: 60, redbull: 60 });
+});
+
+test('yearly review accept raises drinkMultiplier', () => {
+  const g = createGame(); startGame(g);
+  g.pendingYearReview = true;
+  chooseYearReview(g, 'accept');
+  assert.ok(Math.abs(g.mods.drinkMultiplier - 1.1) < 1e-9);
 });

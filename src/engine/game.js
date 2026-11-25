@@ -1,12 +1,13 @@
 // Game state and the simulation step. No DOM in here, so it can be tested in Node.
-import { getBug, getWaves, getFeatures } from './registry.js';
+import { getBug, getWaves, getFeatures, getDrinks } from './registry.js';
 import { emit } from './events.js';
 import { pointAt, PATH_LENGTH } from './map.js';
 import { tickDevs } from './devs.js';
 import { tickPowerups } from './powerups.js';
 import { rollEvent, endEvent } from './random-events.js';
 import { applyInvestments } from './investments.js';
-import { startingDrinks } from './drinks.js';
+import { startingDrinks, addEachDrink } from './drinks.js';
+import { payKill } from './drops.js';
 
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
@@ -46,13 +47,13 @@ export function createGame() {
     waveTime: 0,
     deathTime: 0,             // seconds since production went down (drives the collapse animation)
     mods: {
-      xpMultiplier: 1, warrantMultiplier: 1, fireRateMultiplier: 1,
+      xpMultiplier: 1, drinkMultiplier: 1, fireRateMultiplier: 1,
       damageMultiplier: 1, bugSpeedMultiplier: 1, rangeMultiplier: 1,
       timeScale: 1, devFireRate: {}, devCostMultiplier: 1,
     },
     powerups: {},
     activeEvent: null,        // id of the random event running this wave
-    stats: { squashed: 0, warrantsEarned: 0, drinksCollected: 0, seniors: 0, backfires: 0 },
+    stats: { squashed: 0, drinksCollected: 0, seniors: 0, backfires: 0 },
     time: 0,
     nextId: 1,
     random: Math.random,
@@ -137,8 +138,11 @@ export function spawnBug(game, bugId, distance = 0, hp) {
 
 export function addWarrants(game, amount) {
   game.warrants += amount;
-  game.stats.warrantsEarned += amount;
 }
+
+// Sprint bonus for the sprint with this 0-based index, and the share each drink gets.
+export const sprintBonus = sprint => 20 + 5 * (sprint + 1);
+export const sprintBonusEach = sprint => Math.ceil(sprintBonus(sprint) / (getDrinks().length || 1));
 
 export function killBug(game, bug, dev = null) {
   if (bug.dead) return;
@@ -146,7 +150,7 @@ export function killBug(game, bug, dev = null) {
   const i = game.bugs.indexOf(bug);
   if (i >= 0) game.bugs.splice(i, 1);
   const def = getBug(bug.type);
-  addWarrants(game, Math.round((def?.reward ?? 0) * game.mods.warrantMultiplier));
+  payKill(game, def);
   game.stats.squashed++;
   game.quarterStats.squashed++;
   try { def?.onDeath?.(bug, game); } catch (e) { console.error(e); }
@@ -191,8 +195,8 @@ function checkEnd(game) {
   if (game.spawnQueue.length || game.bugs.length) return;
   endEvent(game);
   const info = sprintInfo(game.sprint);
-  const bonus = 20 + 5 * (game.sprint + 1);
-  addWarrants(game, bonus);
+  const bonus = sprintBonus(game.sprint);
+  addEachDrink(game, bonus);
   game.coins += 1;
   const cleared = { game, sprint: game.sprint + 1, wave: game.sprint + 1, bonus, info };
   emit('sprint:cleared', cleared);
@@ -251,13 +255,13 @@ export function chooseYearReview(game, choice) {
   if (choice === 'accept') { result = 'accepted'; factor = REVIEW_ACCEPT; }
   else if (game.random() < RAISE_CHANCE) { result = 'approved'; factor = REVIEW_RAISE; }
   else result = 'denied';
-  game.mods.warrantMultiplier *= factor;
+  game.mods.drinkMultiplier *= factor;
   game.raise *= factor;
   game.lastYearReview = result;
   game.coins += CAO_COINS;
   const banners = {
-    accepted: ['Yearly review', `Review accepted — Warrants +10% · CAO +${CAO_COINS} coins`, '#2563EB'],
-    approved: ['Yearly review', `Raise approved — Warrants +20% · CAO +${CAO_COINS} coins`, '#16A34A'],
+    accepted: ['Yearly review', `Review accepted — Drinks +10% · CAO +${CAO_COINS} coins`, '#2563EB'],
+    approved: ['Yearly review', `Raise approved — Drinks +20% · CAO +${CAO_COINS} coins`, '#16A34A'],
     denied: ['Yearly review', `Raise denied — but CAO +${CAO_COINS} coins`, '#EA580C'],
   };
   const [title, text, accent] = banners[result];

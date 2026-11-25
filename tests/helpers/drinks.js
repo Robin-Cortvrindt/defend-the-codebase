@@ -5,3 +5,5 @@ export function registerTestDrinks() {
   registerDrink({ id: 'monster', name: 'White Monster', color: '#64748B', icon: 'M' });
   registerDrink({ id: 'redbull', name: 'Red Bull', color: '#2563EB', icon: 'R' });
 }
+
+export const totalDrinks = game => Object.values(game.drinks).reduce((a, b) => a + b, 0);

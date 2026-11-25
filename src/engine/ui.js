@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getDrinks, getDrink, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
 import { loadProgress, capitalFor } from './investments.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
@@ -348,7 +348,7 @@ function showOverlay(phase) {
     ov.append(h('div', { class: 'bell-card' },
       bellWrap,
       h('div', {},
-        h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${20 + 5 * g.sprint} Warrants · +1 coin`),
+        h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 coin`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
         h('small', {}, 'Hiring and selling still work'),
       ),
@@ -359,7 +359,7 @@ function showOverlay(phase) {
   } else if (phase === 'won') {
     ov.className = 'screen won';
     ov.append(endCard('#16A34A', 'All sprints done', 'Codebase defended', [
-      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Level 3 upgrades'], [Math.floor(g.stats.warrantsEarned), 'Warrants earned'],
+      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Level 3 upgrades'], [g.stats.drinksCollected, 'Drinks collected'],
     ], h('button', { class: 'btn primary big', onclick: () => app.restart() }, 'Play again →')));
   } else if (phase === 'lost') {
     ov.className = 'screen lost';
@@ -436,8 +436,8 @@ function renderReview(ov, g) {
 
   if (!g.pendingYearReview && g.lastYearReview && done.quarter === 4) {
     const msg = {
-      accepted: ['Review accepted', 'Warrants +10% from now on', 'accepted'],
-      approved: ['Raise approved', 'Warrants +20% from now on', 'approved'],
+      accepted: ['Review accepted', 'Drinks +10% from now on', 'accepted'],
+      approved: ['Raise approved', 'Drinks +20% from now on', 'approved'],
       denied: ['Raise denied', 'Maybe next year', 'denied'],
     }[g.lastYearReview];
     card.append(h('div', { class: `year-review result ${msg[2]}` },

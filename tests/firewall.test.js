@@ -1,4 +1,4 @@
-import { registerTestDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -71,10 +71,10 @@ test('damages a bug inside the cell at 10/s (bosses too), not one outside', () =
 test('kill pays Warrants and gives XP + a kill to both developers', () => {
   const { g, a, b } = pairGame();
   const bug = spawnBug(g, 'b', 100); bug.hp = 5;
-  const before = g.warrants;
+  const before = totalDrinks(g);
   tickFirewalls(g, 1);
   assert.equal(g.bugs.includes(bug), false);
-  assert.equal(g.warrants, before + 3);
+  assert.equal(totalDrinks(g), before + 3);
   assert.deepEqual([a.xp, b.xp, a.kills, b.kills], [1, 1, 1, 1]);
 });
 
