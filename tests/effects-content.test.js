@@ -82,22 +82,12 @@ test('Full-stack squad, Garbage collection and Security training describe team l
   assert.ok(!line(g2, lone, 'team').some(l => l.text.includes('10th')));
 });
 
-test('Security training line shows only for a developer in a firewall pair', async () => {
-  const { findFirewalls } = await import('../src/content/investments/security-training.js');
+test('Security training line shows only for a developer in a firewall pair', () => {
   const g = game({ 'security-training': 1 });
-  const dn = R.getDevelopers().length && null; void dn;
-  // find two lane-facing .NET spots
-  let pair = null;
-  outer: for (let c = 0; c < 12; c++) for (let r = 0; r < 8; r++) {
-    for (const [dc, dr] of [[0, 2], [2, 0]]) {
-      const x = placeDev(g, 'dotnet', c, r), y = x && placeDev(g, 'dotnet', c + dc, r + dr);
-      if (x && y && findFirewalls(g).length) { pair = [x, y]; break outer; }
-    }
-  }
-  assert.ok(pair, 'found a firewall pair');
-  for (const d of pair) assert.ok(line(g, d, 'team').some(l => l.text === 'part of a firewall'));
-  const stray = g.devs.find(d => !pair.includes(d));
-  if (stray) assert.ok(!line(g, stray, 'team').some(l => l.text === 'part of a firewall'));
+  // (2,0) and (2,2) face each other across the lane cell (2,1); (0,7) is far from any lane gap.
+  const a = hire(g, 'dotnet', 2, 0), b = hire(g, 'dotnet', 2, 2), stray = hire(g, 'dotnet', 0, 7);
+  for (const d of [a, b]) assert.ok(line(g, d, 'team').some(l => l.text === 'part of a firewall'));
+  assert.ok(!line(g, stray, 'team').some(l => l.text === 'part of a firewall'));
 });
 
 test('math unchanged: Better laptops 3 still multiplies damage by 1.3', () => {

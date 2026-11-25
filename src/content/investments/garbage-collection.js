@@ -22,7 +22,7 @@ const investment = {
   maxLevel: 1,
   getCost() { return 40; },
   apply(game) { game.unlocks.garbageCollection = true; },
-  describeEffect(game, dev) { return inJavaSquare(game, dev) ? { group: 'team', text: 'every 10th kill slows bugs nearby' } : null; },
+  describeEffect(game, dev) { return inJavaSquare(game, dev) ? { group: 'team', text: `every ${GC_EVERY}th kill slows bugs nearby` } : null; },
   effectText() { return 'Java 2x2 squares: GC pause every 10th kill'; },
 };
 
