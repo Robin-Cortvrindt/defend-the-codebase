@@ -12,8 +12,8 @@ const C = {
 };
 const FONT = 'Lato, system-ui, sans-serif';
 
-// Layout (logical px), standing on PROD: the path ends at the door. Upper floors get 110 px above
-// the ground floor, as on the old board, so the building keeps its proportions.
+// Layout (logical px), standing on PROD: the path ends at the building's left wall. Upper floors get
+// 110 px above the ground floor, as on the old board, so the building keeps its proportions.
 export const BUILDING = { x: PROD.x + 2, w: 52, ground: PROD.y + 72, groundTop: PROD.y + 12, minTop: PROD.y + 12 - 110 };
 
 function layout(b) {
@@ -85,11 +85,12 @@ export function drawBuilding(ctx, b) {
   ctx.font = `900 8px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('NEXIOS', x + w / 2 + 2, groundTop + 6.5);
-  // lobby glass
+  // lobby glass, across the whole front (there is no door)
+  const lobbyX = x + 3, lobbyW = w - 7;
   ctx.fillStyle = C.glass;
-  ctx.fillRect(x + 12, groundTop + 16, w - 16, 22);
+  ctx.fillRect(lobbyX, groundTop + 16, lobbyW, 22);
   ctx.fillStyle = C.navy3;
-  for (let k = 1; k < 3; k++) ctx.fillRect(x + 12 + ((w - 16) / 3) * k, groundTop + 16, 1, 22);
+  for (let k = 1; k < 3; k++) ctx.fillRect(lobbyX + (lobbyW / 3) * k, groundTop + 16, 1, 22);
   // fridge windows (energy drinks), one per level, glowing fuchsia
   for (let k = 0; k < (L.fridge || 0); k++) {
     const fx = x + w - 4 - (k + 1) * 11, fy = groundTop + 18;
@@ -102,21 +103,13 @@ export function drawBuilding(ctx, b) {
     ctx.fillStyle = C.fuchsia;
     for (let s = 0; s < 3; s++) ctx.fillRect(fx + 1, fy + 3 + s * 5, 5, 2);
   }
-  // door facing the path
-  ctx.fillStyle = C.navy;
-  ctx.fillRect(x, groundTop + 10, 10, 24);
-  ctx.fillStyle = C.green;
-  ctx.fillRect(x, groundTop + 10, 10, 2);
-  ctx.fillStyle = C.s400;
-  ctx.fillRect(x + 7, groundTop + 22, 1.5, 4);
-  // coffee awning over the entrance
   // lower band: the server room. With heat recovery its racks glow warm and blink.
   ctx.fillStyle = C.navy3;
   ctx.fillRect(x, ground - 6, w, 6);
   if (L.heating) {
     ctx.fillStyle = C.orange;
     ctx.globalAlpha = 0.05 * L.heating;
-    ctx.fillRect(x + 12, groundTop + 16, w - 16, 22);   // warm lobby
+    ctx.fillRect(lobbyX, groundTop + 16, lobbyW, 22);   // warm lobby
     ctx.globalAlpha = 1;
     const racks = 3 + L.heating * 2;
     for (let k = 0; k < racks; k++) {
@@ -127,7 +120,7 @@ export function drawBuilding(ctx, b) {
   }
   // generator annex at the right foot
   if (L.generator) drawGenerator(ctx, x + w - 2, ground, L.generator, t);
-  // water cooler against the wall below the door
+  // water cooler against the wall at the left foot
   if (L.water) drawWaterCooler(ctx, x + 1, ground - 6, L.water, t);
   // goblin trap on the ground in front of the building, between the cooler and the generator
   if (L.trap) drawTrap(ctx, x + w / 2 - 2, ground - 6, L.trap, t);

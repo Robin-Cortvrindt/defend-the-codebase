@@ -1,0 +1,116 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Investment tooltips</title>
+<style>
+:root { --navy:#001E32; --navy2:#0A2A40; --navy3:#123650; --blue:#2563EB; --orange:#EA580C; --green:#16A34A; --green-l:#4ADE80; --s500:#64748B; --s400:#94A3B8; --s200:#E2E8F0; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.intro h1 { font-size: 20px; margin: 0 0 4px; } .intro p { color: var(--s400); margin: 0 0 18px; font-size: 14px; max-width: 760px; }
+.label { font-size: 13px; font-weight: 700; color: #FDE68A; margin: 18px 0 8px; }
+.frame { border: 1px solid var(--navy3); border-radius: 10px; padding: 18px; background: var(--navy); max-width: 960px; }
+
+/* game styles (copied from style.css) */
+.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin-bottom: 1px; }
+.inv-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.inv-head h1 { margin: 0; font-size: 26px; font-weight: 900; }
+.inv-capital { font-size: 14px; font-weight: 700; color: #FACC15; }
+.inv-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.inv-col { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.inv { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 8px; align-items: center; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 8px; padding: 6px 8px 6px 10px; }
+.inv:hover { border-color: var(--s500); }
+.inv > b { display: flex; align-items: center; gap: 6px; font-size: 13px; min-width: 0; }
+.inv > b span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv > small { grid-column: 1; font-size: 11px; color: var(--s400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv .buy { grid-row: 1 / 3; grid-column: 2; border: 1px solid transparent; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; background: var(--blue); white-space: nowrap; }
+.inv .buy:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
+.inv .buy.own:disabled { background: transparent; color: var(--green-l); border-color: var(--green); }
+.pips { display: inline-flex; gap: 2px; flex: none; }
+.pips i { width: 6px; height: 6px; border-radius: 2px; background: var(--navy3); }
+.pips i.on { background: var(--green); }
+.inv-foot { font-size: 11px; color: var(--s500); margin-top: 10px; }
+
+/* proposal: compact card + styled tooltip */
+.new .inv { min-height: 36px; }
+.new .inv > b { font-size: 14px; }
+.new .inv .buy { grid-row: 1; }
+.new .info { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--s500); color: var(--s400); font: 700 9px/12px Lato, sans-serif; text-align: center; font-style: normal; }
+.new .inv:hover .info { border-color: var(--s200); color: var(--s200); }
+.tip { position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 6px); background: #fff; color: var(--navy); border-radius: 8px; padding: 10px 12px; box-shadow: 0 10px 28px rgba(0,0,0,.5); font-size: 13px; line-height: 1.4; display: none; pointer-events: none; }
+.tip::before { content: ''; position: absolute; top: -6px; left: 18px; border: 6px solid transparent; border-top: 0; border-bottom-color: #fff; }
+.new .inv:hover .tip, .new .inv.pinned .tip { display: block; }
+.new .inv-cols:hover .inv.pinned:not(:hover) .tip { display: none; }
+.tip h4 { margin: 0 0 3px; font-size: 14px; font-weight: 900; }
+.tip p { margin: 0 0 8px; color: #334155; }
+.tip dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; padding-top: 7px; border-top: 1px solid #E2E8F0; font-size: 12px; }
+.tip dt { font-weight: 700; color: var(--s500); text-transform: uppercase; font-size: 10px; letter-spacing: .1em; padding-top: 2px; }
+.tip dd { margin: 0; font-weight: 700; }
+.tip dd.next { color: var(--blue); }
+.tip dd.max { color: var(--green); }
+</style></head>
+<body>
+<div class="intro">
+  <h1>Investments: explanation in a tooltip</h1>
+  <p>Today the second line of each card is cut off ("…") and the full text only shows in the slow browser tooltip.
+     Proposal: the card shows just the name, level pips and buy button, and hovering a card shows a styled tooltip with
+     the full explanation, the current effect and what the next level gives. The levels below are sample data.</p>
+</div>
+
+<div class="label">Before (today)</div>
+<div class="frame"><div class="inv-head"><h1>Investments</h1><span class="inv-capital">💼 60 Investor Capital</span></div><div class="inv-cols" id="before"></div>
+  <div class="inv-foot">Investments stay for all future runs. Hover one for the full description.</div></div>
+
+<div class="label">After (hover any card; "Full-stack squad" is shown pinned open as an example)</div>
+<div class="frame new"><div class="inv-head"><h1>Investments</h1><span class="inv-capital">💼 60 Investor Capital</span></div><div class="inv-cols" id="after"></div>
+  <div class="inv-foot">Investments stay for all future runs. Hover one to see what it does.</div></div>
+
+<script>
+const c1 = [10, 20, 35, 55, 80], c2 = [15, 30, 50], c3 = [10, 25, 45];
+const groups = [
+  ['Developers', [
+    ['Agile coaching', 'All developers work faster: +8% attack speed per level', 5, c1, 2, l => `+${l * 8}% attack speed`],
+    ['Better laptops', 'All developers hit harder: +10% damage per level', 5, c1, 0, l => `+${l * 10}% damage`],
+    ['Bigger monitors', 'All developers see further: +5% range per level', 3, c2, 3, l => `+${l * 5}% range`],
+    ['Recruitment network', 'Hiring is cheaper: -5% hiring cost per level', 3, c2, 1, l => `-${l * 5}% hiring cost`],
+  ]],
+  ['Power-ups', [
+    ["CEO's calendar", 'The CEO drops by more often: -10% cooldown per level', 3, c3, 1, l => `CEO cooldown -${l * 10}%`],
+    ['Leadership coaching', 'The CEO motivates harder: +10% attack speed per level', 3, c3, 0, l => `CEO attack speed +${50 + 10 * l}%`],
+    ['Enterprise plan', 'Claude comes back sooner: -10% cooldown per level', 3, c2, 0, l => `Claude -${l * 10}% cooldown`],
+    ['Prompt engineering', 'Claude hallucinates less: -5 points backfire chance per level', 3, c2, 2, l => `Claude backfires ${25 - 5 * l}% of the time`],
+    ['Sales pipeline', 'Business manager is back sooner: -10% cooldown per level', 3, c3, 0, l => `Business manager cooldown -${l * 10}%`],
+    ['Sales targets', 'Business manager earns more: +0.25× drinks per level', 3, c3, 1, l => `Business manager ×${2 + 0.25 * l} drinks`],
+    ['Training budget', 'Training manager gives more XP: +0.25× per level', 3, c3, 0, l => `Training manager ×${2 + 0.25 * l} XP`],
+    ['Training planning', 'Training manager is back sooner: -10% cooldown per level', 3, c3, 0, l => `Training manager cooldown -${l * 10}%`],
+  ]],
+  ['Unlocks', [
+    ['Cross-functional team', 'Equal React, Java and .NET developers: +25% attack speed for everyone', 1, [40], 1, () => 'Balanced team: +25% productivity'],
+    ['Full-stack squad', 'A React developer with a Java and a .NET developer directly above, below, left or right: its hits bounce to a second bug', 1, [40], 0, () => 'React next to Java + .NET: hits bounce for 50%'],
+    ['Garbage collection', 'Four Java developers in a 2x2 square: every 10th kill slows nearby bugs', 1, [40], 0, () => 'Java 2x2 squares: GC pause every 10th kill'],
+    ['Security training (.NET)', 'Two .NET developers facing each other across the lane build a firewall', 1, [40], 0, () => 'Opposite .NET pairs build a firewall'],
+    ['Robot vacuum', 'A robot vacuum collects dropped drinks for you. Each level makes it faster.', 3, [40, 30, 50], 1, l => `Robot vacuum: ${[70, 100, 130][l - 1]} px/s`],
+  ]],
+];
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function card([name, desc, max, costs, lvl, eff], isNew) {
+  const maxed = lvl >= max, unlock = max === 1;
+  const pips = unlock ? '' : `<span class="pips">${Array.from({ length: max }, (_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</span>`;
+  const btn = maxed ? `<button class="buy own" disabled>${unlock ? 'Owned' : 'Max'}</button>` : `<button class="buy">💼 ${costs[lvl]}</button>`;
+  if (!isNew) {
+    const small = lvl > 0 ? eff(lvl) : desc;
+    return `<div class="inv" title="${esc(desc)}"><b><span>${esc(name)}</span>${pips}</b><small>${esc(small)}</small>${btn}</div>`;
+  }
+  let rows = '';
+  if (!unlock) rows += `<dt>Level</dt><dd>${lvl} of ${max}</dd>`;
+  if (lvl > 0) rows += `<dt>Now</dt><dd>${esc(eff(lvl))}</dd>`;
+  if (!maxed) rows += `<dt>${lvl > 0 ? 'Next' : 'Gives'}</dt><dd class="next">${esc(eff(lvl + 1))}</dd>`;
+  else rows += `<dt>Status</dt><dd class="max">${unlock ? 'Owned' : 'Fully upgraded'}</dd>`;
+  const pinned = name === 'Full-stack squad' ? ' pinned' : '';
+  return `<div class="inv${pinned}"><b><span>${esc(name)}</span>${pips}<i class="info">i</i></b>${btn}
+    <div class="tip"><h4>${esc(name)}</h4><p>${esc(desc)}</p><dl>${rows}</dl></div></div>`;
+}
+for (const [id, isNew] of [['before', false], ['after', true]]) {
+  document.getElementById(id).innerHTML = groups.map(([title, items]) =>
+    `<div class="inv-col"><div class="eyebrow">${title}</div>${items.map(it => card(it, isNew)).join('')}</div>`).join('');
+}
+</script>
+</body></html>

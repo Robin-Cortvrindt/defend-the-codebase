@@ -110,11 +110,50 @@ export function showHowTo() {
 
 // ---------- investments shop (between runs) ----------
 
-const INVEST_GROUPS = [['developers', 'Developers'], ['powerups', 'Power-ups'], ['unlocks', 'Unlocks']];
+// [group, title, accent colour of its hover tooltips]
+const INVEST_GROUPS = [['developers', 'Developers', 'var(--blue)'], ['powerups', 'Power-ups', 'var(--orange)'], ['unlocks', 'Unlocks', 'var(--fuchsia)']];
 
-function investmentText(def, level) {
+function effectAt(def, level) {
   try { if (level > 0 && def.effectText) return def.effectText(level); } catch (e) { console.error(`[investment ${def.id}]`, e); }
-  return def.description || '';
+  return null;
+}
+
+// The hover tooltip: group, name, full description, then level / now / next (or owned / fully upgraded).
+function investmentTip(def, title, level, max, unlock) {
+  const maxed = level >= max;
+  const rows = [];
+  if (!unlock && Number.isFinite(max)) rows.push(['Level', `${level} of ${max}`]);
+  const now = effectAt(def, level);
+  if (now) rows.push(['Now', now]);
+  if (maxed) rows.push(['Status', unlock ? 'Owned' : 'Fully upgraded', 'next']);
+  else {
+    const next = effectAt(def, level + 1);
+    if (next) rows.push([level > 0 ? 'Next level' : unlock ? 'Unlocks' : 'Level 1', next, 'next']);
+  }
+  return h('div', { class: 'inv-tip', role: 'tooltip' },
+    h('div', { class: 'g' }, title),
+    h('h4', {}, def.name),
+    def.description ? h('p', {}, def.description) : null,
+    rows.length ? h('div', { class: 'rows' }, rows.map(([k, v, cls]) => h('div', {}, h('span', {}, k), h('b', { class: cls || '' }, v)))) : null,
+  );
+}
+
+// Keep an open tooltip inside the visible part of the (scrolling) shop screen. Beside the card it slides up
+// just enough; below the card (narrow screens) it flips above the card instead.
+const TIP_MARGIN = 8;
+function fitTip(card) {
+  const tip = card.querySelector('.inv-tip');
+  if (!tip) return;
+  tip.classList.remove('above');
+  tip.style.transform = '';
+  const area = card.closest('.screen')?.getBoundingClientRect();
+  const top = Math.max(0, area?.top ?? 0) + TIP_MARGIN;
+  const bottom = Math.min(window.innerHeight, area?.bottom ?? Infinity) - TIP_MARGIN;
+  const r = tip.getBoundingClientRect();
+  if (r.bottom <= bottom) return;
+  if (r.top >= card.getBoundingClientRect().bottom) { tip.classList.add('above'); return; }
+  const shift = Math.min(r.bottom - bottom, r.top - top);
+  if (shift > 0) tip.style.transform = `translateY(${-shift}px)`;
 }
 
 // `back` returns to whichever screen opened the shop (the menu or the game-over card).
@@ -123,10 +162,10 @@ export function showShop(back) {
   muteBtn = null;
   const rerender = () => showShop(back);
   const { capital } = loadProgress();
-  const cols = INVEST_GROUPS.map(([group, title]) => {
+  const cols = INVEST_GROUPS.map(([group, title, accent]) => {
     const defs = getInvestments().filter(d => (d.group || 'developers') === group);
     if (!defs.length) return null;
-    return h('div', { class: 'inv-col' }, h('div', { class: 'eyebrow' }, title), defs.map(def => {
+    return h('div', { class: 'inv-col', style: `--accent: ${accent}` }, h('div', { class: 'eyebrow' }, title), defs.map(def => {
       const level = investmentLevel(def.id);
       const max = def.maxLevel ?? Infinity;
       const maxed = level >= max;
@@ -135,10 +174,10 @@ export function showShop(back) {
       if (maxed || !canInvest(def.id)) btnProps.disabled = '';
       const pips = unlock || !Number.isFinite(max) ? null
         : h('span', { class: 'pips', 'aria-label': `Level ${level} of ${max}` }, Array.from({ length: max }, (_, i) => h('i', { class: i < level ? 'on' : '' })));
-      return h('div', { class: 'inv', title: def.description || '' },
+      return h('div', { class: 'inv', onmouseenter: e => fitTip(e.currentTarget), onfocusin: e => fitTip(e.currentTarget) },
         h('b', {}, h('span', {}, def.name), pips),
-        h('small', {}, investmentText(def, level)),
         h('button', btnProps, maxed ? (unlock ? 'Owned' : 'Max') : `💼 ${investmentCost(def.id)}`),
+        investmentTip(def, title, level, max, unlock),
       );
     }));
   });
@@ -157,7 +196,7 @@ export function showShop(back) {
         fromMenu ? h('button', { class: 'btn primary', onclick: startRun }, 'Start run →') : null,
       ),
       h('div', { class: 'inv-cols' }, cols),
-      h('div', { class: 'inv-foot' }, 'Investments stay for all future runs. Hover one for the full description. ',
+      h('div', { class: 'inv-foot' }, 'Investments stay for all future runs. Hover one to see what it does. ',
         h('button', { class: 'link', onclick: reset }, 'Reset progress')),
     ),
   );
