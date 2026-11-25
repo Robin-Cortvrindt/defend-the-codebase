@@ -9,6 +9,7 @@ import { render } from './engine/render.js';
 import { initUI, updateUI, resetUI } from './engine/ui.js';
 import { initInput } from './engine/input.js';
 import { playSound } from './engine/sound.js';
+import { startMusic } from './engine/music.js';
 
 // If the manifest itself is broken (a typo in the one shared file), still load the core game.
 const CORE = [
@@ -55,6 +56,7 @@ on('dev:levelup', ({ game, dev }) => {
 on('claude:backfire', () => playSound('backfire'));
 on('game:won', () => playSound('won'));
 on('game:lost', () => playSound('lost'));
+startMusic(() => app.game); // background loop; silent until the first click unlocks audio
 
 // ----- canvas -----
 const canvas = document.getElementById('game');
