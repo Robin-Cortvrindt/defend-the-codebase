@@ -30,7 +30,25 @@ export const CONTENT = [
   './upgrades/coffee.js',
   './upgrades/fridge.js',
   './upgrades/generator.js',
+  // Investments (permanent, bought between runs with Investor Capital)
+  './investments/better-laptops.js',
+  './investments/agile-coaching.js',
+  './investments/bigger-monitors.js',
+  './investments/recruitment-network.js',
+  './investments/training-budget.js',
+  './investments/training-planning.js',
+  './investments/sales-targets.js',
+  './investments/sales-pipeline.js',
+  './investments/leadership-coaching.js',
+  './investments/ceo-calendar.js',
+  './investments/prompt-engineering.js',
+  './investments/enterprise-plan.js',
+  './investments/security-training.js',   // unlock: .NET firewall
+  './investments/cross-functional.js',    // unlock: balanced team bonus
+  './investments/full-stack-squad.js',    // unlock: React hits bounce
+  './investments/garbage-collection.js',  // unlock: Java 2x2 squares slow bugs
   // Features (teammates' add-ons, Nexios references, ...)
+  './features/side-panel.js',
   './features/mailbox.js',
 ];
 

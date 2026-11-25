@@ -23,11 +23,17 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
   - **Business manager:** double Warrants.
   - **CEO:** attack speed +50%.
   - **Claude:** squashes every bug on the map. The price goes up each use, and there's a 25% chance it backfires and doubles the bugs.
-- **Inbox:** task mails trickle in, up to 4 at a time, such as "Hire 3 .NET developers" or "Survive 2 more sprints". Finish one and press Claim for Warrants, or now and then a free Claude. Watch out: about 1 in 6 mails is phishing, and you only find out when you claim it.
+- **Side panel:** always on the right of the board. It shows your Nexios building (floors, production, coins and every upgrade level), how many developers of each kind you have, and your tasks.
+- **Tasks:** new mail pops up at the top of the Tasks section for 6 seconds, such as "Hire 3 .NET developers" or "Survive 2 more sprints". Click it to accept the task; miss it and it's gone. You can hold up to 4 tasks. Finish one and press Claim for Warrants, or now and then a free Claude. Watch out: about 1 in 6 mails is phishing, and you only find out when you claim it.
 - **Sprints and quarters:** waves are sprints, 7 sprints make a quarter, 4 quarters make a year, and it never ends. Between sprints you ring the Nexios victory bell.
 - **Nexios Coins:** 1 per sprint and 3 more per quarter. At each **quarter review** you spend them on the Nexios building: **add a floor** (+5 production, heals 5; the building grows) or a counter-upgrade for each random event, 3 levels each: **air conditioning** (heat wave), **server heat recovery** (heating out), **coffee bar** (out of coffee), **energy drink fridge** (out of Red Bull) and **backup generator** (PROD is down). Every upgrade shows on the building.
 - **Yearly review** after every Q4: accept a guaranteed +10% on Warrants, or ask for a raise (50% chance of +20%, otherwise nothing).
 - **Lose:** when too many bugs reach the Nexios building, production is down. Your best run (year, quarter, sprint) is remembered in the browser.
+- **Investments (between runs):** after a loss you find new investors, and they put in **Investor Capital** depending on how far you got: 1 per sprint, 5 more per quarter and 15 more per year. Spend it in **Investments** (start menu or game-over screen) on permanent upgrades for every later run:
+  - **Developers** (all at once): more damage, attack speed and range, and cheaper hires.
+  - **Power-ups:** a stronger training manager, business manager and CEO with shorter cooldowns, and a Claude that backfires less and costs less.
+  - **Unlocks:** **Security training (.NET)**. Two .NET developers facing each other across the lane build a **firewall** that damages bugs passing through, and a firewall kill gives XP to both developers. **Cross-functional team**: while you have as many React as Java as .NET developers (1-1-1, 2-2-2, ...), every developer attacks 25% faster. **Full-stack squad**: a React developer with a Java and a .NET developer directly above, below, left or right of it (not diagonally) has its hits bounce to a second bug nearby for half damage. **Garbage collection**: four Java developers in a 2×2 square run a garbage collector, so every 10th kill by one of them slows the bugs in its range by 50% for 1.5 s (bosses 25%).
+  - Progress is saved in this browser. **Reset progress** in the shop starts over.
 
 Controls:
 

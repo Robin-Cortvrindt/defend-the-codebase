@@ -1,30 +1,19 @@
-// Headless balance check: a bot hires, buys upgrades and plays up to MAX_SPRINTS sprints per seed. Run: node scripts/sim.mjs [seed-count] [max-sprints]
+// Headless balance check: a simple bot plays until production goes down.
+//   node scripts/sim.mjs                  every strategy, with and without power-ups, no investments
+//   node scripts/sim.mjs --profile max    the same, with every investment at max level
+//   node scripts/sim.mjs --meta [runs]    run after run from zero: earn Investor Capital, buy the cheapest investment, repeat
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
-import { buyUpgrade as buyBuilding } from '../src/engine/upgrades.js';
-import { placeDev, nextUpgrades, upgradeStatus, buyUpgrade } from '../src/engine/devs.js';
+import { buyUpgrade } from '../src/engine/upgrades.js';
+import { placeDev, hireCost } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
-import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL } from '../src/engine/map.js';
-import { getDeveloper } from '../src/engine/registry.js';
+import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
+import { getInvestments } from '../src/engine/registry.js';
+import { setStorage, saveProgress, loadProgress, awardCapital, investmentCost, invest } from '../src/engine/investments.js';
 
 await loadModules(CONTENT_URLS);
-
-const SEEDS = Math.max(1, parseInt(process.argv[2] ?? '10', 10) || 10);
-// The game is endless (sprints and quarters), so each run stops after MAX_SPRINTS sprints.
-const MAX_SPRINTS = Math.max(1, parseInt(process.argv[3] ?? '28', 10) || 28);
-
-// Small seeded PRNG so every run of a strategy is reproducible.
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6D2B79F5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+setStorage(null);
 
 // Rank buildable cells by how much path is in range.
 function coverage(col, row, range) {
@@ -36,91 +25,69 @@ const cells = [];
 for (let c = 0; c < 16; c++) for (let r = 0; r < 8; r++) if (isBuildable(c, r)) cells.push({ c, r, cov: coverage(c, r, 2.2 * 40) });
 cells.sort((a, b) => b.cov - a.cov);
 
-// Which upgrades this dev may take: at level 1 the bot sticks to one branch.
-// `branch` is 'A', 'B' or 'alt' (every other developer of the same type),
-// or per type, like { dotnet: 'A' } (other types 'alt').
-// An aura upgrade is only taken when it would reach a developer that no copy of it reaches yet.
-function auraHelps(g, dev, up) {
-  const reach = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) <= up.aura.radius * CELL;
-  const owners = g.devs.filter(o => o.upgrade?.id === up.id);
-  return g.devs.some(o => o !== dev && reach(o, dev) && !owners.some(w => w !== o && reach(w, o)));
+// Firewall slots: pairs of buildable cells facing each other across one lane cell, best coverage first.
+const pairCells = [];
+for (const a of cells) {
+  for (const [dc, dr] of [[0, 2], [2, 0]]) {
+    const b = cells.find(x => x.c === a.c + dc && x.r === a.r + dr);
+    if (b && isPathCell(a.c + dc / 2, a.r + dr / 2)) pairCells.push(a, b);
+  }
 }
 
-function choices(g, dev, branch) {
-  const ups = nextUpgrades(dev);
-  if (dev.level !== 1) return ups;
-  const b = typeof branch === 'object' ? branch[dev.type] ?? 'alt' : branch;
-  const pick = b === 'A' ? 0 : b === 'B' ? 1 : g.devs.filter(d => d.type === dev.type).indexOf(dev) % 2;
-  const up = ups[pick];
-  if (!up) return [];
-  if (up.aura && !auraHelps(g, dev, up)) return [];
-  return [up];
-}
-
-// bell: 'up' buys upgrades before hiring, 'hire' hires before upgrading.
-function play({ order, powers, branch, bell }, seed) {
-  const g = createGame(); g.random = mulberry32(seed); startGame(g);
-  const bought = {};
+function play(strategy, usePowers) {
+  const g = createGame(); startGame(g);
+  const free = x => !g.devs.some(d => d.col === x.c && d.row === x.r);
   let i = 0;
-  const upgrade = () => {
+  const buy = () => {
     while (true) {
-      let best = null;
-      for (const dev of g.devs) for (const up of choices(g, dev, branch)) {
-        if (upgradeStatus(g, dev, up).ok && (!best || up.cost < best.up.cost)) best = { dev, up };
-      }
-      if (!best || !buyUpgrade(g, best.dev, best.up.id)) return;
-      if (best.dev.level === 2) bought[best.up.id] = (bought[best.up.id] ?? 0) + 1;
-    }
-  };
-  const hire = () => {
-    while (true) {
-      const type = order[i % order.length];
-      if (g.warrants < getDeveloper(type).cost) return;
-      // Seeded jitter: one of the three best free cells.
-      const free = cells.filter(x => !g.devs.some(d => d.col === x.c && d.row === x.r)).slice(0, 3);
-      if (!free.length) return;
-      const cell = free[Math.floor(g.random() * free.length)];
+      const type = strategy[i % strategy.length];
+      if (g.warrants < hireCost(g, type)) return;
+      // With the firewall unlocked, .NET developers go into facing pairs first.
+      const cell = (type === 'dotnet' && g.unlocks.firewall && pairCells.find(free)) || cells.find(free);
+      if (!cell) return;
       placeDev(g, type, cell.c, cell.r); i++;
     }
   };
-  hire(); startWave(g);
+  buy(); startWave(g);
   let t = 0;
-  while (g.phase !== 'lost' && g.sprint < MAX_SPRINTS && t < 20000) {
+  while (!['won', 'lost'].includes(g.phase) && t < 40000) {
     step(g, 0.05); t += 0.05;
-    if (powers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
-    if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyBuilding(g, 'aircon') || buyBuilding(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') {
-      if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); }
-      ringBell(g);
-    }
+    if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
+    if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
+    if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
   }
-  return { survived: g.phase !== 'lost', sprints: g.sprint, lives: g.lives, bought };
+  return g;
 }
+const describe = g => `${g.phase.padEnd(4)} ${sprintInfo(g.sprint).label.padEnd(26)} floors ${g.floors} devs ${g.devs.length} seniors ${g.stats.seniors}`;
 
-// Level-3 upgrade ids for the types in an order, in content order.
-const level3Ids = order => [...new Set(order)].flatMap(type => (getDeveloper(type).upgrades?.level3 ?? []).map(u => u.id));
+const args = process.argv.slice(2);
+const STRATEGIES = [['react only', ['react']], ['java only', ['java']], ['mixed', ['react', 'java', 'react', 'dotnet']], ['dotnet only', ['dotnet']]];
 
-function run(name, strategy) {
-  const runs = [];
-  for (let seed = 1; seed <= SEEDS; seed++) runs.push(play(strategy, seed));
-  const avg = f => (runs.reduce((n, r) => n + f(r), 0) / runs.length).toFixed(1);
-  const alive = runs.filter(r => r.survived).length;
-  const ups = level3Ids(strategy.order).map(id => `${id} ${runs.reduce((n, r) => n + (r.bought[id] ?? 0), 0)}`).join(' ');
-  const label = `${name} ${strategy.powers ? 'powers' : 'no powers'} ${strategy.bell === 'up' ? 'up-first' : 'hire-first'}`;
-  console.log(`${label.padEnd(36)} survived ${`${alive}/${SEEDS}`.padEnd(5)} sprints ${avg(r => r.sprints).padStart(4)}  lives ${avg(r => r.lives).padStart(4)}  ${ups}`);
+if (args.includes('--meta')) {
+  const runs = Number(args[args.indexOf('--meta') + 1]) || 30;
+  const total = getInvestments().length;
+  let firewallRun = null, completeRun = null;
+  for (let run = 1; run <= runs; run++) {
+    const g = play(STRATEGIES[2][1], true);
+    const earned = awardCapital(g);
+    for (;;) {   // buy unlocks first (a player wants new mechanics), then the cheapest affordable investment
+      const { capital } = loadProgress();
+      const rank = d => (d.group === 'unlocks' ? 0 : 1);
+      const next = getInvestments().map(d => ({ id: d.id, rank: rank(d), cost: investmentCost(d.id) })).filter(x => x.cost <= capital).sort((a, b) => a.rank - b.rank || a.cost - b.cost)[0];
+      if (!next || !invest(next.id)) break;
+    }
+    const { levels, capital } = loadProgress();
+    const owned = getInvestments().filter(d => (levels[d.id] || 0) >= (d.maxLevel ?? Infinity)).length;
+    if (!firewallRun && levels['security-training']) firewallRun = run;
+    if (!completeRun && owned === total) completeRun = run;
+    console.log(`run ${String(run).padStart(2)} · died ${sprintInfo(g.sprint).label.padEnd(26)} · +${String(earned).padStart(3)} · left ${String(capital).padStart(3)} · maxed ${owned}/${total}`);
+  }
+  console.log(`firewall bought on run ${firewallRun ?? `— (not within ${runs})`}; catalog complete on run ${completeRun ?? `— (not within ${runs})`}`);
+} else {
+  const max = args.includes('--profile') && args[args.indexOf('--profile') + 1] === 'max';
+  if (max) saveProgress({ capital: 0, levels: Object.fromEntries(getInvestments().map(d => [d.id, d.maxLevel ?? 1])) });
+  for (const [name, s] of STRATEGIES) {
+    console.log(name.padEnd(12), 'no powers :', describe(play(s, false)));
+    console.log(name.padEnd(12), 'powers    :', describe(play(s, true)));
+  }
 }
-
-// Each strategy runs with and without powers, and with both bell orders.
-function runAll(name, order, branch) {
-  for (const powers of [false, true]) for (const bell of ['up', 'hire']) run(name, { order, powers, branch, bell });
-}
-
-const ORDERS = [['react only', ['react']], ['java only', ['java']], ['mixed', ['react', 'java', 'react', 'dotnet']], ['dotnet only', ['dotnet']]];
-for (const [name, order] of ORDERS) runAll(name, order, 'alt');
-for (const type of ['java', 'react', 'dotnet']) {
-  runAll(`${type} A`, [type], 'A');
-  runAll(`${type} B`, [type], 'B');
-}
-// .NET only can't hire before wave 1, so its branches also run behind a React opener.
-runAll('react+dotnet A', ['react', 'dotnet'], { dotnet: 'A' });
-runAll('react+dotnet B', ['react', 'dotnet'], { dotnet: 'B' });

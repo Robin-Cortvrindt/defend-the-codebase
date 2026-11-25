@@ -57,4 +57,12 @@ registerEvent({ // random event, rolled at wave start (put it in src/content/eve
   id: 'wifi-down', name: 'The wifi is down', description: 'Developers have 30% less range',
   start(game) { game.mods.rangeMultiplier *= 0.7; }, end(game) { game.mods.rangeMultiplier /= 0.7; },
 });
+
+registerInvestment({ // permanent upgrade bought between runs (put it in src/content/investments/; import registerInvestment)
+  id: 'standing-desks', name: 'Standing desks', description: '+5 starting Warrants per level',
+  group: 'developers', maxLevel: 3,
+  getCost(level) { return [10, 20, 30][level] ?? Infinity; },
+  apply(game, level) { game.warrants += 5 * level; },   // runs once at the start of every run
+  effectText(level) { return `+${5 * level} starting Warrants`; },
+});
 */

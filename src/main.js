@@ -8,6 +8,7 @@ import { WIDTH, HEIGHT } from './engine/map.js';
 import { render } from './engine/render.js';
 import { initUI, updateUI, resetUI } from './engine/ui.js';
 import { initInput } from './engine/input.js';
+import { awardCapital } from './engine/investments.js';
 import { playSound } from './engine/sound.js';
 import { startMusic } from './engine/music.js';
 
@@ -22,6 +23,8 @@ const CORE = [
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);
 if (failed.length) console.warn(`[main] ${failed.length} content file(s) failed to load and were skipped`, failed);
+
+const DEMO = new URLSearchParams(location.search).has('demo');
 
 const app = {
   game: createGame(),
@@ -56,6 +59,8 @@ on('dev:levelup', ({ game, dev, upgrade }) => {
 on('claude:backfire', () => playSound('backfire'));
 on('game:won', () => playSound('won'));
 on('game:lost', () => playSound('lost'));
+// New investors pay out Investor Capital for how far the run got (not in the ?demo=1 shortcut).
+on('game:lost', ({ game }) => { if (!DEMO && game === app.game) awardCapital(game); });
 startMusic(() => app.game); // background loop; silent until the first click unlocks audio
 
 // ----- canvas -----
@@ -80,7 +85,7 @@ initFeatures();
 resize();
 
 // ?demo=1 jumps straight into wave 1 with one of each developer (handy for testing)
-if (new URLSearchParams(location.search).has('demo')) {
+if (DEMO) {
   startGame(app.game);
   app.game.warrants = 1000;
   placeDev(app.game, 'react', 3, 3);

@@ -5,6 +5,7 @@ import { pointAt, PATH_LENGTH } from './map.js';
 import { tickDevs } from './devs.js';
 import { tickPowerups } from './powerups.js';
 import { rollEvent, endEvent } from './random-events.js';
+import { applyInvestments } from './investments.js';
 
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
@@ -28,6 +29,10 @@ export function createGame() {
     resistance: {},           // event id -> 0..1, set by counter-upgrades; each event scales its effect by (1 - resistance)
     raise: 1,                 // total yearly-review Warrant multiplier
     upgrades: {},
+    unlocks: {},              // mechanics unlocked by investments, e.g. unlocks.firewall
+    powerupMods: {},          // per power-up investment bonuses, see powerupMod() in powerups.js
+    investmentsApplied: false,
+    capitalEarned: null,      // Investor Capital paid out when this run was lost
     quarterStats: { squashed: 0, leaked: 0 },
     warrants: START_WARRANTS,
     lives: START_LIVES,
@@ -41,7 +46,7 @@ export function createGame() {
     mods: {
       xpMultiplier: 1, warrantMultiplier: 1, fireRateMultiplier: 1,
       damageMultiplier: 1, bugSpeedMultiplier: 1, rangeMultiplier: 1,
-      timeScale: 1, devFireRate: {},
+      timeScale: 1, devFireRate: {}, devCostMultiplier: 1,
     },
     powerups: {},
     activeEvent: null,        // id of the random event running this wave
@@ -85,6 +90,7 @@ export function getSprintDef(n) {
 
 export function startGame(game) {
   game.phase = 'building';
+  applyInvestments(game);
   emit('game:start', { game });
 }
 

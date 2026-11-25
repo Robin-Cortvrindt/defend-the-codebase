@@ -9,7 +9,8 @@ Start from `src/content/features/example-feature.js`. It has a working example o
 ```
 python -m http.server 8000     # then open http://localhost:8000
 node --test                    # engine tests (Node 20+)
-node scripts/sim.mjs [seeds]   # bot plays all 10 waves per seed (default 10): balance check
+node scripts/sim.mjs           # bot plays until production goes down; --profile max / --meta for investments
+node scripts/sim-upgrades.mjs [seeds] [sprints]   # developer-upgrade balance: seeded strategies per level-3 branch
 ```
 
 Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of each type and 1000 Warrants. In the browser console, `game.game` is the live state, e.g. `game.game.warrants = 9999`.
@@ -20,10 +21,11 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 |---|---|
 | `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
 | `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?, drawIcon?(ctx, radius) }` |
-| `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), activate(game), deactivate?(game) }` |
+| `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), describe?(game) /*button text, overrides description*/, activate(game, st), deactivate?(game, st) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
 | `registerEvent` | `{ id, name, description, accent?, weight? /*default 1*/, minWave? /*default 2*/, start(game), end(game), draw?(ctx, game, view) }`: a random event. Each wave from wave 2 has a 25% chance to start one; it lasts until the wave ends. `view.cursor` is the mouse position or `null` (`src/content/events/`) |
 | `registerUpgrade` | `{ id, name, description, maxLevel?, getCost(game, level), apply(game, level) }` — appears in the quarter-review shop |
+| `registerInvestment` | `{ id, name, description, group: 'developers' \| 'powerups' \| 'unlocks', maxLevel, getCost(level), apply(game, level), effectText?(level) }`: a permanent upgrade bought between runs with Investor Capital. `apply` runs once at the start of every run (`src/content/investments/`) |
 | `registerWaves` | `[{ hp /*health multiplier*/, boss? /*bug id, spawns 3 s after the last bug*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
 
 ## Developer upgrades
@@ -77,13 +79,13 @@ registerDeveloper({
 });
 ```
 
-Check a change with `node scripts/sim.mjs`: the `{type} A` and `{type} B` lines should stay close, mainly the no-powers ones, and up-first should not clearly beat hire-first. For .NET, compare the `react+dotnet A` and `react+dotnet B` lines, because .NET only can't hire before wave 1.
+Check a change with `node scripts/sim-upgrades.mjs`: the `{type} A` and `{type} B` lines should stay close, mainly the no-powers ones, and up-first should not clearly beat hire-first. For .NET, compare the `react+dotnet A` and `react+dotnet B` lines, because .NET only can't hire before the first sprint.
 
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost`
+`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `dev:hit` (passes `{ game, dev, bug, damage, counter }` once per shot, after the shot's hits and kills; `bug` is the shot's main target, also for upgrades that pierce, chain or splash) · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost` · `investment:bought` (passes `{ id, level }`, no game: it happens between runs)
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`. `dev:upgradeready` gives `{ game, dev, level }` when XP unlocks the next upgrade. `dev:levelup` fires when an upgrade is bought and gives `{ game, dev, level, upgrade }`. In both, `level` is 0-based like `dev.level`: 1 for the level-2 upgrade, 2 for level 3.
 
@@ -92,6 +94,14 @@ Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, de
 `xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier` · `timeScale` (whole simulation speed) · `devFireRate` (object keyed by developer id, e.g. `devFireRate.java`; a missing key counts as 1)
 
 Multiply when your effect starts and divide when it ends, so effects stack.
+
+## Permanent bonuses (investments)
+
+- `game.mods.devCostMultiplier` scales hiring cost. Use `hireCost(game, typeId)` from `src/engine/devs.js`, not `def.cost`.
+- `powerupMod(game, id)` from `src/engine/powerups.js` returns `{ cooldown, effect, cost }` for a power-up: a cooldown multiplier, an effect level your power-up reads in `activate`, and a price multiplier. Store the factor you applied on `st` and divide by exactly that in `deactivate`.
+- `game.unlocks` holds flags for unlocked mechanics, e.g. `game.unlocks.firewall`.
+- **New unlock:** copy `src/content/investments/security-training.js` (or `cross-functional.js` for a passive bonus that switches on and off). It registers the investment (its `apply` sets a `game.unlocks` flag) and a feature whose `update`/`draw` do nothing until the flag is set. One file, one manifest line.
+- In the browser console, `localStorage.setItem('dtc-investments', JSON.stringify({ capital: 999, levels: {} }))` and a reload give you capital to test with.
 
 ## Effects and sound
 

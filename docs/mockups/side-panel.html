@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Side panel mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#001E32;--navy2:#0A2A40;--navy3:#123650;--blue:#2563EB;--orange:#EA580C;--fuchsia:#C026D3;--green:#16A34A;--green-l:#4ADE80;
+        --s600:#475569;--s500:#64748B;--s400:#94A3B8;--s200:#E2E8F0;--tint:#EEF1F5}
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px;background:var(--tint);color:var(--navy);font-family:Lato,system-ui,sans-serif}
+  h1{font-size:26px;font-weight:900;margin:0 0 4px}
+  .intro{color:var(--s600);font-size:14px;margin:0 0 24px;max-width:820px}
+  .card{background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--s200);margin-bottom:28px}
+  .cap{padding:12px 16px;border-bottom:1px solid var(--s200)}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .cap h3{margin:2px 0 0;font-size:17px}
+  .note{font-size:13px;line-height:1.5;color:var(--s600);padding:12px 16px;background:var(--tint)}
+  .note b{color:var(--navy)}
+
+  /* game frame */
+  .app{background:var(--navy);color:#fff}
+  .hud{display:flex;align-items:center;gap:20px;padding:9px 16px;border-bottom:1px solid var(--navy3)}
+  .brand{font-weight:900;font-size:19px;letter-spacing:.04em}
+  .stat{display:flex;flex-direction:column;line-height:1.1}
+  .stat small{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400)}
+  .stat b{font-size:19px;font-weight:900}
+  .prodbar{display:flex;gap:3px;margin-top:5px}.prodbar i{width:9px;height:8px;border-radius:2px;background:var(--green)}
+  .spacer{flex:1}
+  .btn{font-size:12px;font-weight:700;border:1px solid var(--navy3);border-radius:8px;padding:7px 12px;color:var(--s200)}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  .play{display:grid;grid-template-columns:1fr 280px}
+  .stage{position:relative;aspect-ratio:2/1;background:#0A2A40;overflow:hidden;
+    background-image:linear-gradient(#0f3047 1px,transparent 1px),linear-gradient(90deg,#0f3047 1px,transparent 1px);background-size:6.25% 12.5%}
+  .path{position:absolute;background:#123650}
+  .dev{position:absolute;width:6%;aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;border:2px solid #fff}
+  .bug{position:absolute;width:2.2%;aspect-ratio:1;border-radius:50%;background:#1f2937;border:2px solid}
+  .bld{position:absolute;right:1.5%;top:22%;width:8%;height:34%;border:2px solid #fff;background:#0A2A40}
+  .bld b{display:block;background:#fff;color:var(--navy);font-size:10px;text-align:center;font-weight:900}
+  .bld i{display:inline-block;width:18%;height:12%;background:#cbd5e1;margin:8% 0 0 10%}
+  .bld .bar{position:absolute;left:0;right:0;bottom:-10px;height:5px;background:var(--green)}
+
+  .side{border-left:1px solid var(--navy3);display:flex;flex-direction:column;min-height:0;background:#001A2B}
+  .sec{padding:10px 14px;border-bottom:1px solid var(--navy3)}
+  .sec h4{margin:0 0 7px;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400);display:flex;justify-content:space-between}
+  .sec h4 span{letter-spacing:.06em}
+  .kv{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+  .kv span{color:var(--s400)} .kv b{font-weight:900}
+  .coins{color:#FACC15}
+  .pbar{height:5px;border-radius:3px;background:var(--navy3);margin:2px 0 6px;overflow:hidden}.pbar i{display:block;height:100%;background:var(--green)}
+  .up{display:grid;grid-template-columns:1fr auto;gap:0 8px;font-size:12px;padding:3px 0}
+  .up small{grid-column:1;font-size:10px;color:var(--s400)}
+  .pips{grid-row:1/3;grid-column:2;align-self:center;display:flex;gap:3px}
+  .pips i{width:8px;height:8px;border-radius:2px;border:1px solid var(--s500)} .pips i.on{background:var(--green-l);border-color:var(--green-l)}
+  .devrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:4px 0}
+  .ico{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900}
+  .devrow b{margin-left:auto;font-weight:900;font-size:14px}
+  .total{font-size:11px;color:var(--s400);margin-top:6px}
+  .tasks{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:0}
+  .list{overflow:auto;flex:1;margin:0 -14px}
+  .t{padding:8px 14px;border-top:1px solid var(--navy3);display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+  .from{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--s400)}
+  .subj{font-size:12px;font-weight:700;grid-column:1}
+  .rew{font-size:11px;font-weight:900;color:var(--green-l);grid-row:1/3;grid-column:2;align-self:center}
+  .prog{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:3px}
+  .prog i{flex:1;height:5px;border-radius:3px;background:var(--navy3);overflow:hidden}.prog i b{display:block;height:100%;background:var(--blue)}
+  .prog small{font-size:10px;color:var(--s400)}
+  .claim{grid-column:1/-1;margin-top:4px;background:var(--green);border:0;border-radius:6px;color:#fff;font:700 11px Lato;padding:5px 0}
+  .claim.off{background:var(--navy3);color:var(--s400)}
+  .empty{font-size:12px;color:var(--s400);padding:10px 14px;line-height:1.4}
+
+  .offer{margin:0 0 8px;border:1px solid var(--navy3);border-left:3px solid var(--green);border-radius:8px;background:#0b3320;padding:8px 10px;position:relative;overflow:hidden;box-shadow:0 0 0 2px rgba(74,222,128,.25)}
+  .offer .from{color:var(--green-l)}
+  .offer b{display:block;font-size:13px;margin:1px 0}
+  .offer .row{display:flex;justify-content:space-between;align-items:center;margin-top:5px}
+  .offer small{font-size:11px;color:var(--green-l);font-weight:900}
+  .offer .acc{background:var(--green);color:#fff;border:0;border-radius:6px;font:700 11px Lato;padding:5px 10px}
+  .offer .time{position:absolute;left:0;bottom:0;height:3px;background:var(--green-l)}
+  .missed{opacity:.35;filter:grayscale(1)}
+
+  .bars{border-top:1px solid var(--navy3)}
+  .pu-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 16px}
+  .pu{background:var(--navy2);border:1px solid var(--green);border-radius:10px;padding:7px 10px;font-size:12px}
+  .pu b{display:block;font-size:13px} .pu small{color:var(--green-l)} .pu.off{border-color:var(--navy3)} .pu.off small{color:var(--s400)}
+  .hire{display:grid;grid-template-columns:repeat(3,1fr) 1.4fr;gap:8px;padding:0 16px 12px}
+  .hire div{background:var(--navy2);border:1px solid var(--navy3);border-top:2px solid;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:700}
+  .hire span{float:right}
+
+  /* phone */
+  .phone{width:390px;margin:16px auto;border:8px solid #1e293b;border-radius:28px;overflow:hidden}
+  .phone .play{grid-template-columns:1fr}
+  .phone .side{border-left:0;border-top:1px solid var(--navy3)}
+  .phone .hud{gap:10px;flex-wrap:wrap}
+  .phone .pu-row{grid-template-columns:1fr 1fr}
+  .phone .hire{grid-template-columns:repeat(3,1fr)}
+  .phone .hire div:last-child{display:none}
+</style>
+</head>
+<body>
+<h1>Side panel: mockups</h1>
+<p class="intro">Look only. The board is simplified, and all numbers, senders and tasks are placeholders. It uses the game's own colours and Lato. Board and panel sizes match the design: the panel is 280 px, and the game is up to 1380 px wide.</p>
+
+<!-- 1: offer arriving -->
+<div class="card">
+  <div class="cap"><div class="eyebrow">1 · During a sprint</div><h3>A new mail offer arrives at the top of Tasks</h3></div>
+  <div class="app">
+    <div class="hud">
+      <span class="brand">NEXIOS IT</span>
+      <div class="stat"><small>Warrants</small><b>412</b></div>
+      <div class="stat"><small>Production</small><div class="prodbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i style="background:#123650"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="stat"><small>Sprint</small><b>Y1 · Q2 · 3/7</b></div>
+      <div class="spacer"></div><span class="btn">1×</span><span class="btn">Pause</span><span class="btn primary">Sprint running</span>
+    </div>
+    <div class="play">
+      <div class="stage">
+        <div class="path" style="left:0;top:18%;width:30%;height:11%"></div>
+        <div class="path" style="left:27%;top:18%;width:3.5%;height:60%"></div>
+        <div class="path" style="left:27%;top:70%;width:40%;height:10%"></div>
+        <div class="path" style="left:63%;top:42%;width:3.5%;height:38%"></div>
+        <div class="path" style="left:63%;top:42%;width:28%;height:10%"></div>
+        <div class="dev" style="left:17%;top:40%;background:var(--blue)">R</div>
+        <div class="dev" style="left:38%;top:52%;background:var(--orange)">J</div>
+        <div class="dev" style="left:52%;top:52%;background:var(--fuchsia)">.N</div>
+        <div class="dev" style="left:70%;top:24%;background:var(--blue)">R</div>
+        <div class="bug" style="left:10%;top:21%;border-color:var(--blue)"></div>
+        <div class="bug" style="left:28%;top:45%;border-color:var(--orange)"></div>
+        <div class="bld"><b>NEXIOS</b><i></i><i></i><i></i><i></i><i></i><i></i><div class="bar"></div></div>
+      </div>
+      <aside class="side">
+        <div class="sec">
+          <h4>Nexios building</h4>
+          <div class="kv"><span>Floors</span><b>2</b></div>
+          <div class="kv"><span>Production</span><b>23 / 25</b></div>
+          <div class="pbar"><i style="width:92%"></i></div>
+          <div class="kv"><span>Nexios Coins</span><b class="coins">4</b></div>
+          <div class="up">Air conditioning<small>Counters: heat wave</small><span class="pips"><i class="on"></i><i class="on"></i><i></i></span></div>
+          <div class="up">Server heat recovery<small>Counters: the heating is out</small><span class="pips"><i></i><i></i><i></i></span></div>
+          <div class="up">Coffee bar<small>Counters: out of coffee</small><span class="pips"><i class="on"></i><i></i><i></i></span></div>
+          <div class="up">Energy drink fridge<small>Counters: out of Red Bull</small><span class="pips"><i></i><i></i><i></i></span></div>
+          <div class="up">Backup generator<small>Counters: PROD is down</small><span class="pips"><i></i><i></i><i></i></span></div>
+        </div>
+        <div class="sec">
+          <h4>Developers</h4>
+          <div class="devrow"><span class="ico" style="background:var(--blue)">R</span>React<b>2</b></div>
+          <div class="devrow"><span class="ico" style="background:var(--orange)">J</span>Java<b>1</b></div>
+          <div class="devrow"><span class="ico" style="background:var(--fuchsia)">.N</span>.NET<b>1</b></div>
+          <div class="total">4 developers</div>
+        </div>
+        <div class="sec tasks">
+          <h4>Tasks <span>2/4</span></h4>
+          <div class="offer">
+            <span class="from">New mail · Business manager</span>
+            <b>Clear a sprint without a single leak</b>
+            <div class="row"><small>+70 W</small><button class="acc">Click to accept</button></div>
+            <i class="time" style="width:62%"></i>
+          </div>
+          <div class="list">
+            <div class="t"><span class="from">HR</span><span class="subj">Hire 3 .NET developers</span><span class="rew">+60 W</span><div class="prog"><i><b style="width:33%"></b></i><small>1/3</small></div></div>
+            <div class="t"><span class="from">CEO</span><span class="subj">Survive 2 more sprints</span><span class="rew">+50 W</span><div class="prog"><i><b style="width:100%"></b></i><small>2/2</small></div><button class="claim">Claim</button></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <div class="bars">
+      <div class="pu-row"><div class="pu"><b>Training manager</b><small>Double XP · ready</small></div><div class="pu"><b>Business manager</b><small>Double Warrants · ready</small></div><div class="pu"><b>CEO</b><small>Attack speed +50% · ready</small></div><div class="pu off"><b>Claude</b><small>Squash every bug · 150</small></div></div>
+      <div class="hire"><div style="border-top-color:var(--blue)">React <span>50</span></div><div style="border-top-color:var(--orange)">Java <span>75</span></div><div style="border-top-color:var(--fuchsia)">.NET <span>110</span></div><div style="border-top-color:transparent;color:var(--s400);font-weight:400">Selected developer</div></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>Panel:</b> it sits on the right of the board, always visible, with three sections: Building, Developers and Tasks.<br>
+    <b>Offer card:</b> it slides in at the top of Tasks, with a green edge and glow. The bar along its bottom shrinks over 6 seconds; here it's at about 60%. Click anywhere on the card to accept. It plays the mail chime.<br>
+    <b>Power-up bar:</b> no Inbox card any more.
+  </div>
+</div>
+
+<!-- 2: accepted / missed -->
+<div class="card">
+  <div class="cap"><div class="eyebrow">2 · Accepted or missed</div><h3>What happens after the 6 seconds</h3></div>
+  <div class="app" style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--navy3)">
+    <aside class="side" style="border:0">
+      <div class="sec tasks" style="border:0">
+        <h4>Tasks <span>3/4</span> · accepted</h4>
+        <div class="list">
+          <div class="t" style="background:rgba(74,222,128,.08)"><span class="from">Business manager</span><span class="subj">Clear a sprint without a single leak</span><span class="rew">+70 W</span><div class="prog"><i><b style="width:0%"></b></i><small>0/1</small></div></div>
+          <div class="t"><span class="from">HR</span><span class="subj">Hire 3 .NET developers</span><span class="rew">+60 W</span><div class="prog"><i><b style="width:33%"></b></i><small>1/3</small></div></div>
+          <div class="t"><span class="from">CEO</span><span class="subj">Survive 2 more sprints</span><span class="rew">+50 W</span><div class="prog"><i><b style="width:100%"></b></i><small>2/2</small></div><button class="claim">Claim</button></div>
+        </div>
+      </div>
+    </aside>
+    <aside class="side" style="border:0">
+      <div class="sec tasks" style="border:0">
+        <h4>Tasks <span>2/4</span> · missed</h4>
+        <div class="offer missed">
+          <span class="from">New mail · Business manager</span>
+          <b>Clear a sprint without a single leak</b>
+          <div class="row"><small>+70 W</small><button class="acc">Click to accept</button></div>
+        </div>
+        <div class="list">
+          <div class="t"><span class="from">HR</span><span class="subj">Hire 3 .NET developers</span><span class="rew">+60 W</span><div class="prog"><i><b style="width:33%"></b></i><small>1/3</small></div></div>
+          <div class="t"><span class="from">CEO</span><span class="subj">Survive 2 more sprints</span><span class="rew">+50 W</span><div class="prog"><i><b style="width:100%"></b></i><small>2/2</small></div><button class="claim">Claim</button></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div class="note"><b>Left, accepted:</b> the offer becomes a task at the top of the list, starting at 0, with a brief highlight. <b>Right, missed:</b> the card fades and slides out (shown faded here), and nothing is added. The next mail comes after the normal 30 s. A phishing task looks exactly like the others; it only reveals itself when you press Claim.</div>
+</div>
+
+<!-- 3: empty + paused / review -->
+<div class="card">
+  <div class="cap"><div class="eyebrow">3 · Start of a run, and while paused</div><h3>Empty Tasks, and a disabled Claim</h3></div>
+  <div class="app" style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--navy3)">
+    <aside class="side" style="border:0">
+      <div class="sec">
+        <h4>Developers</h4>
+        <div class="devrow"><span class="ico" style="background:var(--blue)">R</span>React<b>0</b></div>
+        <div class="devrow"><span class="ico" style="background:var(--orange)">J</span>Java<b>0</b></div>
+        <div class="devrow"><span class="ico" style="background:var(--fuchsia)">.N</span>.NET<b>0</b></div>
+        <div class="total">No developers hired yet</div>
+      </div>
+      <div class="sec tasks" style="border:0">
+        <h4>Tasks <span>0/4</span></h4>
+        <div class="empty">No tasks yet. Click new mail when it pops up to accept it.</div>
+      </div>
+    </aside>
+    <aside class="side" style="border:0">
+      <div class="sec tasks" style="border:0">
+        <h4>Tasks <span>2/4</span> · paused</h4>
+        <div class="list">
+          <div class="t"><span class="from">CEO</span><span class="subj">Survive 2 more sprints</span><span class="rew">+50 W</span><div class="prog"><i><b style="width:100%"></b></i><small>2/2</small></div><button class="claim off">Claim</button></div>
+          <div class="t"><span class="from">IT service desk</span><span class="subj">Squash 25 typo bugs</span><span class="rew">Free Claude</span><div class="prog"><i><b style="width:44%"></b></i><small>11/25</small></div></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div class="note"><b>Left:</b> what a new run looks like, before any mail. <b>Right:</b> while paused, and on the start and game-over screens, Claim is greyed out. It works during build time, sprints, the bell and the quarter review.</div>
+</div>
+
+<!-- 4: phone -->
+<div class="card">
+  <div class="cap"><div class="eyebrow">4 · Phone (720 px and narrower)</div><h3>The panel moves below the board</h3></div>
+  <div style="background:var(--tint);padding:8px 0">
+    <div class="phone app">
+      <div class="hud"><span class="brand" style="font-size:15px">NEXIOS IT</span><div class="stat"><small>Warrants</small><b>412</b></div><div class="stat"><small>Sprint</small><b>3/7</b></div></div>
+      <div class="play">
+        <div class="stage">
+          <div class="path" style="left:0;top:18%;width:30%;height:11%"></div>
+          <div class="path" style="left:27%;top:18%;width:4%;height:60%"></div>
+          <div class="path" style="left:27%;top:70%;width:40%;height:10%"></div>
+          <div class="dev" style="left:15%;top:40%;background:var(--blue);font-size:8px">R</div>
+          <div class="bld"><b>NEXIOS</b></div>
+        </div>
+        <aside class="side">
+          <div class="sec"><h4>Nexios building</h4><div class="kv"><span>Floors</span><b>2</b></div><div class="kv"><span>Production</span><b>23 / 25</b></div><div class="kv"><span>Upgrades</span><b>3 of 15 levels</b></div></div>
+          <div class="sec"><h4>Developers</h4><div class="devrow"><span class="ico" style="background:var(--blue)">R</span>React<b>2</b></div><div class="devrow"><span class="ico" style="background:var(--orange)">J</span>Java<b>1</b></div><div class="devrow"><span class="ico" style="background:var(--fuchsia)">.N</span>.NET<b>1</b></div></div>
+          <div class="sec tasks" style="border:0"><h4>Tasks <span>1/4</span></h4>
+            <div class="offer"><span class="from">New mail · HR</span><b>Hire 2 Java developers</b><div class="row"><small>+40 W</small><button class="acc">Click to accept</button></div><i class="time" style="width:80%"></i></div>
+          </div>
+        </aside>
+      </div>
+      <div class="bars"><div class="pu-row"><div class="pu"><b>Training mgr</b><small>ready</small></div><div class="pu"><b>CEO</b><small>ready</small></div></div></div>
+    </div>
+  </div>
+  <div class="note">On a phone, the panel stacks under the board in the same order: Building, Developers, Tasks. The offer card can scroll out of view there, which makes missing an offer more likely on a phone. That's acceptable for a desktop-first game.</div>
+</div>
+</body>
+</html>

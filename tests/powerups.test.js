@@ -107,3 +107,65 @@ test('I1: a power-up whose getCost or canActivate throws is just unusable, never
   assert.equal(usePowerup(g, 'broken'), false);
   console.error = orig;
 });
+
+// ---------- power-up investments ----------
+import { powerupMod, effectiveCooldown, powerupCost } from '../src/engine/powerups.js';
+import { setStorage, saveProgress } from '../src/engine/investments.js';
+
+const PU_INVESTMENTS = ['training-budget', 'training-planning', 'sales-targets', 'sales-pipeline', 'leadership-coaching', 'ceo-calendar', 'prompt-engineering', 'enterprise-plan'];
+async function withPowerupInvestments() {
+  setStorage(null);
+  for (const m of PU_INVESTMENTS) R.registerInvestment((await import(`../src/content/investments/${m}.js`)).default);
+}
+
+test('effect level makes training stronger; activate→deactivate restores exactly', () => {
+  const g = waveGame(); powerupMod(g, 'training').effect = 2; spawnBug(g, 'b', 10);
+  usePowerup(g, 'training'); assert.equal(g.mods.xpMultiplier, 2.5);
+  tickPowerups(g, 15.01); assert.equal(g.mods.xpMultiplier, 1);
+});
+
+test('business and CEO effect levels', () => {
+  const g = waveGame(); powerupMod(g, 'business').effect = 1; powerupMod(g, 'ceo').effect = 2;
+  usePowerup(g, 'business'); usePowerup(g, 'ceo');
+  assert.equal(g.mods.warrantMultiplier, 2.25);
+  assert.ok(Math.abs(g.mods.fireRateMultiplier - 1.7) < 1e-9);
+  tickPowerups(g, 15.01);
+  assert.ok(Math.abs(g.mods.warrantMultiplier - 1) < 1e-9);
+  assert.ok(Math.abs(g.mods.fireRateMultiplier - 1) < 1e-9);
+});
+
+test('cooldown level shortens the cooldown', () => {
+  const g = waveGame(); powerupMod(g, 'ceo').cooldown = 0.7;
+  assert.equal(effectiveCooldown(g, 'ceo'), 28);
+  usePowerup(g, 'ceo'); tickPowerups(g, 10.01);
+  assert.ok(Math.abs(powerupState(g, 'ceo').cooldownLeft - 28) < 0.05);
+});
+
+test('Review Focus 4: CEO boost + another fireRate change in between unwind cleanly', () => {
+  const g = waveGame(); powerupMod(g, 'ceo').effect = 3;
+  usePowerup(g, 'ceo'); g.mods.fireRateMultiplier *= 0.5;   // e.g. heating out starts
+  tickPowerups(g, 10.01); g.mods.fireRateMultiplier /= 0.5; // CEO ends, then event ends
+  assert.ok(Math.abs(g.mods.fireRateMultiplier - 1) < 1e-9);
+});
+
+test('Claude: prompt engineering lowers backfire, enterprise plan lowers price', () => {
+  const g = waveGame(); powerupMod(g, 'claude').effect = 3; powerupMod(g, 'claude').cost = 0.7;
+  assert.equal(powerupCost(g, 'claude'), 105);
+  g.random = () => 0.12; g.warrants = 1000; spawnBug(g, 'b', 10);
+  usePowerup(g, 'claude'); assert.equal(g.bugs.length, 0);   // 0.12 ≥ 0.10 → success
+});
+
+test('describe() shows the upgraded numbers', () => {
+  const g = waveGame(); powerupMod(g, 'training').effect = 1; powerupMod(g, 'claude').effect = 2;
+  assert.equal(R.getPowerup('training').describe(g), '×2.25 XP');
+  assert.equal(R.getPowerup('claude').describe(g), 'Squash every bug · 15% backfire');
+});
+
+test('investment files apply to powerupMods via startGame', async () => {
+  await withPowerupInvestments();
+  saveProgress({ capital: 0, levels: { 'training-budget': 1, 'ceo-calendar': 2, 'enterprise-plan': 3 } });
+  const g = createGame(); startGame(g);
+  assert.equal(powerupMod(g, 'training').effect, 1);
+  assert.ok(Math.abs(powerupMod(g, 'ceo').cooldown - 0.8) < 1e-9);
+  assert.ok(Math.abs(powerupMod(g, 'claude').cost - 0.7) < 1e-9);
+});

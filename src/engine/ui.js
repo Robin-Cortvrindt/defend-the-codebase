@@ -1,9 +1,10 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
+import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades, getInvestments } from './registry.js';
+import { loadProgress, investmentLevel, investmentCost, canInvest, invest, resetProgress } from './investments.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
-import { sellDev, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
-import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
+import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
+import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
 import { drawDevTile } from './render.js';
@@ -72,7 +73,7 @@ function buildHire() {
     const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, title: `Hotkey ${i + 1}`, onclick: () => selectHire(def.id) },
       cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost);
     bar.append(btn);
-    return { def, btn };
+    return { def, btn, cost };
   });
   // The selected-developer panel lives on the map, before #overlay so overlay screens stay on top.
   if (!refs.selPanel) {
@@ -161,9 +162,11 @@ export function updateUI() {
   set(refs.pause, 'textContent', v.paused ? 'Resume' : 'Pause');
   set(refs.mute, 'textContent', isMuted() ? 'Sound off' : 'Sound on');
 
-  for (const { def, btn } of refs.hire) {
+  for (const { def, btn, cost } of refs.hire) {
+    const price = hireCost(g, def.id);
     toggle(btn, 'active', v.hire === def.id);
-    toggle(btn, 'poor', g.warrants < def.cost);
+    toggle(btn, 'poor', g.warrants < price);
+    set(cost, 'textContent', String(price));
   }
 
   for (const { def, card, status, cd } of refs.powerups) {
@@ -174,9 +177,11 @@ export function updateUI() {
     toggle(card, 'ready', usable && !st.active);
     toggle(card, 'disabled', !usable && !st.active);
     let text, pct = 0;
-    if (st.active) { text = `${def.description} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
-    else if (st.cooldownLeft > 0) { text = `${def.description} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / def.cooldown; }
-    else text = cost ? `${def.description} · ${cost}` : `${def.description} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
+    let desc = def.description;
+    try { if (def.describe) desc = def.describe(g); } catch (e) { console.error(`[powerup ${def.id}]`, e); }
+    if (st.active) { text = `${desc} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
+    else if (st.cooldownLeft > 0) { text = `${desc} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / (effectiveCooldown(g, def.id) || 1); }
+    else text = cost ? `${desc} · ${cost}` : `${desc} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
     set(status, 'textContent', text);
     cd.style.width = `${Math.round(pct * 100)}%`;
   }
@@ -301,7 +306,10 @@ function showOverlay(phase) {
       h('h1', {}, 'Defend the Codebase'),
       h('p', { class: 'lede' }, 'Bugs are crawling toward the Nexios building. Hire developers next to the path, earn Warrants for every bug they squash and ring the Nexios bell after each sprint. Every quarter ends with a review where you spend Nexios Coins on the building. How many years can you keep production up?'),
       legend,
-      h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
+      h('div', { class: 'screen-actions' },
+        h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
+        h('button', { class: 'btn ghost big', onclick: showShop }, `Investments · 💼 ${loadProgress().capital}`),
+      ),
     ));
   } else if (phase === 'bell') {
     ov.className = 'bell-overlay';
@@ -324,14 +332,20 @@ function showOverlay(phase) {
     ], h('button', { class: 'btn primary big', onclick: () => app.restart() }, 'Play again →')));
   } else if (phase === 'lost') {
     ov.className = 'screen lost';
-    const best = recordBest(g.sprint);
+    // Kept on the game, so coming back from the shop still shows "New" for a new record.
+    g.bestResult ??= recordBest(g.sprint);
+    const best = g.bestResult;
     const si = sprintInfo(g.sprint);
     const bi = sprintInfo(best.sprint);
     ov.append(endCard('#EA580C', `Fell in Year ${si.year} · Q${si.quarter} · Sprint ${si.sprint}`, 'Production is down', [
       [g.stats.squashed, 'Bugs squashed'], [g.floors, 'Floors'],
       [best.isNew ? 'New' : `Y${bi.year} Q${bi.quarter} S${bi.sprint}`, 'Best run'],
     ], h('pre', { class: 'trace' }, '500 · NullPointerException\n  at prod.main(Legacy.java:1)\non-call: you'),
-    h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →')));
+    h('p', { class: 'lede investors' }, `New investors put in +${g.capitalEarned ?? 0} 💼 · you now have ${loadProgress().capital} 💼`),
+    h('div', { class: 'screen-actions' },
+      h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →'),
+      h('button', { class: 'btn ghost big', onclick: showShop }, 'Investments'),
+    )));
   }
 }
 
@@ -347,6 +361,56 @@ function endCard(accent, eyebrow, title, stats, ...extra) {
 }
 
 export function resetUI() { lastPhase = null; buildPowerups(); }
+
+// ---------- investments shop (between runs) ----------
+
+const INVEST_GROUPS = [['developers', 'Developers'], ['powerups', 'Power-ups'], ['unlocks', 'Unlocks']];
+
+function investmentText(def, level) {
+  try { if (level > 0 && def.effectText) return def.effectText(level); } catch (e) { console.error(`[investment ${def.id}]`, e); }
+  return def.description || '';
+}
+
+function showShop() {
+  const ov = $('#overlay');
+  ov.className = 'screen invest';
+  ov.innerHTML = '';
+  const rerender = () => showShop();
+  const { capital } = loadProgress();
+  const sections = INVEST_GROUPS.map(([group, title]) => {
+    const defs = getInvestments().filter(d => (d.group || 'developers') === group);
+    if (!defs.length) return null;
+    return h('div', { class: 'shop' }, h('div', { class: 'eyebrow' }, title), defs.map(def => {
+      const level = investmentLevel(def.id);
+      const max = def.maxLevel ?? Infinity;
+      const maxed = level >= max;
+      const unlock = group === 'unlocks';
+      const cost = investmentCost(def.id);
+      const label = maxed ? (unlock ? 'Owned' : 'Max') : `💼 ${cost}`;
+      const btnProps = { class: 'btn primary', onclick: () => { if (invest(def.id)) { playSound('powerup'); rerender(); } } };
+      if (!canInvest(def.id)) btnProps.disabled = '';
+      return h('div', { class: 'shop-row' },
+        h('div', {}, h('b', {}, def.name), h('small', {}, investmentText(def, level))),
+        unlock || !Number.isFinite(max) ? null : h('span', { class: 'lvl' }, `Lv ${level}/${max}`),
+        h('button', btnProps, label),
+      );
+    }));
+  });
+  const reset = () => {
+    if (!window.confirm('Reset all investments and Investor Capital?')) return;
+    resetProgress(); rerender();
+  };
+  ov.append(h('div', { class: 'screen-card invest-card' },
+    h('div', { class: 'eyebrow' }, 'Between runs'),
+    h('h1', {}, 'Investments'),
+    h('p', { class: 'lede' }, `Investor Capital: 💼 ${capital}. Every investment stays for all your future runs.`),
+    sections,
+    h('div', { class: 'screen-actions' },
+      h('button', { class: 'btn light big', onclick: () => showOverlay(app.game.phase) }, '← Back'),
+      h('button', { class: 'btn ghost', onclick: reset }, 'Reset progress'),
+    ),
+  ));
+}
 
 // ---------- quarter review ----------
 
