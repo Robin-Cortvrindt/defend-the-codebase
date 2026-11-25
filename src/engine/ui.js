@@ -9,6 +9,7 @@ import { drinkFor, drinkName, canAfford } from './drinks.js';
 import { quarterHoldLeft } from './drops.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
+import { hireCardInfo } from './hire-card.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
@@ -49,6 +50,13 @@ function stat(label, valueEl, extra) {
   return h('div', { class: 'stat' }, h('small', {}, label, extra), valueEl);
 }
 
+function hireCard(def, i) {
+  const { strong, hotkey } = hireCardInfo(def, i);
+  return h('span', { class: 'hire-card' },
+    strong ? h('span', { class: 'hc-strong' }, 'Strong vs ', h('i', { class: 'hc-dot', style: `background:${strong.ring}` }), h('b', {}, strong.name), ' · 2× damage') : null,
+    h('small', {}, hotkey));
+}
+
 function buildHire() {
   const bar = $('#hire');
   bar.innerHTML = '';
@@ -58,8 +66,8 @@ function buildHire() {
     c.scale(2, 2);
     drawDevTile(c, def, 16, 16, 28);
     const cost = h('span', { class: 'cost' }, String(def.cost));
-    const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, title: `Hotkey ${i + 1}`, onclick: () => selectHire(def.id) },
-      cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost);
+    const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, onclick: () => selectHire(def.id) },
+      cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost, hireCard(def, i));
     bar.append(btn);
     return { def, btn, cost };
   });
