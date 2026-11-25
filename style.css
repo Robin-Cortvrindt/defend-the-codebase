@@ -10,7 +10,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #app { width: 100%; max-width: 1380px; background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; align-self: flex-start; }
 
 /* HUD */
-#hud { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
+#hud { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
 .wordmark { height: 20px; max-height: 20px; width: auto; align-self: center; }
 .stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .stat small { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
@@ -351,3 +351,24 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .stat .drinks .drink { display: inline-flex; gap: 3px; align-items: baseline; font-weight: 900; }
 .stat .drinks .drink i { font-style: normal; font-size: 14px; }
 .stat .drinks .drink b { font-size: 18px; color: inherit; }
+
+/* year roadmap in the HUD: 4 quarters x 7 sprints (docs/mockups/top-bar.html, option B) */
+.hud-divider { width: 1px; align-self: stretch; background: var(--navy3); }
+.roadmap { flex: 1 1 280px; min-width: 270px; max-width: 400px; line-height: 1.2; }
+.rm-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--s400); margin-bottom: 4px; white-space: nowrap; }
+.rm-top b { color: #fff; font-size: 13px; font-weight: 900; }
+.rm-quarters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.rm-q { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding-bottom: 13px; }
+.rm-sprint { position: relative; height: 8px; border-radius: 2px; background: var(--navy3); overflow: hidden; }
+.rm-sprint.done { background: var(--green); }
+.rm-sprint.now { background: var(--navy3); box-shadow: 0 0 0 2px rgba(37, 99, 235, .45); overflow: visible; }
+.rm-sprint.now::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--fill, 0%); min-width: 3px; border-radius: 2px; background: var(--blue); }
+.rm-q label { position: absolute; left: 0; bottom: 0; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--s500); }
+.rm-q.current label { color: #fff; }
+.rm-mark { position: absolute; right: -2px; bottom: -1px; color: var(--s600); line-height: 0; }
+.rm-mark svg { width: 10px; height: 10px; }
+.rm-q.past .rm-mark { color: #FACC15; }
+.incident-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 99px; background: rgba(234, 88, 12, .15); color: #FDBA74; border: 1px solid rgba(234, 88, 12, .5); white-space: nowrap; }
+.incident-chip svg { width: 13px; height: 13px; }
+.incident-chip.hidden { display: none; }
+#hud .btn.icon { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 8px 9px; }

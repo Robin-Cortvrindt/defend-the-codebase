@@ -43,6 +43,7 @@ export function createGame() {
     effects: [],
     drops: [],                // drinks lying on the board, waiting to be clicked
     spawnQueue: [],
+    waveSpawned: 0,           // bugs that walked in this sprint (splits included), for the progress count
     waveTime: 0,
     deathTime: 0,             // seconds since production went down (drives the collapse animation)
     mods: {
@@ -64,6 +65,13 @@ export const totalWaves = () => getWaves().length;
 // While the bell waits between sprints nothing about the team can change: no hiring, selling,
 // upgrading, power-ups or mail. Ringing the bell starts the next sprint.
 export const isLocked = game => game.phase === 'bell';
+
+// How far the running sprint is: bugs dealt with (squashed or through) out of every bug this sprint,
+// counting bugs that split into more. Ends at total / total when the sprint ends.
+export function waveProgress(game) {
+  const spawned = game.waveSpawned ?? 0;
+  return { done: spawned - game.bugs.length, total: spawned + game.spawnQueue.length };
+}
 // The view with nothing selected and no hire in progress, for when the lock starts.
 export const lockedView = view => ({ ...view, selected: null, hire: null });
 export const SPRINTS_PER_QUARTER = 7;
@@ -116,6 +124,7 @@ export function startWave(game) {
   // The boss (if the sprint has one) walks in a few seconds after the last regular bug.
   if (wave.boss) queue.push({ t: (queue.at(-1)?.t ?? 0) + BOSS_DELAY, bug: wave.boss });
   game.spawnQueue = queue;
+  game.waveSpawned = 0;
   game.waveTime = 0;
   game.phase = 'wave';
   if (game.sprint % SPRINTS_PER_QUARTER === 0) game.quarterStats = { squashed: 0, leaked: 0 };
@@ -138,6 +147,7 @@ export function spawnBug(game, bugId, distance = 0, hp) {
   const maxHp = Math.round(def.hp * (getSprintDef(game.sprint)?.hp ?? 1));
   const bug = { id: game.nextId++, type: bugId, hp: hp ?? maxHp, maxHp, distance, x: p.x, y: p.y, slow: 1 };
   game.bugs.push(bug);
+  if (game.phase === 'wave') game.waveSpawned = (game.waveSpawned ?? 0) + 1;
   emit('bug:spawned', { game, bug });
   return bug;
 }
