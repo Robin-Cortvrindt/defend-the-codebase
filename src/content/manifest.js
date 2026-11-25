@@ -1,6 +1,10 @@
 // Every content file the game loads. To add something: create one file, add one line here.
 // A file that fails to load is skipped (see the browser console), so it can't break the game.
 export const CONTENT = [
+  // Drinks (currencies, one per developer)
+  './drinks/coffee.js',
+  './drinks/monster.js',
+  './drinks/redbull.js',
   // Developers (towers)
   './developers/react.js',
   './developers/java.js',

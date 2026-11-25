@@ -11,6 +11,7 @@ on('dev:placed', ({ game, dev }) => {
 // Java: balanced speed and damage. Counters null pointers.
 registerDeveloper({
   id: 'java',
+  drink: 'coffee',
   name: 'Java',
   accent: '#EA580C',
   cost: 75,

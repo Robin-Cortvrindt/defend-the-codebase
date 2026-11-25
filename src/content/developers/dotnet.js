@@ -6,6 +6,7 @@ import { CELL } from '../../engine/map.js';
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
 registerDeveloper({
   id: 'dotnet',
+  drink: 'monster',
   name: '.NET',
   accent: '#C026D3',
   cost: 110,

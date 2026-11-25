@@ -1,4 +1,5 @@
 // Content registry. Every developer, bug, power-up, wave list and feature registers itself here.
+const drinks = new Map();
 const developers = new Map();
 const bugs = new Map();
 const powerups = new Map();
@@ -18,6 +19,7 @@ function put(map, kind, def) {
   return def;
 }
 
+export const registerDrink = def => put(drinks, 'drink', def);
 export const registerDeveloper = def => put(developers, 'developer', def);
 export const registerBug = def => put(bugs, 'bug', def);
 export const registerPowerup = def => put(powerups, 'powerup', def);
@@ -27,6 +29,8 @@ export const registerUpgrade = def => put(upgrades, 'upgrade', def);
 export const registerInvestment = def => put(investments, 'investment', def);
 export function registerWaves(list) { waves = list; }
 
+export const getDrinks = () => [...drinks.values()];
+export const getDrink = id => drinks.get(id);
 export const getDevelopers = () => [...developers.values()];
 export const getDeveloper = id => developers.get(id);
 export const getBugs = () => [...bugs.values()];
@@ -43,5 +47,5 @@ export const getInvestments = () => [...investments.values()];
 export const getInvestment = id => investments.get(id);
 
 export function resetRegistry() {
-  developers.clear(); bugs.clear(); powerups.clear(); features.clear(); events.clear(); upgrades.clear(); investments.clear(); waves = [];
+  drinks.clear(); developers.clear(); bugs.clear(); powerups.clear(); features.clear(); events.clear(); upgrades.clear(); investments.clear(); waves = [];
 }

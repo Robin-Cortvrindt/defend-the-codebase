@@ -4,6 +4,7 @@ import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
 // React (front-end): fast, light hits. Counters swarms of typo bugs.
 registerDeveloper({
   id: 'react',
+  drink: 'redbull',
   name: 'React',
   accent: '#2563EB',
   cost: 50,

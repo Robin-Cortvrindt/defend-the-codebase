@@ -14,6 +14,7 @@ import { startMusic } from './engine/music.js';
 
 // If the manifest itself is broken (a typo in the one shared file), still load the core game.
 const CORE = [
+  'drinks/coffee.js', 'drinks/monster.js', 'drinks/redbull.js',
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
   'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',

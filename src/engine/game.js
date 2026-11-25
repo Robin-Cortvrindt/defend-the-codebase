@@ -50,7 +50,7 @@ export function createGame() {
     },
     powerups: {},
     activeEvent: null,        // id of the random event running this wave
-    stats: { squashed: 0, warrantsEarned: 0, seniors: 0, backfires: 0 },
+    stats: { squashed: 0, warrantsEarned: 0, drinksCollected: 0, seniors: 0, backfires: 0 },
     time: 0,
     nextId: 1,
     random: Math.random,
