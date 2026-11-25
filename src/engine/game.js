@@ -8,6 +8,7 @@ import { rollEvent, endEvent } from './random-events.js';
 
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
+export const BOSS_DELAY = 3;    // seconds between the last regular bug and the boss
 
 export function createGame() {
   return {
@@ -66,6 +67,7 @@ export function getSprintDef(n) {
   const k = n - (waves.length - 1);
   return {
     hp: (last.hp ?? 1) * 1.05 ** k,
+    boss: last.boss,
     groups: last.groups.map(g => ({
       ...g,
       count: Math.max(1, Math.round(g.count * (1 + 0.05 * k))),
@@ -89,6 +91,8 @@ export function startWave(game) {
     for (let i = 0; i < g.count; i++) queue.push({ t: (g.delay || 0) + i * (g.interval || 1), bug: g.bug });
   }
   queue.sort((a, b) => a.t - b.t);
+  // The boss (if the sprint has one) walks in a few seconds after the last regular bug.
+  if (wave.boss) queue.push({ t: (queue.at(-1)?.t ?? 0) + BOSS_DELAY, bug: wave.boss });
   game.spawnQueue = queue;
   game.waveTime = 0;
   game.phase = 'wave';
