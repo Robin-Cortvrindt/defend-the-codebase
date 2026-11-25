@@ -17,7 +17,7 @@ Upgrades are gated by XP: squashing bugs earns XP as it does today, and reaching
 - Upgrades cost Warrants and need XP: 10 XP unlocks level 2, 30 XP unlocks the level-3 choice (today's thresholds).
 - Nine upgrades as in §4, each with its own behaviour, not just a stat bump.
 - Each developer file declares its whole upgrade path (approach A, §5).
-- The jokes from §4 ship as written.
+- The jokes from §4 ship as written, except the .NET "Is it Core?" prompt, which the user dropped.
 
 **Non-goals**
 - Invisible or stealth bugs. Visual Studio Enterprise is simply the big-hit branch.
@@ -65,7 +65,6 @@ Flavour: after placement, "Initializing 847 beans…" shows above the tower for 
 
 Azure details *(design calls)*: it starts **on** after purchase. It charges only while it's on **and** has a bug in range, at 1 Warrant every 0.5 s, so Warrants stay whole numbers and never go below 0. At 0 Warrants it stops firing until you have Warrants again.
 
-Running gag: every .NET upgrade first opens a prompt "Is it Core? Standard? Just .NET?" with a single "Yes" button. Esc or clicking outside cancels; "Yes" buys. The game keeps running while the prompt is open (user's call): the joke costs real time mid-wave. The sim and tests call the buy function directly and skip the prompt.
 
 ### React — fast, light hits
 
@@ -107,7 +106,6 @@ The engine must offer hooks for at least what §4 needs:
 - **replacing what a shot does** (pierce, splash, pulse, chained re-hits), using an engine helper that applies one hit with counter damage, `onHit`, kill, reward and XP, so content doesn't duplicate that logic,
 - **a per-tick update that can stop the tower firing** (Garbage Collector's pause, Azure's toggle and Warrants drain),
 - **extra panel buttons for the selected developer** (Azure's on/off toggle),
-- **an optional confirm prompt before buying** (.NET's "Is it Core?").
 
 The exact signatures are the builder's call. A developer-level hook (e.g. React's ecosystem bonus) applies at every level. Every hook call is wrapped in try/catch like existing content hooks.
 
@@ -150,5 +148,5 @@ Selection panel, when a developer is selected:
 
 - Exact hook names and signatures, and where the upgrade data sits in the definition.
 - Visuals for pulse, splash, pierce, chains and the aura (reuse `ring`, `beam`, `pop` effects).
-- How the "ready" marker and the .NET prompt look, within the Nexios style.
+- How the "ready" marker looks, within the Nexios style.
 - Tuning costs and numbers in §4 against the sim.
