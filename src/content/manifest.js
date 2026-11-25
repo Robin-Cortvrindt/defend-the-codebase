@@ -27,6 +27,7 @@ export const CONTENT = [
   './upgrades/floor.js',
   './upgrades/aircon.js',
   // Features (teammates' add-ons, Nexios references, ...)
+  './features/mailbox.js',
 ];
 
 export const CONTENT_URLS = CONTENT.map(p => new URL(p, import.meta.url).href);
