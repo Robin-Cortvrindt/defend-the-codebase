@@ -54,7 +54,7 @@ export const goblinFeature = {
     g.moving = true;
     if (Math.hypot(target.x - g.x, target.y - g.y) <= STEAL_RADIUS && stealDrop(game, target)) g.carried++;
   },
-  draw(ctx, game) {
+  drawUnder(ctx, game) {   // on the floor: under effects, banners and the PROD-is-down darkness
     const g = game.goblin;
     if (g) drawGoblin(ctx, g, game.time || 0);
   },

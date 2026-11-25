@@ -22,6 +22,10 @@ export function render(ctx, game, view) {
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, game, bug);
   drawDrops(ctx, game);   // under the event, so in the PROD-is-down darkness only the flashlight shows them
+  for (const f of getFeatures()) {   // things on the floor (goblin, vacuum): also under the event's darkness
+    if (!f.drawUnder) continue;
+    safeDraw(ctx, `[feature ${f.id}] drawUnder`, () => f.drawUnder(ctx, game));
+  }
   drawActiveEvent(ctx, game, view);
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
