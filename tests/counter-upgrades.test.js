@@ -47,10 +47,20 @@ function runEvent(id, level) {
   return during;
 }
 
-test('heating is out: half speed, a sixth less per level, none at level 3', () => {
-  assert.equal(runEvent('heating-out', 0).timeScale, 0.5);
-  assert.ok(Math.abs(runEvent('heating-out', 1).timeScale - 2 / 3) < 1e-9);
-  assert.equal(runEvent('heating-out', 3).timeScale, 1);
+test('heating is out: only developers slow down (half fire rate), a sixth less per level, none at level 3', () => {
+  const d0 = runEvent('heating-out', 0);
+  assert.equal(d0.fireRateMultiplier, 0.5);
+  assert.equal(d0.timeScale, 1, 'bugs keep their speed');
+  assert.equal(d0.bugSpeedMultiplier, 1, 'bugs keep their speed');
+  assert.ok(Math.abs(runEvent('heating-out', 1).fireRateMultiplier - 2 / 3) < 1e-9);
+  assert.equal(runEvent('heating-out', 3).fireRateMultiplier, 1);
+});
+
+test('heat wave: only bugs speed up, developers are untouched', () => {
+  const d = runEvent('heat-wave', 0);
+  assert.equal(d.bugSpeedMultiplier, 1.5);
+  assert.equal(d.fireRateMultiplier, 1);
+  assert.equal(d.timeScale, 1);
 });
 
 test('out of coffee / Red Bull: Java / .NET at half speed, none at level 3', () => {

@@ -48,7 +48,7 @@ Option 2 won because it keeps the "one new file plus one manifest line" rule for
 | Event | Effect |
 |---|---|
 | PROD is down | Dark overlay with a flashlight radius of about 2.5 cells around `view.cursor`. Fully dark when the cursor is off the canvas. |
-| Heating is out | `timeScale *= 0.5` |
+| Heating is out | developers only: `fireRateMultiplier *= 0.5` (bugs unaffected; reduced by server heat recovery) |
 | Out of coffee | Java fire rate ×0.5 |
 | Out of Red Bull | .NET fire rate ×0.5 |
 | Heat wave | `bugSpeedMultiplier *= 1.5` |

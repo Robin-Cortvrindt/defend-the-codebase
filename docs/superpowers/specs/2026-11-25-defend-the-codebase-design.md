@@ -226,7 +226,7 @@ This section replaces the parts of §4 it contradicts. Waves become **sprints**,
 | Event | Counter-upgrade (id) | Effect | On the building |
 |---|---|---|---|
 | Heat wave | Air conditioning (`aircon`) | speed-up −⅓ per level | white roof unit, one fan per level, cool-air wisps |
-| The heating is out | Server heat recovery (`heating`) | slowdown 50% → 33% → 17% → 0% | orange radiator strips under the windows (more floors per level), blinking server-room lights |
+| The heating is out (developers only) | Server heat recovery (`heating`) | developer slowdown 50% → 33% → 17% → 0% | orange radiator strips under the windows (more floors per level), blinking server-room lights |
 | Out of coffee | Coffee bar (`coffee`) | Java slowdown shrinks the same way | round café sign with a steaming cup on the left wall, bigger per level, glow at level 3 |
 | Out of Red Bull | Energy drink fridge (`fridge`) | .NET slowdown shrinks the same way | glowing fuchsia fridge window, one per level |
 | PROD is down | Backup generator (`generator`) | flashlight radius +40% per level; level 3 keeps the lights on | generator box at the foot (bigger per level) and one roof light per level |
