@@ -96,9 +96,11 @@ export function applyInvestments(game) {
   if (game.investmentsApplied) return;
   game.investmentsApplied = true;
   const { levels } = loadProgress();
+  game.investmentLevels = {};
   for (const def of getInvestments()) {
     const level = levels[def.id] || 0;
     if (level <= 0) continue;
+    game.investmentLevels[def.id] = level;
     try { def.apply(game, level); } catch (e) { console.error(`[investment ${def.id}]`, e); }
   }
 }

@@ -33,6 +33,7 @@ export function createGame() {
     unlocks: {},              // mechanics unlocked by investments, e.g. unlocks.firewall
     powerupMods: {},          // per power-up investment bonuses, see powerupMod() in powerups.js
     investmentsApplied: false,
+    investmentLevels: {},     // id -> level applied this run (set by applyInvestments)
     capitalEarned: null,      // Investor Capital paid out when this run was lost
     quarterStats: { squashed: 0, leaked: 0 },
     drinks: startingDrinks(),

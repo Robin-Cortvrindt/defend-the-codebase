@@ -574,3 +574,16 @@ test('claim works during the quarter review', () => {
   g.phase = 'review';
   assert.equal(claimMail(g, m.id), 'reward');
 });
+
+test('describeEffect shows the phishing lock on the locked developer only', () => {
+  R.registerDeveloper({ id: 'dotnet', name: '.NET', accent: '#C026D3', cost: 100, damage: 10, fireRate: 1, range: 2, counters: 'typo' });
+  const dev = addDev(7);
+  assert.equal(mailbox.describeEffect(g, dev), null);
+  const m = phish('compromised');
+  claimMail(g, m.id);
+  const other = addDev(8);
+  assert.deepEqual(mailbox.describeEffect(g, dev), { name: 'Phished', text: `locked out (${LOCK_SECONDS} s left)` });
+  dev.cooldown = 7.2;
+  assert.equal(mailbox.describeEffect(g, dev).text, 'locked out (8 s left)');
+  assert.equal(mailbox.describeEffect(g, other), null);
+});

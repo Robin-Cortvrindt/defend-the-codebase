@@ -122,6 +122,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .sel-panel .choice-or { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--s400); }
 .sel-panel .choice-head small { font-size: 12px; color: var(--s400); }
 
+/* hover card: every effect acting on a developer */
+.sel-panel.popover.effects-card { pointer-events: none; z-index: 11; }   /* above the pause veil (10); updateEffectsCard hides it while the quit modal (5) is open */
+.effects-card .popover-body { overflow: hidden; gap: 4px; }
+.effects-card .effects-totals { color: var(--s400); font-size: 12px; margin-bottom: 4px; }
+.effects-card .effect-line { display: block; font-size: 12px; color: var(--s200); }
+.effects-card .effect-line b { font-size: 12px; margin-right: 6px; }
+
 /* overlay screens */
 .screen { display: flex; align-items: center; justify-content: flex-start; background: rgba(0, 30, 50, .94); padding: 0 6%; }
 .screen.lost { background: rgba(10, 42, 64, .96); }

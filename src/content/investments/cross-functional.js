@@ -4,6 +4,7 @@
 // or selling switches it on or off right away. Built like security-training.js: one investment + one feature.
 import { registerInvestment, registerFeature } from '../../engine/registry.js';
 import { addEffect } from '../../engine/game.js';
+import { pctText } from '../../engine/effects.js';
 
 export const BALANCED_BONUS = 1.25;
 const TYPES = ['react', 'java', 'dotnet'];
@@ -17,6 +18,7 @@ const investment = {
   maxLevel: 1,
   getCost() { return 40; },
   apply(game) { game.unlocks.crossFunctional = true; },
+  describeEffect(game) { return isBalanced(game) ? { group: 'team', text: `attack speed ${pctText(BALANCED_BONUS)}` } : null; },
   effectText() { return 'Balanced team: +25% productivity'; },
 };
 

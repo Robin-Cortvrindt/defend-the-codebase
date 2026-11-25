@@ -15,6 +15,7 @@ import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
 import { drawDrinkIcon } from './drink-icons.js';
+import { updateEffectsCard } from './effects-card.js';
 import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
 import { getBellActions, bellActionView } from './bell.js';
 
@@ -302,6 +303,7 @@ export function updateUI() {
   }
 
   updateSelPanel();
+  updateEffectsCard(app, reviewMinimized, isQuitOpen());
   // On game over, let the building burn down first; the end screen follows once the collapse is done.
   // A quit run burns down like a real loss, then goes straight back to the main menu.
   if (g.phase === 'lost' && g.quit && deathAnimDone(g)) {

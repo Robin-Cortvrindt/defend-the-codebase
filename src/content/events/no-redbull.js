@@ -1,6 +1,7 @@
 // Event: out of Red Bull. .NET developers work at half speed, less with an energy drink fridge.
 import { registerEvent } from '../../engine/registry.js';
 import { resistanceTo } from '../../engine/upgrades.js';
+import { pctText } from '../../engine/effects.js';
 
 const event = {
   id: 'no-redbull', name: 'Out of Red Bull', description: '.NET developers work at half speed', accent: '#C026D3',
@@ -8,6 +9,10 @@ const event = {
     const f = 0.5 + 0.5 * resistanceTo(game, 'no-redbull');
     game.redbullFactor = f;
     if (f !== 1) game.mods.devFireRate.dotnet = (game.mods.devFireRate.dotnet ?? 1) * f;
+  },
+  describeEffect(game, dev) {
+    const f = game.redbullFactor ?? 1;
+    return dev.type === 'dotnet' && f !== 1 ? `attack speed ${pctText(f)}` : null;
   },
   end(game) {
     const f = game.redbullFactor ?? 1;

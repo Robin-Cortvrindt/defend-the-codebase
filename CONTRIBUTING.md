@@ -31,6 +31,7 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 | `registerUpgrade` | `{ id, name, description, maxLevel?, getCost(game, level), apply(game, level) }` — appears in the quarter-review shop |
 | `registerInvestment` | `{ id, name, description, group: 'developers' \| 'powerups' \| 'unlocks', maxLevel, getCost(level), apply(game, level), effectText?(level) }`: a permanent upgrade bought between runs with Investor Capital. `apply` runs once at the start of every run (`src/content/investments/`) |
 | `registerWaves` | `[{ hp /*health multiplier*/, boss? /*bug id, spawns 3 s after the last bug*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
+| `describeEffect` | `describeEffect?(game, dev, level?)` on a developer def, an upgrade (and its `aura.describe`), an investment (gets its `level`), a power-up or event (only called while active) or a feature: says what it does to this developer, for the hover card. Returns a string, `string[]`, `{ name?, text, group? }`, an array of those, or `null` for no line. The line is named after its source (investments include their level) unless you return `name`. Numbers must come from the same constant the effect uses, never a copy; use `pctText(factor)` from `src/engine/effects.js` for percentages. A hook that throws is logged and skipped |
 
 ## Developer upgrades
 

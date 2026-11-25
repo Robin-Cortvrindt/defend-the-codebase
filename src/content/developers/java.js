@@ -3,6 +3,10 @@ import { addEffect } from '../../engine/game.js';
 import { on } from '../../engine/events.js';
 import { bugsInRange, hitBug } from '../../engine/devs.js';
 import { zigzagPoint } from '../../engine/zigzag.js';
+import { pctText } from '../../engine/effects.js';
+
+export const ARCHITECT_OWN = 0.9;     // the Architect's own damage factor
+export const ARCHITECT_AURA = 1.15;   // damage factor for developers nearby
 
 on('dev:placed', ({ game, dev }) => {
   if (dev.type !== 'java') return;
@@ -64,8 +68,13 @@ registerDeveloper({
         id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
         description: 'Less damage itself, +15% damage to developers nearby',
         tooltip: "I don't code anymore, I enable.",
-        modifyStats(game, dev, stats) { stats.damage *= 0.9; },
-        aura: { radius: 5, apply(game, dev, stats) { stats.damage *= 1.15; } },
+        modifyStats(game, dev, stats) { stats.damage *= ARCHITECT_OWN; },
+        describeEffect: () => `damage ${pctText(ARCHITECT_OWN)}, ${pctText(ARCHITECT_AURA)} damage to developers nearby`,
+        aura: {
+          radius: 5,
+          apply(game, dev, stats) { stats.damage *= ARCHITECT_AURA; },
+          describe: () => `damage ${pctText(ARCHITECT_AURA)}`,
+        },
       },
       {
         id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,

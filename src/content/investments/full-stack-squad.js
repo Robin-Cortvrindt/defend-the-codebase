@@ -21,6 +21,7 @@ const investment = {
   maxLevel: 1,
   getCost() { return 40; },
   apply(game) { game.unlocks.fullStackSquad = true; },
+  describeEffect(game, dev) { return isSquadReact(game, dev) ? { group: 'team', text: `hits bounce to a second bug for ${Math.round(BOUNCE_FACTOR * 100)}%` } : null; },
   effectText() { return 'React next to Java + .NET: hits bounce for 50%'; },
 };
 

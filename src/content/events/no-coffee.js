@@ -1,6 +1,7 @@
 // Event: out of coffee. Java developers work at half speed, less with a coffee bar.
 import { registerEvent } from '../../engine/registry.js';
 import { resistanceTo } from '../../engine/upgrades.js';
+import { pctText } from '../../engine/effects.js';
 
 const event = {
   id: 'no-coffee', name: 'Out of coffee', description: 'Java developers work at half speed', accent: '#EA580C',
@@ -8,6 +9,10 @@ const event = {
     const f = 0.5 + 0.5 * resistanceTo(game, 'no-coffee');
     game.coffeeFactor = f;
     if (f !== 1) game.mods.devFireRate.java = (game.mods.devFireRate.java ?? 1) * f;
+  },
+  describeEffect(game, dev) {
+    const f = game.coffeeFactor ?? 1;
+    return dev.type === 'java' && f !== 1 ? `attack speed ${pctText(f)}` : null;
   },
   end(game) {
     const f = game.coffeeFactor ?? 1;
