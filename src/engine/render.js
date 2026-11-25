@@ -1,7 +1,7 @@
 // Canvas rendering. Reads game state, never changes it.
 import { getDeveloper, getBug, getFeatures } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
-import { LEVELS, devStats, canPlace } from './devs.js';
+import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 
 export const COLORS = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', pathLine: '#1E4A6A',
@@ -103,20 +103,26 @@ function drawDev(ctx, dev, selected) {
   if (!def) return;
   drawDevTile(ctx, def, dev.x, dev.y);
   // level badge at top-right corner
-  const lvl = LEVELS[dev.level];
+  const maxed = dev.level >= XP_GATES.length - 1;
   const bx = dev.x + 19, by = dev.y - 19;
   roundRect(ctx, bx - 8, by - 7, 16, 14, 3);
-  ctx.fillStyle = dev.level === LEVELS.length - 1 ? COLORS.green : '#fff';
+  ctx.fillStyle = maxed ? COLORS.green : '#fff';
   ctx.fill();
-  ctx.fillStyle = dev.level === LEVELS.length - 1 ? '#fff' : COLORS.navy;
+  ctx.fillStyle = maxed ? '#fff' : COLORS.navy;
   ctx.font = `900 10px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(lvl.badge, bx, by + 0.5);
-  if (dev.level === 1) { ctx.fillStyle = COLORS.green; ctx.fillRect(bx - 8, by + 5, 16, 2); }
+  ctx.fillText(String(dev.level + 1), bx, by + 0.5);
+  // ready marker: an upgrade is unlocked
+  if (upgradeUnlocked(dev)) {
+    const tx = dev.x - 19, ty = dev.y - 19;
+    ctx.fillStyle = COLORS.green;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty - 6); ctx.lineTo(tx + 6, ty + 5); ctx.lineTo(tx - 6, ty + 5);
+    ctx.closePath(); ctx.fill();
+  }
   if (selected) {
-    const next = LEVELS[dev.level + 1];
-    const prev = lvl.xp;
-    const pct = next ? Math.min(1, (dev.xp - prev) / (next.xp - prev)) : 1;
+    const gate = XP_GATES[dev.level + 1];
+    const pct = gate ? Math.min(1, dev.xp / gate) : 1;
     ctx.fillStyle = COLORS.navy3; ctx.fillRect(dev.x - 20, dev.y + 22, 40, 4);
     ctx.fillStyle = COLORS.green; ctx.fillRect(dev.x - 20, dev.y + 22, 40 * pct, 4);
   }

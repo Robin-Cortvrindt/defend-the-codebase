@@ -4,11 +4,6 @@ import { emit } from './events.js';
 import { isBuildable, cellCenter, CELL } from './map.js';
 import { killBug, addEffect } from './game.js';
 
-export const LEVELS = [
-  { name: 'Junior Consultant', badge: 'J', xp: 0 },
-  { name: 'Consultant', badge: 'C', xp: 10 },
-  { name: 'Senior Consultant', badge: 'S', xp: 30 },
-];
 export const XP_GATES = [0, 10, 30];
 
 export const devAt = (game, col, row) => game.devs.find(d => d.col === col && d.row === row);

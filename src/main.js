@@ -45,9 +45,9 @@ on('bug:killed', ({ game, bug }) => {
   playSound('squash', 40);
 });
 on('bug:leaked', () => playSound('leak', 80));
-on('dev:levelup', ({ game, dev }) => {
+on('dev:levelup', ({ game, dev, upgrade }) => {
   addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#16A34A', ttl: 0.6 });
-  addEffect(game, { kind: 'pop', x: dev.x, y: dev.y - 26, text: dev.level === 2 ? 'Senior' : 'Promoted', color: '#4ADE80', size: 12, ttl: 1 });
+  addEffect(game, { kind: 'pop', x: dev.x, y: dev.y - 26, text: upgrade.name, color: '#4ADE80', size: 12, ttl: 1 });
   playSound('levelup');
 });
 on('claude:backfire', () => playSound('backfire'));

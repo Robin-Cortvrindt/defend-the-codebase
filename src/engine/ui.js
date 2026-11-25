@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs } from './registry.js';
 import { totalWaves, startWave, startGame, ringBell } from './game.js';
-import { LEVELS, sellDev } from './devs.js';
+import { sellDev, nextUpgrades, upgradeStatus, upgradeUnlocked, buyUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
@@ -167,16 +167,33 @@ function updateSelPanel() {
   const p = refs.selPanel;
   if (!dev || !app.game.devs.includes(dev)) { toggle(p, 'hidden', true); p.dataset.key = ''; return; }
   const def = getDeveloper(dev.type);
-  const lvl = LEVELS[dev.level], next = LEVELS[dev.level + 1];
-  const key = `${dev.id}:${dev.level}:${Math.floor(dev.xp)}:${dev.kills}`;
+  const gate = XP_GATES[dev.level + 1];
+  const ups = nextUpgrades(dev).map(up => ({ up, status: upgradeStatus(app.game, dev, up) }));
+  let extra = [];
+  try { extra = dev.upgrade?.panelButtons?.(app.game, dev) ?? []; } catch (e) { console.error(`panelButtons failed for ${dev.type}`, e); }
+  const key = [dev.id, dev.level, Math.floor(dev.xp), dev.kills,
+    ups.map(u => `${u.up.id}=${u.status.reason}`).join(','), extra.map(b => b.label).join('|')].join(':');
   toggle(p, 'hidden', false);
   if (p.dataset.key === key) return;
   p.dataset.key = key;
   p.style.setProperty('--accent', def.accent);
   p.innerHTML = '';
+  const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
   p.append(
-    h('div', {}, h('b', {}, `${def.name} · ${lvl.name}`),
-      h('small', {}, next ? `XP ${Math.floor(dev.xp)} / ${next.xp} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`)),
+    h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), h('small', {}, xpLine)),
+    ups.map(({ up, status }) => {
+      const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
+      const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
+      const btn = h('button', { class: 'upgrade-btn', onclick: () => buyUpgrade(app.game, dev, up.id) },
+        h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
+        h('small', {}, kind + line));
+      btn.disabled = !status.ok;
+      if (up.tooltip) btn.title = up.tooltip;
+      return btn;
+    }),
+    extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
+      try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
+    } }, b.label)),
     h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
   );
 }

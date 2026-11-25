@@ -64,10 +64,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hire-text b { font-size: 14px; }
 .hire-text small { font-size: 12px; color: var(--s400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cost { font-weight: 900; font-variant-numeric: tabular-nums; }
-.sel-panel { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
+.sel-panel { flex-wrap: wrap; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; }
 .sel-panel div { display: flex; flex-direction: column; min-width: 0; }
 .sel-panel b { font-size: 14px; }
 .sel-panel small { font-size: 12px; color: var(--s400); }
+.upgrade-btn { display: flex; flex-direction: column; gap: 2px; text-align: left; color: inherit; font: inherit; cursor: pointer; background: var(--navy2); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 7px 10px; min-width: 180px; max-width: 280px; }
+.upgrade-btn:hover:not(:disabled) { background: var(--navy3); }
+.upgrade-btn:disabled { opacity: .5; cursor: default; }
+.upgrade-top { display: flex; justify-content: space-between; gap: 10px; }
+.upgrade-btn b { font-size: 13px; font-weight: 700; }
+.upgrade-btn small { font-size: 12px; color: var(--s400); }
 .sel-panel.hidden { visibility: hidden; }
 
 .help { font-size: 12px; color: var(--s500); padding: 10px 16px; border-top: 1px solid var(--navy3); background: #001726; }
