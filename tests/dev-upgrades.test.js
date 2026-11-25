@@ -143,13 +143,13 @@ test('dotnet: names and stats', () => {
   assert.equal(devStats(g, v).fireRate, 0.6);
 });
 
-test('dotnet: Azure splashes everything within 1 cell of the target', () => {
+test('dotnet: Azure splashes 3× damage on everything within 1 cell of the target', () => {
   const g = waveGame();
   devAt(g, 'dotnet', 3, 3, 'core', 'azure');
   const [t, n, f] = [300, 270, 220].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
   tickDevs(g, 0.05);
-  assert.equal(1000 - t.hp, 55);
-  assert.equal(1000 - n.hp, 55);
+  assert.equal(1000 - t.hp, 165);
+  assert.equal(1000 - n.hp, 165);
   assert.equal(1000 - f.hp, 0);
 });
 

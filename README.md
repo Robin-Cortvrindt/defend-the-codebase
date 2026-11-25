@@ -17,7 +17,7 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
   |---|---|---|---|---|
   | Java | Junior Java Dev | Spring Boot Dev: more damage and range | Enterprise Architect: a little less damage itself, +15% damage to developers nearby | Garbage Collector: stops for 1 s every 8 s, then a big pulse hits every bug in range for 2× |
   | React | Create React App | Vite: faster fire | Next.js: each shot also hits the next 2 bugs | useEffect Hell: harder hits, and each hit has a 20% chance to hit again, up to 10 times |
-  | .NET | .NET Framework 4.8 | .NET Core: faster fire | Visual Studio Enterprise: one huge hit | Azure Function: area damage, billed 1 White Monster every 0.5 s while it fires. Toggle it in the panel. |
+  | .NET | .NET Framework 4.8 | .NET Core: faster fire | Visual Studio Enterprise: one huge hit | Azure Function: triple area damage, billed 1 White Monster every 0.5 s while it fires. Toggle it in the panel. |
 
   React developers fire 10% faster for each other React developer on the map, up to +50%.
 - **Power-ups** are free. Each one has a cooldown instead of a price, and cooldowns only count down during a sprint:

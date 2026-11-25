@@ -5,6 +5,9 @@ import { CELL } from '../../engine/map.js';
 import { zigzagPoint } from '../../engine/zigzag.js';
 import { spendDrink } from '../../engine/drinks.js';
 
+// Azure Function hits every bug around its target for 3× the developer's damage (it costs White Monster).
+export const AZURE_DAMAGE_MULT = 3;
+
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
 // Its attack is a lightning strike: a jagged bolt cracks into the bug with a flash and a shockwave.
 const FUCHSIA = '#C026D3';
@@ -58,7 +61,7 @@ registerDeveloper({
       },
       {
         id: 'azure', name: 'Azure Function', kind: 'gamble', cost: 100,
-        description: 'Area damage, pay-as-you-go',
+        description: 'Triple area damage, pay-as-you-go',
         update(game, dev, dt, stats) {
           if (dev.state.azureOff) return false;
           if (bugsInRange(game, dev, stats.range).length === 0) return true;
@@ -72,7 +75,7 @@ registerDeveloper({
           shotBeam(game, dev, target);
           addEffect(game, { kind: 'ring', x, y, color: '#C026D3', ttl: 0.4 });
           for (const bug of bugsInRange(game, dev, stats.range + CELL)) {
-            if (Math.hypot(bug.x - x, bug.y - y) <= CELL) hitBug(game, dev, bug, stats.damage);
+            if (Math.hypot(bug.x - x, bug.y - y) <= CELL) hitBug(game, dev, bug, stats.damage * AZURE_DAMAGE_MULT);
           }
         },
         panelButtons(game, dev) {
