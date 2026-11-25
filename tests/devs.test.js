@@ -186,7 +186,9 @@ test('Review Focus 5: throwing hooks are logged and the game keeps stepping', ()
   placeDev(g, 'r', 2, 3);
   spawnBug(g, 'other', 300);
   const errors = []; const orig = console.error; console.error = (...a) => errors.push(a);
-  try { for (let i = 0; i < 5; i++) step(g, 0.1); } finally { console.error = orig; }
-  assert.ok(errors.length > 0);
-  assert.ok(devStats(g, d).damage > 0);
+  try {
+    for (let i = 0; i < 5; i++) step(g, 0.1);
+    assert.ok(errors.length > 0);
+    assert.ok(devStats(g, d).damage > 0);
+  } finally { console.error = orig; }
 });
