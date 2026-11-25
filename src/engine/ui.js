@@ -6,6 +6,7 @@ import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, effectiveCooldown } from './powerups.js';
 import { drinkFor, drinkName, canAfford } from './drinks.js';
+import { quarterHoldLeft } from './drops.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
 import { drawDevTile } from './render.js';
@@ -185,7 +186,11 @@ export function updateUI() {
   if (g.phase === 'building') { set(wb, 'textContent', `Start sprint ${si.sprint} →`); set(wb, 'disabled', false); }
   else if (g.phase === 'bell') { set(wb, 'textContent', 'Ring the bell →'); set(wb, 'disabled', false); }
   else if (g.phase === 'review') { set(wb, 'textContent', g.pendingYearReview ? 'Yearly review first' : `Start Q${si.quarter} →`); set(wb, 'disabled', g.pendingYearReview); }
-  else { set(wb, 'textContent', g.phase === 'wave' ? 'Sprint running' : '—'); set(wb, 'disabled', true); }
+  else {
+    const hold = quarterHoldLeft(g);
+    set(wb, 'textContent', hold ? `Grab the drops · review in ${Math.ceil(hold)} s` : g.phase === 'wave' ? 'Sprint running' : '—');
+    set(wb, 'disabled', true);
+  }
   set(refs.speed, 'textContent', `${v.speed}×`);
   set(refs.pause, 'textContent', v.paused ? 'Resume' : 'Pause');
   set(refs.mute, 'textContent', isMuted() ? 'Sound off' : 'Sound on');
@@ -241,7 +246,7 @@ function upgradeBtn({ up, status }, dev, gate) {
   const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
   const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} ${drinkName(drinkFor(dev.type))}`;
   const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
-    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
+    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, `${getDrink(drinkFor(dev.type))?.icon ?? ''} ${up.cost}`.trim())),
     h('small', {}, kind + line));
   btn.disabled = !status.ok;
   if (up.tooltip) btn.title = up.tooltip;

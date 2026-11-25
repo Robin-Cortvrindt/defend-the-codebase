@@ -33,13 +33,13 @@ test('Review Focus 2: placeDev refuses path, PROD, occupied, off-grid, unafforda
   assert.equal(placeDev(g, 'r', 15, 3), null);  // PROD
   assert.equal(placeDev(g, 'r', -1, 0), null);  // off-grid
   assert.equal(placeDev(g, 'nope', 3, 3), null); // unknown type
-  assert.equal(g.drinks.coffee, 50);
+  assert.equal(g.drinks.coffee, 100);
   assert.ok(placeDev(g, 'r', 3, 3));
   assert.equal(placeDev(g, 'r', 3, 3), null);   // occupied
-  assert.deepEqual(g.drinks, { coffee: 0, monster: 50, redbull: 50 });
+  assert.deepEqual(g.drinks, { coffee: 50, monster: 100, redbull: 100 });
   g.drinks.coffee = 49;
   assert.equal(placeDev(g, 'r', 3, 4), null);   // unaffordable
-  assert.deepEqual(g.drinks, { coffee: 49, monster: 50, redbull: 50 });
+  assert.deepEqual(g.drinks, { coffee: 49, monster: 100, redbull: 100 });
   g.drinks.coffee = 0; g.drinks.redbull = 999;
   assert.equal(placeDev(g, 'r', 3, 4), null);   // wrong drink
   assert.equal(g.drinks.redbull, 999);
@@ -50,9 +50,9 @@ test('Review Focus 2: placeDev refuses path, PROD, occupied, off-grid, unafforda
 test('placeDev deducts cost; sellDev refunds floor(50%)', () => {
   const g = createGame(); startGame(g);
   const d = placeDev(g, 'r', 3, 3);
-  assert.equal(g.drinks.coffee, 0);
+  assert.equal(g.drinks.coffee, 50);
   assert.equal(sellDev(g, d), 25);
-  assert.deepEqual(g.drinks, { coffee: 25, monster: 50, redbull: 50 });
+  assert.deepEqual(g.drinks, { coffee: 75, monster: 100, redbull: 100 });
   assert.equal(g.devs.length, 0);
 });
 

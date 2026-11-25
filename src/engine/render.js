@@ -19,8 +19,8 @@ export function render(ctx, game, view) {
   for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, bug);
-  drawDrops(ctx, game);
   drawActiveEvent(ctx, game, view);
+  drawDrops(ctx, game);   // after the event so drops stay visible in the PROD-is-down darkness
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
     if (!f.draw) continue;

@@ -189,10 +189,10 @@ test('a normal kill pays a random drink: reward x drinkMultiplier', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.spawnQueue = []; g.random = () => 0;
   killBug(g, spawnBug(g, 'b')); collectAll(g);
-  assert.equal(g.drinks.coffee, 53);
+  assert.equal(g.drinks.coffee, 103);
   g.mods.drinkMultiplier = 2;
   killBug(g, spawnBug(g, 'b')); collectAll(g);
-  assert.equal(g.drinks.coffee, 59);
+  assert.equal(g.drinks.coffee, 109);
 });
 
 test('a kill pays at least 1 drink', () => {
@@ -200,14 +200,14 @@ test('a kill pays at least 1 drink', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.random = () => 0; g.mods.drinkMultiplier = 0.4;
   killBug(g, spawnBug(g, 'tiny')); collectAll(g);
-  assert.equal(g.drinks.coffee, 51);
+  assert.equal(g.drinks.coffee, 101);
 });
 
 test('a boss kill pays every drink reward / n', () => {
   R.registerBug({ id: 'boss', hp: 1, speed: 1, reward: 30, boss: true, radius: 5 });
   const g = createGame(); startGame(g); startWave(g);
   killBug(g, spawnBug(g, 'boss')); collectAll(g);
-  assert.deepEqual(g.drinks, { coffee: 60, monster: 60, redbull: 60 });
+  assert.deepEqual(g.drinks, { coffee: 110, monster: 110, redbull: 110 });
 });
 
 test('yearly review accept raises drinkMultiplier', () => {

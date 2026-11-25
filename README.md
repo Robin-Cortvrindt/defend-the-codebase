@@ -6,7 +6,7 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 
 ## How it plays
 
-- **Drinks:** squashed bugs drop a drink: Coffee, White Monster or Red Bull. Click it within 10 s or it's gone. Each developer is paid in its own drink: Java in Coffee, .NET in White Monster, React in Red Bull. A security risk drops all three. You start with 50 of each, so a mixed team keeps pace while a team of one kind grows slower. Drops don't time out or get picked up while the game is paused.
+- **Drinks:** squashed bugs drop a drink: Coffee, White Monster or Red Bull. Click it within 10 s or it's gone. Each developer is paid in its own drink: Java in Coffee, .NET in White Monster, React in Red Bull. A security risk drops all three. You start with 100 of each: a mixed team keeps roughly today's pace, while a team of one kind grows slower. Drops don't time out or get picked up while the game is paused.
 - **Hire developers** next to the path, paying in the developer's drink.
 - **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's ring colour shows which developer counters it, and counters do double damage.
 - **Boss:** every sprint ends with a **security risk** (red ring, padlock). It's big, slow and tough, no developer counters it, and letting it through costs 5 lives.

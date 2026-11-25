@@ -1,7 +1,7 @@
 // Drink wallet: balances live in game.drinks, keyed by drink id. Pure helpers, no DOM.
 import { getDrinks, getDrink, getDeveloper } from './registry.js';
 
-export const START_DRINKS = 50;
+export const START_DRINKS = 100;
 
 const ids = () => getDrinks().map(d => d.id);
 

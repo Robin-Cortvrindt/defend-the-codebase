@@ -96,8 +96,10 @@ test('usePowerup emits skippedCooldown only when a skipCooldown hook allowed it'
   usePowerup(g, 'claude');
   spawnBug(g, 'b', 10);
   R.getPowerup('claude').skipCooldown = () => true;
-  assert.equal(usePowerup(g, 'claude'), true);
-  assert.deepEqual(seen, [false, true]);
+  try {
+    assert.equal(usePowerup(g, 'claude'), true);
+    assert.deepEqual(seen, [false, true]);
+  } finally { delete R.getPowerup('claude').skipCooldown; }
 });
 
 test('Review Focus 5: backfire doubles bugs, clones keep distance and hp, wave waits for clones', () => {

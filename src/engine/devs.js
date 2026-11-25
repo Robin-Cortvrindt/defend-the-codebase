@@ -38,6 +38,7 @@ export function sellDev(game, dev) {
   game.devs.splice(i, 1);
   const refund = Math.floor(dev.spent * 0.5);
   const drink = drinkFor(dev.type);
+  // Refunds bypass addDrink on purpose, so they do not count as drinks collected.
   game.drinks[drink] = (game.drinks[drink] ?? 0) + refund;
   emit('dev:sold', { game, dev, refund, drink });
   return refund;

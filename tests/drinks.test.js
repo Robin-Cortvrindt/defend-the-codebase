@@ -12,8 +12,8 @@ beforeEach(() => {
   g = { drinks: startingDrinks(), stats: { drinksCollected: 0 }, random: Math.random };
 });
 
-test('startingDrinks gives every drink 50', () => {
-  assert.deepEqual(startingDrinks(), { coffee: 50, monster: 50, redbull: 50 });
+test('startingDrinks gives every drink 100', () => {
+  assert.deepEqual(startingDrinks(), { coffee: 100, monster: 100, redbull: 100 });
 });
 
 test('drinkFor uses the developer drink, falling back to the first drink', () => {
@@ -28,28 +28,28 @@ test('drinkName falls back to the id', () => {
 
 test('addDrink counts into stats', () => {
   addDrink(g, 'monster', 5);
-  assert.equal(g.drinks.monster, 55);
+  assert.equal(g.drinks.monster, 105);
   assert.equal(g.stats.drinksCollected, 5);
 });
 
 test('spendDrink refuses when short and spends when enough', () => {
-  assert.equal(canAfford(g, 'coffee', 60), false);
-  assert.equal(spendDrink(g, 'coffee', 60), false);
-  assert.equal(g.drinks.coffee, 50);
+  assert.equal(canAfford(g, 'coffee', 120), false);
+  assert.equal(spendDrink(g, 'coffee', 120), false);
+  assert.equal(g.drinks.coffee, 100);
   assert.equal(spendDrink(g, 'coffee', 30), true);
-  assert.equal(g.drinks.coffee, 20);
+  assert.equal(g.drinks.coffee, 70);
 });
 
 test('addEachDrink splits the total over every drink', () => {
   assert.equal(addEachDrink(g, 35), 12);
-  assert.deepEqual(g.drinks, { coffee: 62, monster: 62, redbull: 62 });
+  assert.deepEqual(g.drinks, { coffee: 112, monster: 112, redbull: 112 });
   assert.equal(g.stats.drinksCollected, 36);
 });
 
 test('takeEachDrink floors at 0', () => {
-  g.drinks = { coffee: 10, monster: 50, redbull: 50 };
+  g.drinks = { coffee: 10, monster: 100, redbull: 100 };
   assert.equal(takeEachDrink(g, 100), 34);
-  assert.deepEqual(g.drinks, { coffee: 0, monster: 16, redbull: 16 });
+  assert.deepEqual(g.drinks, { coffee: 0, monster: 66, redbull: 66 });
 });
 
 test('randomDrink picks by game.random', () => {

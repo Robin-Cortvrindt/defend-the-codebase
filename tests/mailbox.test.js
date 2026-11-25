@@ -267,7 +267,7 @@ test('claim pays each drink and removes the mail', () => {
   const m = give('hire-dotnet');
   m.progress = m.target;
   assert.equal(claimMail(g, m.id), 'reward');
-  assert.deepEqual(g.drinks, { coffee: 70, monster: 70, redbull: 70 });
+  assert.deepEqual(g.drinks, { coffee: 120, monster: 120, redbull: 120 });
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.text.includes('+20 of each drink')));
   assert.equal(g.mailbox.mails.length, 0);
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.title === 'Reward claimed'));
@@ -388,7 +388,7 @@ test('stolen claude mail takes 34 of each drink', () => {
   const m = phish('stolen', { claude: true });
   assert.equal(stealAmount(m), 100);
   claimMail(g, m.id);
-  assert.deepEqual(g.drinks, { coffee: 16, monster: 16, redbull: 16 });
+  assert.deepEqual(g.drinks, { coffee: 66, monster: 66, redbull: 66 });
 });
 
 test('malware spawns min(8, 3 + floor(sprint/3)) non-boss bugs during a sprint', () => {
@@ -430,7 +430,7 @@ test('compromised locks one developer for 10 s', () => {
 test('compromised falls back to stolen with no developers', () => {
   const m = phish('compromised');
   assert.equal(claimMail(g, m.id), 'stolen');
-  assert.deepEqual(g.drinks, { coffee: 30, monster: 30, redbull: 30 });
+  assert.deepEqual(g.drinks, { coffee: 80, monster: 80, redbull: 80 });
 });
 
 test('phishing claim shows a Phished banner, a red flash and no reward', () => {
@@ -528,11 +528,11 @@ test('queued malware is capped by lives when it spawns', () => {
 test('a phishing offer can be accepted and penalises only on Claim', () => {
   const m = give('hire-dotnet', { phishing: true });
   assert.equal(m.phishing, true);
-  assert.deepEqual(g.drinks, { coffee: 50, monster: 50, redbull: 50 });
+  assert.deepEqual(g.drinks, { coffee: 100, monster: 100, redbull: 100 });
   m.progress = m.target;
   g.random = rolls(0.1);
   assert.equal(claimMail(g, m.id), 'stolen');
-  assert.deepEqual(g.drinks, { coffee: 30, monster: 30, redbull: 30 });
+  assert.deepEqual(g.drinks, { coffee: 80, monster: 80, redbull: 80 });
 });
 
 test('claim is refused on the start and game-over screens', () => {

@@ -2,7 +2,7 @@
 import { getDrinks, getDrink } from './registry.js';
 import { addDrink, randomDrink } from './drinks.js';
 import { emit } from './events.js';
-import { addEffect } from './game.js';
+import { addEffect, sprintInfo, SPRINTS_PER_QUARTER } from './game.js';
 
 export const DROP_TTL = 10;     // seconds of game time before an uncollected drop disappears
 export const BLINK_AT = 3;      // a drop blinks for its last 3 s
@@ -68,4 +68,12 @@ export function pickDrop(game, x, y) {
 export function clickDrop(game, view, x, y) {
   if (view?.paused) return null;
   return pickDrop(game, x, y);
+}
+
+// Seconds until the quarter's closing review can start, while the last sprint of a quarter
+// is only waiting for its drops (see checkEnd in game.js). 0 when it is not holding.
+export function quarterHoldLeft(game) {
+  if (game.phase !== 'wave' || game.bugs.length || game.spawnQueue.length || !game.drops.length) return 0;
+  if (sprintInfo(game.sprint).sprint !== SPRINTS_PER_QUARTER) return 0;
+  return Math.max(...game.drops.map(d => d.ttl));
 }

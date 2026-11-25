@@ -42,7 +42,7 @@ Option 1 was chosen.
 
 - Coins → Warrants (rename only). The old Warrants become three drinks, each tied to one developer type.
 - **Every bug drops one random drink** (rule C). The drop isn't tied to which developer counters the bug or which one squashed it.
-- **Balance A′:** each drop gives the bug's current `reward` (× multipliers) in that random drink. **Developer and upgrade prices stay as they are**, now priced in the developer's own drink. A run starts with **50 of each drink**.
+- **Balance A′:** each drop gives the bug's current `reward` (× multipliers) in that random drink. **Developer and upgrade prices stay as they are**, now priced in the developer's own drink. A run starts with **100 of each drink**.
 - **Power-ups are free** and only have a cooldown.
 - **The sprint-end bonus and task rewards** pay drinks. **Phishing theft** takes drinks.
 - **Azure Function** is billed in White Monster.
@@ -56,7 +56,7 @@ Option 1 was chosen.
 
 A new content type, `registerDrink({ id, name, color, icon })`, in `src/content/drinks/` with three files (`coffee`, `monster`, `redbull`) plus manifest lines. Each developer gets `drink: 'coffee' | 'monster' | 'redbull'` (Java, .NET, React).
 
-`game.drinks` is created from the registered drinks when a run starts, each at `START_DRINKS = 50`. Engine helpers (in `game.js` or a new `src/engine/drinks.js`):
+`game.drinks` is created from the registered drinks when a run starts, each at `START_DRINKS = 100`. Engine helpers (in `game.js` or a new `src/engine/drinks.js`):
 
 - `addDrink(game, id, amount)`: adds to the balance and to `stats.drinksCollected`.
 - `canAfford(game, id, amount)` and `spendDrink(game, id, amount)`.
@@ -109,7 +109,7 @@ In code and on screen: `game.coins` → `game.warrants`, `CAO_COINS` → `CAO_WA
 
 ### Balance
 
-Today N Warrants of bug rewards buys N worth of anything. Now N arrives as about N/3 of each drink at the same prices, so **a mixed team (spending all three) keeps today's pace, and a team of one developer type grows about 3× slower.** Missed drops make it harder still. Starting with 50 of each (vs 100 Warrants) lets you hire one React developer straight away. Java (75) and .NET (110) need a few pickups first.
+Today N Warrants of bug rewards buys N worth of anything. Now N arrives as about N/3 of each drink at the same prices, so **a mixed team (spending all three) keeps today's pace, and a team of one developer type grows about 3× slower.** Missed drops make it harder still. Starting with 100 of each lets you hire two React developers straight away (Changed from 50 after the final review: with 50, sprint 1 drops (~4 per drink) left nothing affordable for sprint 2; 100 each restores today's pace in the sim.) Java (75) and .NET (110) need a few pickups first.
 
 `scripts/sim.mjs` needs a pickup model, since it can't click: collect each drop with a configurable chance (default 100%, plus a run at about 70%) after a short delay. Retuning the numbers isn't part of this work, but the sim output before and after goes in the PR so the change in difficulty is visible.
 

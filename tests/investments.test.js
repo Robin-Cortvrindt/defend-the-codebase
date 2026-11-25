@@ -96,7 +96,7 @@ test('developer investments raise damage, attack speed, range and cut hiring cos
   assert.equal(hireCost(g, 'r'), 45);
   const dev = placeDev(g, 'r', 3, 3);
   assert.equal(dev.spent, 45);
-  assert.equal(g.drinks.coffee, 50 - 45);
+  assert.equal(g.drinks.coffee, 100 - 45);
 });
 
 test('no investments: hireCost equals the base cost; unknown type is Infinity', async () => {
