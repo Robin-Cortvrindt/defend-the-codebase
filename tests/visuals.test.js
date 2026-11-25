@@ -172,3 +172,37 @@ test('drawLane does not throw', async () => {
   drawLane(stubCtx(), 0);
   drawLane(stubCtx(), 12.34);
 });
+
+// A stub that counts save/restore, to check a broken hook can't leave the canvas off balance.
+function countingCtx() {
+  const ctx = stubCtx();
+  ctx.depth = 0;
+  ctx.save = function () { this.depth++; };
+  ctx.restore = function () { this.depth--; };
+  return ctx;
+}
+
+test('render: hooks that save and then throw leave the canvas balanced', () => {
+  R.registerDeveloper({ id: 'halfway', accent: '#fff', cost: 50, damage: 6, fireRate: 4, range: 2.2, drawAttack(ctx) { ctx.save(); ctx.save(); throw new Error('boom'); } });
+  R.registerBug({ id: 'halfbug', ring: '#fff', hp: 10, speed: 0, livesLost: 1, reward: 1, radius: 7, draw(ctx) { ctx.save(); throw new Error('boom'); } });
+  const { g } = setup('halfway');
+  spawnBug(g, 'halfbug', 60);
+  tickDevs(g, 0.01);
+  const ctx = countingCtx();
+  quietConsole(() => render(ctx, g, {}));
+  assert.equal(ctx.depth, 0);
+});
+
+test('hitJolt: a developer with attackJolt knocks the bug back a little when it lands, others don\'t', async () => {
+  const { hitJolt } = await import('../src/engine/render.js');
+  R.registerDeveloper({ id: 'heavy', accent: '#fff', cost: 50, damage: 6, fireRate: 4, range: 2.2, attackJolt: 3 });
+  const { g, bug } = setup('heavy');
+  tickDevs(g, 0.01);
+  const j = hitJolt(g, bug);
+  const from = attacks(g)[0].from;
+  assert.ok(Math.hypot(j.x, j.y) > 2.9, 'pushed about 3 px');
+  assert.ok((bug.x - from.x) * j.x + (bug.y - from.y) * j.y > 0, 'away from the developer');
+  const { g: g2, bug: b2 } = setup('plain');
+  tickDevs(g2, 0.01);
+  assert.deepEqual(hitJolt(g2, b2), { x: 0, y: 0 });
+});

@@ -83,6 +83,7 @@ registerDeveloper({
   },
   attackDuration: 0.28,
   attackHitAt: 0,
+  attackJolt: 3,   // px the bug is knocked back, visually, when the bolt hits
   drawAttack(ctx, { from, to, progress, time, seed }) {
     const alpha = progress < 0.15 ? 1 : 1 - (progress - 0.15) / 0.85;
     bolt(ctx, { x: from.x, y: from.y - 6 }, to, rng(seed + Math.floor(time / FLICKER) * 0.137), alpha);

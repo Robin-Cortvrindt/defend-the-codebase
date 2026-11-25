@@ -23,9 +23,7 @@ export function render(ctx, game, view) {
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
     if (!f.draw) continue;
-    ctx.save();
-    try { f.draw(ctx, game); } catch (e) { console.error(`[feature ${f.id}]`, e); }
-    ctx.restore();
+    safeDraw(ctx, `[feature ${f.id}]`, () => f.draw(ctx, game));
   }
   ctx.restore();
 }
@@ -34,9 +32,7 @@ export function render(ctx, game, view) {
 function drawActiveEvent(ctx, game, view) {
   const def = game.activeEvent && getEvent(game.activeEvent);
   if (!def?.draw) return;
-  ctx.save();
-  try { def.draw(ctx, game, view); } catch (e) { console.error(`[event ${def.id}]`, e); }
-  ctx.restore();
+  safeDraw(ctx, `[event ${def.id}]`, () => def.draw(ctx, game, view));
 }
 
 function drawMap(ctx, game) {
@@ -280,7 +276,7 @@ export function drawDevTile(ctx, def, x, y, size = 36, dev, time) {
   roundRect(ctx, -size / 2, -size / 2, size, size, size / 4);
   ctx.fillStyle = def.accent; ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-  try { def.drawIcon?.(ctx, size, dev, time); } catch (e) { console.error(e); }
+  if (def.drawIcon) safeDraw(ctx, `[developer ${def.id}] drawIcon`, () => def.drawIcon(ctx, size, dev, time));
   ctx.restore();
 }
 
@@ -359,6 +355,22 @@ export function hitFlash(game, bug) {
   }
   return best;
 }
+// A small visual knock-back for developers with `attackJolt` (px): strongest when the hit lands,
+// pushing the bug away from where the attack came from, gone 30% of the attack later.
+export function hitJolt(game, bug) {
+  const out = { x: 0, y: 0 };
+  for (const e of game.effects) {
+    if (e.kind !== 'attack' || e.target !== bug) continue;
+    const px = getDeveloper(e.dev)?.attackJolt;
+    if (!px) continue;
+    const since = attackProgress(e) - (e.hitAt ?? 0);
+    if (since < -1e-9 || since > 0.3) continue;
+    const dx = e.to.x - e.from.x, dy = e.to.y - e.from.y, len = Math.hypot(dx, dy) || 1;
+    const k = px * (1 - since / 0.3);
+    out.x += dx / len * k; out.y += dy / len * k;
+  }
+  return out;
+}
 const attackProgress = e => Math.min(1, Math.max(0, 1 - e.ttl / (e.maxTtl || 1)));
 
 // Six walking legs for a bug drawn facing +x, for bugs that draw themselves (bug `draw`).
@@ -372,6 +384,24 @@ export function drawBugLegs(ctx, r, step, color = COLORS.s400, spread = 1) {
     ctx.moveTo(fx, s * r * 0.6); ctx.lineTo(fx + (i - 1) * r * 0.35 + sw, s * (r * spread + 4));
   }
   ctx.stroke();
+}
+
+// Runs a content draw hook inside its own save/restore. If the hook throws, it is logged and any
+// saves the hook left open are restored too, so the rest of the frame draws where it should.
+export function safeDraw(ctx, label, fn) {
+  const save = ctx.save, restore = ctx.restore;
+  let open = 0;
+  save.call(ctx);
+  ctx.save = function () { open++; return save.call(this); };
+  ctx.restore = function () { open--; return restore.call(this); };
+  try { fn(); } catch (e) {
+    console.error(label, e);
+    while (open-- > 0) restore.call(ctx);
+  } finally {
+    delete ctx.save; delete ctx.restore;
+    if (ctx.save !== save) { ctx.save = save; ctx.restore = restore; }   // a context with own methods (e.g. a test stub)
+    restore.call(ctx);
+  }
 }
 
 // The look of a bug that doesn't draw itself: legs, a pale oval in its ring colour, its icon.
@@ -391,22 +421,20 @@ function drawDefaultBug(ctx, def, bug, r) {
   ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
-  if (def.drawIcon) { try { def.drawIcon(ctx, r, bug); } catch (e) { console.error(e); } }
+  if (def.drawIcon) safeDraw(ctx, `[bug ${def.id}] drawIcon`, () => def.drawIcon(ctx, r, bug));
 }
 
 function drawBug(ctx, game, bug) {
   const def = getBug(bug.type);
   if (!def) return;
-  const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
+  const jolt = hitJolt(game, bug);
+  const x = bug.x + (bug.jitter || 0) * 0.7 + jolt.x, y = bug.y + (bug.jitter || 0) + jolt.y;
   const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
   ctx.save();
   ctx.translate(x, y);
   if (def.draw) {
     // The bug draws its own body, facing +x; turn it towards where it walks.
-    ctx.save();
-    ctx.rotate(headingAt(bug.distance || 0));
-    try { def.draw(ctx, r, bug, game.time); } catch (e) { console.error(`[bug ${bug.type}] draw`, e); }
-    ctx.restore();
+    safeDraw(ctx, `[bug ${bug.type}] draw`, () => { ctx.rotate(headingAt(bug.distance || 0)); def.draw(ctx, r, bug, game.time); });
   } else drawDefaultBug(ctx, def, bug, r);
   const flash = hitFlash(game, bug);
   if (flash > 0) {
@@ -427,11 +455,8 @@ function drawAttack(ctx, game, e, t) {
   const def = getDeveloper(e.dev);
   const accent = def?.accent || '#fff';
   if (def?.drawAttack) {
-    ctx.save();
-    try {
-      def.drawAttack(ctx, { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, accent });
-    } catch (err) { console.error(`[developer ${e.dev}] drawAttack`, err); }
-    ctx.restore();
+    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, accent };
+    safeDraw(ctx, `[developer ${e.dev}] drawAttack`, () => def.drawAttack(ctx, a));
     return;
   }
   ctx.globalAlpha = t;
