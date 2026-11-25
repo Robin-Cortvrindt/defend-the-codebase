@@ -1,12 +1,13 @@
 // Pickup model for the sims: the bot can't click, so each drop is collected with probability PICKUP,
 // PICKUP_DELAY seconds of game time after it appears (if it is still on the board by then).
-//   --pickup <p>   chance 0..1 (default 1). Seeded: the same flags give the same runs.
+//   --pickup <p>   chance 0..1 (default 1, also when missing or not a number). Seeded: the same flags give the same runs.
 import { on } from '../src/engine/events.js';
 import { collectDrop } from '../src/engine/drops.js';
 
 export const PICKUP_DELAY = 1;
 const flag = process.argv.indexOf('--pickup');
-export const PICKUP = flag >= 0 ? Math.min(1, Math.max(0, Number(process.argv[flag + 1]))) : 1;
+const value = flag >= 0 ? Number(process.argv[flag + 1]) : NaN;
+export const PICKUP = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;   // missing or not a number: 1
 
 const pending = new WeakMap();   // game -> { t, queue: [{ at, drop }], rng }
 let seed = 12345;

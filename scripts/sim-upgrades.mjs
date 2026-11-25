@@ -16,9 +16,13 @@ setStorage(null);   // no saved investments: every run starts from the same base
 
 await loadModules(CONTENT_URLS);
 
-const SEEDS = Math.max(1, parseInt(process.argv[2] ?? '10', 10) || 10);
+// --pickup <p> is read by pickup.mjs; strip it so it can't shift the positional arguments.
+const argv = process.argv.slice(2);
+const pk = argv.indexOf('--pickup');
+if (pk >= 0) argv.splice(pk, 2);
+const SEEDS = Math.max(1, parseInt(argv[0] ?? '10', 10) || 10);
 // The game is endless (sprints and quarters), so each run stops after MAX_SPRINTS sprints.
-const MAX_SPRINTS = Math.max(1, parseInt(process.argv[3] ?? '28', 10) || 28);
+const MAX_SPRINTS = Math.max(1, parseInt(argv[1] ?? '28', 10) || 28);
 
 // Small seeded PRNG so every run of a strategy is reproducible.
 function mulberry32(seed) {
