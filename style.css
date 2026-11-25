@@ -77,13 +77,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .upgrade-btn b { font-size: 13px; font-weight: 700; }
 .upgrade-btn small { font-size: 12px; color: var(--s400); }
 .sel-panel.hidden { visibility: hidden; pointer-events: none; }
-.sel-panel.popover { position: absolute; z-index: 5; width: 260px; line-height: 1.4; flex-direction: column; align-items: stretch; flex-wrap: nowrap; justify-content: flex-start; gap: 0; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
-.popover-arrow { position: absolute; left: -6px; width: 12px; height: 12px; margin-top: -6px; background: var(--navy2); border-left: 1px solid var(--navy3); border-bottom: 1px solid var(--navy3); transform: rotate(45deg); }
+.sel-panel.popover { position: absolute; left: 0; top: 0; z-index: 5; width: 260px; line-height: 1.4; flex-direction: column; align-items: stretch; flex-wrap: nowrap; justify-content: flex-start; gap: 0; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.popover-arrow { position: absolute; left: -6px; width: 12px; height: 12px; margin-top: -6px; background: var(--navy2); border-left: 3px solid var(--accent); border-bottom: 3px solid var(--accent); transform: rotate(45deg); }
 .popover.left .popover-arrow { left: auto; right: -6px; transform: rotate(225deg); }
 .popover-body { flex: 1 1 auto; min-height: 0; overflow: auto; gap: 8px; }
 .sel-panel.popover .upgrade-btn { max-width: none; flex: none; }
 .sel-panel .choice { display: flex; flex-direction: row; gap: 6px; align-items: stretch; }
 .sel-panel .choice .upgrade-btn { min-width: 0; flex: 1 1 0; }
+.sel-panel .choice .upgrade-top { flex-direction: column; align-items: flex-start; gap: 0; }
+.sel-panel .choice .upgrade-btn b { overflow-wrap: anywhere; min-width: 0; }
 .sel-panel .choice-or { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--s400); }
 .sel-panel .choice-head small { font-size: 12px; color: var(--s400); }
 

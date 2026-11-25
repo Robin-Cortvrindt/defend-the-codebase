@@ -188,9 +188,7 @@ export function updateUI() {
   toggle($('#stage'), 'paused', v.paused);
 }
 
-function upgradeBtn({ up, status }) {
-  const dev = app.view.selected;
-  const gate = XP_GATES[dev.level + 1];
+function upgradeBtn({ up, status }, dev, gate) {
   const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
   const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
   const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
@@ -222,16 +220,16 @@ function updateSelPanel() {
   // The arrow sits outside the box, so scrolling happens in an inner body, not on the popover.
   p.append(
     h('div', { class: 'popover-body' },
-    h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
-    // Element.append does not flatten arrays (h() does), so spread them.
-    ...(ups.length === 2 ? [
-      h('div', { class: 'choice-head' }, h('b', {}, 'Choose one'), h('small', {}, "You can't change this later.")),
-      h('div', { class: 'choice' }, upgradeBtn(ups[0]), h('span', { class: 'choice-or' }, 'or'), upgradeBtn(ups[1])),
-    ] : ups.map(upgradeBtn)),
-    ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
-      try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
-    } }, b.label)),
-    h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
+      h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
+      // Element.append does not flatten arrays (h() does), so spread them.
+      ...(ups.length === 2 ? [
+        h('div', { class: 'choice-head' }, h('b', {}, 'Choose one'), h('small', {}, "You can't change this later.")),
+        h('div', { class: 'choice' }, upgradeBtn(ups[0], dev, gate), h('span', { class: 'choice-or' }, 'or'), upgradeBtn(ups[1], dev, gate)),
+      ] : ups.map(u => upgradeBtn(u, dev, gate))),
+      ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
+        try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
+      } }, b.label)),
+      h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
     ),
     refs.selArrow,
   );
