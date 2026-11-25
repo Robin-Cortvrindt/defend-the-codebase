@@ -77,10 +77,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hire-card { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; gap: 2px; white-space: nowrap; background: var(--navy); color: #fff; border: 1px solid var(--navy3); border-radius: 6px; padding: 6px 10px; font-size: 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); pointer-events: none; opacity: 0; }
 .hire-card::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--navy); }
 .hire-btn:hover .hire-card, .hire-btn:focus-visible .hire-card { opacity: 1; }
-.hire-btn:first-child .hire-card { left: 0; transform: none; }
-.hire-btn:last-child .hire-card { left: auto; right: 0; transform: none; }
-.hire-btn:first-child .hire-card::after { left: 24px; }
-.hire-btn:last-child .hire-card::after { left: auto; right: 24px; margin-left: 0; margin-right: -5px; }
+.hire-btn:nth-child(3n+1) .hire-card { left: 0; transform: none; }
+.hire-btn:nth-child(3n) .hire-card { left: auto; right: 0; transform: none; }
+.hire-btn:nth-child(3n+1) .hire-card::after { left: 24px; }
+.hire-btn:nth-child(3n) .hire-card::after { left: auto; right: 24px; margin-left: 0; margin-right: -5px; }
 .hire-card .hc-strong { display: flex; align-items: center; gap: 5px; }
 /* .active turns every button small dark; keep the card's hotkey light */
 .hire-card small, .hire-btn.active .hire-card small { font-size: 12px; color: var(--s400); }
