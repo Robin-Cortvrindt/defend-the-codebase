@@ -35,7 +35,7 @@ export function scatterLoot(game, bug) {
     const jackpot = loot - BOSS_DROP;
     if (jackpot <= 0) continue;
     for (const amount of split(jackpot, Math.min(PIECES, jackpot))) {
-      const { x, y } = landingSpot(game, bug.x, bug.y);
+      const { x, y } = landingSpot(game, bug.x, bug.y, Infinity);   // the one exception to DROP_RANGE
       const dist = Math.hypot(x - bug.x, y - bug.y);
       const ttl = DROP_TTL + EXTRA_TTL * Math.min(1, dist / MAX_THROW);
       drops.push(placeDrop(game, { x, y, fromX: bug.x, fromY: bug.y, drink: d.id, amount, ttl }));

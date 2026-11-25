@@ -108,3 +108,10 @@ test("Claude can't fire at a lone horse", () => {
   spawnBug(g, 'trojan-horse', 100);
   assert.equal(CLAUDE.canActivate(g), false);
 });
+
+test('unlike normal drops, the jackpot can land anywhere on the map, far beyond DROP_RANGE', () => {
+  const g = game(); g.random = mulberry32(5);
+  const horse = spawnBug(g, 'trojan-horse', PATH_LENGTH / 2);
+  scatterLoot(g, horse);
+  assert.ok(g.drops.some(d => Math.hypot(d.x - horse.x, d.y - horse.y) > 300), 'some loot flies across the map');
+});
