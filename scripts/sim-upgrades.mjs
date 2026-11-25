@@ -5,6 +5,8 @@ import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
 import { buyUpgrade as buyBuilding } from '../src/engine/upgrades.js';
+import { canAfford, drinkFor } from '../src/engine/drinks.js';
+import { trackPickups, tickPickups } from './pickup.mjs';
 import { placeDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL } from '../src/engine/map.js';
@@ -63,7 +65,7 @@ function choices(g, dev, branch) {
 
 // bell: 'up' buys upgrades before hiring, 'hire' hires before upgrading.
 function play({ order, powers, branch, bell }, seed) {
-  const g = createGame(); g.random = mulberry32(seed); startGame(g);
+  const g = createGame(); g.random = mulberry32(seed); startGame(g); trackPickups(g);
   const bought = {};
   let i = 0;
   const upgrade = () => {
@@ -79,7 +81,7 @@ function play({ order, powers, branch, bell }, seed) {
   const hire = () => {
     while (true) {
       const type = order[i % order.length];
-      if (g.warrants < hireCost(g, type)) return;
+      if (!canAfford(g, drinkFor(type), hireCost(g, type))) return;
       // Seeded jitter: one of the three best free cells.
       const free = cells.filter(x => !g.devs.some(d => d.col === x.c && d.row === x.r)).slice(0, 3);
       if (!free.length) return;
@@ -90,7 +92,7 @@ function play({ order, powers, branch, bell }, seed) {
   hire(); startWave(g);
   let t = 0;
   while (g.phase !== 'lost' && g.sprint < MAX_SPRINTS && t < 20000) {
-    step(g, 0.05); t += 0.05;
+    step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (powers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyBuilding(g, 'aircon') || buyBuilding(g, 'floor')); }
     if (g.phase === 'bell' || g.phase === 'review') {

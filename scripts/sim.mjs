@@ -1,12 +1,15 @@
 // Headless balance check: a simple bot plays until production goes down.
 //   node scripts/sim.mjs                  every strategy, with and without power-ups, no investments
 //   node scripts/sim.mjs --profile max    the same, with every investment at max level
+//   node scripts/sim.mjs --pickup 0.7     collect only 70% of the drops (default 1), each 1 s after it appears
 //   node scripts/sim.mjs --meta [runs]    run after run from zero: earn Investor Capital, buy the cheapest investment, repeat
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
 import { buyUpgrade } from '../src/engine/upgrades.js';
 import { placeDev, hireCost } from '../src/engine/devs.js';
+import { canAfford, drinkFor } from '../src/engine/drinks.js';
+import { PICKUP, trackPickups, tickPickups } from './pickup.mjs';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
 import { getInvestments } from '../src/engine/registry.js';
@@ -35,13 +38,13 @@ for (const a of cells) {
 }
 
 function play(strategy, usePowers) {
-  const g = createGame(); startGame(g);
+  const g = createGame(); startGame(g); trackPickups(g);
   const free = x => !g.devs.some(d => d.col === x.c && d.row === x.r);
   let i = 0;
   const buy = () => {
     while (true) {
       const type = strategy[i % strategy.length];
-      if (g.warrants < hireCost(g, type)) return;
+      if (!canAfford(g, drinkFor(type), hireCost(g, type))) return;
       // With the firewall unlocked, .NET developers go into facing pairs first.
       const cell = (type === 'dotnet' && g.unlocks.firewall && pairCells.find(free)) || cells.find(free);
       if (!cell) return;
@@ -51,7 +54,7 @@ function play(strategy, usePowers) {
   buy(); startWave(g);
   let t = 0;
   while (!['won', 'lost'].includes(g.phase) && t < 40000) {
-    step(g, 0.05); t += 0.05;
+    step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
     if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
@@ -84,6 +87,7 @@ if (args.includes('--meta')) {
   }
   console.log(`firewall bought on run ${firewallRun ?? `— (not within ${runs})`}; catalog complete on run ${completeRun ?? `— (not within ${runs})`}`);
 } else {
+  console.log(`pickup ${PICKUP}`);
   const max = args.includes('--profile') && args[args.indexOf('--profile') + 1] === 'max';
   if (max) saveProgress({ capital: 0, levels: Object.fromEntries(getInvestments().map(d => [d.id, d.maxLevel ?? 1])) });
   for (const [name, s] of STRATEGIES) {

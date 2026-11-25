@@ -13,13 +13,14 @@ node scripts/sim.mjs           # bot plays until production goes down; --profile
 node scripts/sim-upgrades.mjs [seeds] [sprints]   # developer-upgrade balance: seeded strategies per level-3 branch
 ```
 
-Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of each type and 1000 Warrants. In the browser console, `game.game` is the live state, e.g. `game.game.warrants = 9999`.
+Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of each type and 1000 of each drink. In the browser console, `game.game` is the live state, e.g. `game.game.drinks.coffee = 9999` (`game.game.warrants` is the building currency).
 
 ## What you can register (`src/engine/registry.js`)
 
 | Call | Shape |
 |---|---|
-| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
+| `registerDrink` | `{ id, name, color, icon }`: a drink that bugs drop and developers are paid in (`src/content/drinks/`, one file and one manifest line, e.g. `coffee.js`). The `icon` is a short emoji or text. Each drink starts at 50 per run |
+| `registerDeveloper` | `{ id, name, accent, drink /*drink id: what this developer costs and sells in*/, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
 | `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?(bug, game, dt), drawIcon?(ctx, radius, bug) }`. Set `bug.radius` in `update` to draw one bug bigger or smaller than `radius` |
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), describe?(game) /*button text, overrides description*/, activate(game, st), deactivate?(game, st) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
@@ -30,7 +31,7 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 ## Developer upgrades
 
-These are the developers' own upgrades, bought with Warrants. (Building upgrades in the quarter-review shop are separate: see `registerUpgrade`.) Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in Warrants.
+These are the developers' own upgrades, bought with the developer's drink. (Building upgrades in the quarter-review shop are separate: see `registerUpgrade`.) Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in that drink.
 
 In code, `dev.level` is 0-based: 0 for level 1, 1 after the level-2 upgrade, 2 after level 3.
 
@@ -91,7 +92,7 @@ Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, de
 
 ## Changing the rules: `game.mods`
 
-`xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier` · `timeScale` (whole simulation speed) · `devFireRate` (object keyed by developer id, e.g. `devFireRate.java`; a missing key counts as 1)
+`xpMultiplier` · `drinkMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier` · `timeScale` (whole simulation speed) · `devFireRate` (object keyed by developer id, e.g. `devFireRate.java`; a missing key counts as 1)
 
 Multiply when your effect starts and divide when it ends, so effects stack.
 
@@ -130,7 +131,7 @@ Use the Nexios palette: navy `#001E32`, blue `#2563EB` (React), orange `#EA580C`
 
 - `game.sprint` is the 0-based global sprint index (`game.wave` is an alias). `sprintInfo(n)` from `src/engine/game.js` gives `{ year, quarter, sprint, label }`.
 - Hand-made sprints come from `waves.js`; after those, `getSprintDef(n)` generates harder ones forever.
-- `game.coins`, `game.floors`, `game.heatResistance` (0..1, from air conditioning) and `game.raise` (total yearly-review multiplier) are plain fields on the game.
+- `game.warrants`, `game.floors`, `game.heatResistance` (0..1, from air conditioning) and `game.raise` (total yearly-review multiplier) are plain fields on the game.
 
 ## Counter-upgrades for events
 
