@@ -152,3 +152,23 @@ test('every shipped bug look draws without throwing', async () => {
     def.draw(stubCtx(), def.radius, undefined, 0);
   }
 });
+
+test('sideTraces: each runs from the lane edge into the board and ends off the lane', async () => {
+  const { sideTraces } = await import('../src/engine/lane.js');
+  const { isPathCell, cellAt, WIDTH, HEIGHT, PROD } = await import('../src/engine/map.js');
+  const traces = sideTraces();
+  assert.ok(traces.length >= 4, `${traces.length} traces`);
+  for (const tr of traces) {
+    const [x, y] = tr[tr.length - 1];
+    assert.ok(x > 0 && x < WIDTH && y > 0 && y < HEIGHT, `end (${x}, ${y}) on the board`);
+    const c = cellAt(x, y);
+    assert.equal(isPathCell(c.col, c.row), false, `end (${x}, ${y}) off the lane`);
+    assert.ok(!(x > PROD.x - 6 && y > PROD.y - 6 && y < PROD.y + PROD.h + 6), `end (${x}, ${y}) clear of the building`);
+  }
+});
+
+test('drawLane does not throw', async () => {
+  const { drawLane } = await import('../src/engine/lane.js');
+  drawLane(stubCtx(), 0);
+  drawLane(stubCtx(), 12.34);
+});

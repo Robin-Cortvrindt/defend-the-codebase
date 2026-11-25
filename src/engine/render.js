@@ -1,7 +1,8 @@
 // Canvas rendering. Reads game state, never changes it.
 import { getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
-import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter, headingAt } from './map.js';
+import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
+import { drawLane } from './lane.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
 
 export const COLORS = {
@@ -48,20 +49,7 @@ function drawMap(ctx, game) {
   for (let r = 1; r < ROWS; r++) { ctx.moveTo(0, r * CELL + 0.5); ctx.lineTo(WIDTH, r * CELL + 0.5); }
   ctx.stroke();
 
-  const tracePath = () => {
-    ctx.beginPath();
-    WAYPOINTS.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-  };
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = COLORS.navy3;
-  ctx.lineWidth = PATH_WIDTH;
-  tracePath(); ctx.stroke();
-  ctx.strokeStyle = COLORS.pathLine;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 8]);
-  ctx.lineDashOffset = -game.time * 20;
-  tracePath(); ctx.stroke();
-  ctx.setLineDash([]);
+  drawLane(ctx, game.time);
 
   drawBuilding(ctx, game);
 }
