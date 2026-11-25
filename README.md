@@ -1,4 +1,4 @@
-# Defend the Codebase
+# Bug-Farm
 
 A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs crawl toward production. You hire React, Java and .NET developers to squash them, and the training manager, business manager, CEO and Claude lend a hand.
 

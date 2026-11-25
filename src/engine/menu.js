@@ -62,7 +62,7 @@ export function showMenu() {
     h('div', { class: 'menu-main' },
       h('img', { src: 'assets/nexios-wordmark-white.webp', alt: 'Nexios', class: 'wordmark' }),
       h('i', { class: 'dash', style: 'background:#2563EB' }),
-      h('h1', {}, 'Defend the Codebase'),
+      h('h1', {}, 'Bug-Farm'),
       h('p', { class: 'lede' }, 'Hire developers, squash bugs, keep production up. How many years can you last?'),
       h('div', { class: 'menu-list' },
         h('button', { class: 'mi primary', onclick: startRun }, 'Start run', h('small', {}, 'Space')),
