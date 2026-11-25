@@ -18,10 +18,10 @@ registerDeveloper({
     stats.fireRate *= 1 + 0.1 * Math.min(5, others);
   },
   upgrades: {
-    level2: { id: 'vite', name: 'Vite', cost: 20, description: 'Much faster rate of fire', tooltip: 'CRA is deprecated, sorry.', stats: { fireRate: 6 } },
+    level2: { id: 'vite', name: 'Vite', cost: 25, description: 'Much faster rate of fire', tooltip: 'CRA is deprecated, sorry.', stats: { fireRate: 6 } },
     level3: [
       {
-        id: 'nextjs', name: 'Next.js', kind: 'steady', cost: 90,
+        id: 'nextjs', name: 'Next.js', kind: 'steady', cost: 50,
         description: 'Hits pierce 2 more bugs',
         tooltip: 'Renders before they arrive.',
         fire(game, dev, target, stats) {
@@ -35,8 +35,9 @@ registerDeveloper({
         },
       },
       {
-        id: 'effecthell', name: 'useEffect Hell', kind: 'gamble', cost: 15,
-        description: '20% chance each hit re-renders',
+        id: 'effecthell', name: 'useEffect Hell', kind: 'gamble', cost: 35,
+        description: 'Harder hits, 20% chance each hit re-renders',
+        stats: { damage: 9 },
         fire(game, dev, target, stats) {
           shotBeam(game, dev, target);
           hitBug(game, dev, target, stats.damage);

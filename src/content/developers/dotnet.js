@@ -15,10 +15,10 @@ registerDeveloper({
   blurb: 'Slow, heavy hits',
   levelName: '.NET Framework 4.8',
   upgrades: {
-    level2: { id: 'core', name: '.NET Core', cost: 40, description: 'Faster attacks', stats: { fireRate: 0.9 } },
+    level2: { id: 'core', name: '.NET Core', cost: 50, description: 'Faster attacks', stats: { fireRate: 0.9 } },
     level3: [
       {
-        id: 'vs', name: 'Visual Studio Enterprise', kind: 'steady', cost: 80,
+        id: 'vs', name: 'Visual Studio Enterprise', kind: 'steady', cost: 70,
         description: 'Huge single hit',
         stats: { damage: 160, fireRate: 0.6 },
       },

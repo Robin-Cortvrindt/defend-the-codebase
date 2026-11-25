@@ -21,23 +21,22 @@ registerDeveloper({
   blurb: 'Balanced all-rounder',
   levelName: 'Junior Java Dev',
   upgrades: {
-    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 30, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
     level3: [
       {
-        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 30,
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
         description: '+15% damage to developers nearby',
         tooltip: "I don't code anymore, I enable.",
-        modifyStats(game, dev, stats) { stats.damage *= 0.6; },
-        aura: { radius: 2, apply(game, dev, stats) { stats.damage *= 1.15; } },
+        aura: { radius: 4, apply(game, dev, stats) { stats.damage *= 1.15; } },
       },
       {
-        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 60,
         description: 'Stop-the-World, then a pulse',
         update(game, dev, dt, stats) {
           const st = dev.state;
           st.gcT = (st.gcT ?? 0) + dt;
           if (st.gcT >= 9) {
-            for (const bug of bugsInRange(game, dev, stats.range)) hitBug(game, dev, bug, 3 * stats.damage);
+            for (const bug of bugsInRange(game, dev, stats.range)) hitBug(game, dev, bug, stats.damage);
             addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#EA580C', ttl: 0.5 });
             st.gcT = 0; st.stopped = false;
             return true;
