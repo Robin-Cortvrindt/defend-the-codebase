@@ -265,14 +265,133 @@ registerSound('mail', (ctx, tone) => {
 });
 registerSound('phished', (ctx, tone) => tone({ freq: 520, type: 'sawtooth', dur: 0.5, vol: 0.06, to: 110 }));
 
+// ---------- DOM: the Tasks section of the side panel (browser only) ----------
+const HAS_DOM = typeof document !== 'undefined';
+const HIGHLIGHT_MS = 1200;
+let ui = null;            // { root, count, slot, list, card, bar, offerId, key, highlight }
+let lastDraw = 0;         // performance.now() of the previous draw
+let updatedSinceDraw = false;   // false between two draws means the game is paused
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+const rewardText = mail => (mail.reward.kind === 'claude' ? 'Free Claude' : `+${mail.reward.amount} W`);
+const blurFocus = () => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
+
+function setupTasks(game) {
+  ui = null;
+  const root = document.getElementById('panel-tasks');
+  if (!root) return;
+  root.textContent = '';
+  const head = el('div', 'sp-title', 'Tasks');
+  const count = el('span', '', `0/${MAX_MAILS}`);
+  head.append(count);
+  const slot = el('div', 'mb-offer-slot');
+  const list = el('div', 'mb-list');
+  root.append(head, slot, list);
+  list.addEventListener('click', ev => {
+    const btn = ev.target.closest?.('.mb-claim');
+    if (!btn || btn.disabled) return;
+    const result = claimMail(game, Number(btn.dataset.id));
+    if (result) playSound(result === 'reward' ? 'mail' : 'phished');
+    blurFocus();
+  });
+  ui = { root, count, slot, list, card: null, bar: null, offerId: 0, key: null, highlight: { id: 0, until: 0 }, game };
+}
+
+function showOffer(mail) {
+  ui.slot.textContent = '';
+  const card = el('div', 'mb-offer');
+  card.setAttribute('role', 'button');
+  card.tabIndex = 0;
+  const row = el('div', 'mb-offer-row');
+  row.append(el('small', '', rewardText(mail)), el('span', 'mb-accept', 'Click to accept'));
+  const bar = el('i', 'mb-time');
+  card.append(el('span', 'mb-from', `New mail · ${mail.from}`), el('b', '', mail.subject), row, bar);
+  card.addEventListener('click', () => {
+    const accepted = acceptOffer(ui.game);
+    if (accepted) {
+      playSound('mail');
+      ui.highlight = { id: accepted.id, until: performance.now() + HIGHLIGHT_MS };
+      hideOffer(true);   // accepted: the new task replaces the card at once (only a miss slides out)
+    }
+    blurFocus();
+  });
+  ui.slot.append(card);
+  ui.card = card; ui.bar = bar; ui.offerId = mail.id;
+  playSound('mail');
+}
+
+function hideOffer(immediate = false) {
+  const card = ui.card;
+  ui.card = null; ui.bar = null; ui.offerId = 0;
+  if (!card) return;
+  if (immediate) { card.remove(); return; }
+  card.classList.add('leaving');
+  setTimeout(() => card.remove(), 250);
+}
+
+function renderTasks(box, claimable, now) {
+  ui.list.textContent = '';
+  if (!box.mails.length) { ui.list.append(el('div', 'mb-empty', 'No tasks yet. Click new mail when it pops up to accept it.')); return; }
+  for (const m of box.mails) {
+    const row = el('div', `mb-task${m.id === ui.highlight.id && now < ui.highlight.until ? ' fresh' : ''}`);
+    const bar = el('i'); const fill = el('b'); fill.style.width = `${Math.round((m.progress / m.target) * 100)}%`; bar.append(fill);
+    const prog = el('div', 'mb-prog'); prog.append(bar, el('small', '', `${m.progress}/${m.target}`));
+    row.append(el('span', 'mb-from', m.from), el('span', 'mb-subj', m.subject), el('span', 'mb-rew', rewardText(m)), prog);
+    if (isDone(m)) {
+      const claim = el('button', 'mb-claim', 'Claim');
+      claim.dataset.id = String(m.id);
+      claim.disabled = !claimable;
+      row.append(claim);
+    }
+    ui.list.append(row);
+  }
+}
+
+function syncTasks(game, paused, now) {
+  if (!ui || ui.game !== game || !game.mailbox) return;
+  const box = game.mailbox;
+  const count = `${box.mails.length}/${MAX_MAILS}`;
+  if (ui.count.textContent !== count) ui.count.textContent = count;
+  if (box.offer && box.offer.mail.id !== ui.offerId) showOffer(box.offer.mail);
+  else if (!box.offer && ui.card) hideOffer();
+  if (box.offer && ui.bar) ui.bar.style.width = `${Math.max(0, (box.offer.remaining / OFFER_SECONDS) * 100).toFixed(1)}%`;
+  const claimable = canClaim(game) && !paused;
+  const fresh = now < ui.highlight.until ? ui.highlight.id : 0;
+  const key = `${claimable}|${fresh}|${box.mails.map(m => `${m.id}:${m.progress}`).join(',')}`;
+  if (key !== ui.key) { ui.key = key; renderTasks(box, claimable, now); }
+}
+
 const feature = {
   id: 'mailbox',
   init(game) {
     game.mailbox = createMailbox();
     wrapClaude();
+    lastDraw = 0;
+    updatedSinceDraw = false;
+    if (HAS_DOM) setupTasks(game);
   },
-  update(game, dt) { tickMailbox(game, dt); tickPenalties(game, dt); },
-  draw(ctx, game) { drawPenalties(ctx, game); },
+  update(game, dt) {
+    tickMailbox(game, dt);
+    tickPenalties(game, dt);
+    updatedSinceDraw = true;
+  },
+  // draw runs every frame, also while paused. The offer countdown uses real time here, and only
+  // counts when the game advanced since the last draw, so pausing freezes it.
+  draw(ctx, game) {
+    drawPenalties(ctx, game);
+    const now = typeof performance !== 'undefined' ? performance.now() : 0;
+    const paused = !updatedSinceDraw;
+    const realDt = lastDraw && !paused ? Math.min(0.25, (now - lastDraw) / 1000) : 0;
+    tickOffer(game, realDt);   // with 0 it still drops an offer outside active play
+    lastDraw = now;
+    updatedSinceDraw = false;
+    if (HAS_DOM) syncTasks(game, paused, now);
+  },
 };
 registerFeature(feature);
 export default feature;
