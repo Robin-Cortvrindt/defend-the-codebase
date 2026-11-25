@@ -5,7 +5,7 @@ import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame } from '../src/engine/game.js';
 
-test('manifest registers 3 developers, 4 bugs, 10 consistent waves with a boss', async () => {
+test('manifest registers 3 developers, 7 bugs, 10 consistent waves with a boss', async () => {
   R.resetRegistry();
   const { failed } = await loadModules(CONTENT_URLS);
   assert.equal(failed.length, 0);
@@ -18,6 +18,17 @@ test('manifest registers 3 developers, 4 bugs, 10 consistent waves with a boss',
   for (const w of waves) assert.equal(w.boss, 'security-risk', 'every sprint ends with the security-risk boss');
   assert.ok(!R.getDevelopers().some(d => d.counters === 'security-risk'), 'no developer counters the boss');
   assert.deepEqual([...new Set(waves[0].groups.map(g => g.bug))], ['typo']);
+
+  // the new bugs come in gradually: merge conflicts from sprint 5, memory leaks from sprint 7, halves only from a split
+  const firstWave = id => waves.findIndex(w => w.groups.some(g => g.bug === id));
+  assert.equal(firstWave('merge-conflict'), 4);
+  assert.equal(firstWave('memory-leak'), 6);
+  assert.equal(firstWave('merge-conflict-half'), -1);
+  for (const id of ['merge-conflict', 'merge-conflict-half', 'memory-leak']) {
+    assert.ok(!R.getDevelopers().some(d => d.counters === id), `no developer counters ${id}`);
+    assert.ok(!['#2563EB', '#EA580C', '#C026D3'].includes(R.getBug(id).ring), `${id} has a neutral ring`);
+    assert.ok(R.getBug(id).reward > 0, `${id} pays a reward`);
+  }
   assert.deepEqual(R.getEvents().map(e => e.id), ['prod-down', 'heating-out', 'no-coffee', 'no-redbull', 'heat-wave']);
 
   // each event's end exactly undoes its start
