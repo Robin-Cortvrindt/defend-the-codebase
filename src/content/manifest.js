@@ -10,6 +10,7 @@ export const CONTENT = [
   './bugs/nullpointer.js',
   './bugs/legacy.js',
   './bugs/merge-conflict.js', // splits in two when squashed
+  './bugs/memory-leak.js',    // grows the longer it lives
   './bugs/security-risk.js', // boss at the end of every sprint
   // Waves
   './waves.js',

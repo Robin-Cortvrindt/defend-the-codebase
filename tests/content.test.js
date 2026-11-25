@@ -10,7 +10,7 @@ test('manifest registers 3 developers, 4 bugs, 10 consistent waves with a boss',
   const { failed } = await loadModules(CONTENT_URLS);
   assert.equal(failed.length, 0);
   assert.deepEqual(R.getDevelopers().map(d => d.id), ['react', 'java', 'dotnet']);
-  assert.deepEqual(R.getBugs().map(b => b.id), ['typo', 'nullpointer', 'legacy', 'merge-conflict', 'merge-conflict-half', 'security-risk']);
+  assert.deepEqual(R.getBugs().map(b => b.id), ['typo', 'nullpointer', 'legacy', 'merge-conflict', 'merge-conflict-half', 'memory-leak', 'security-risk']);
   for (const d of R.getDevelopers()) assert.ok(R.getBug(d.counters), `${d.id} counters a registered bug`);
   const waves = R.getWaves();
   assert.equal(waves.length, 10);
