@@ -8,6 +8,7 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 
 - **Hire developers** next to the path with Warrants, the currency. Squashed bugs pay Warrants.
 - **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's ring colour shows which developer counters it, and counters do double damage.
+- **Boss:** every sprint ends with a **security risk** (red ring, padlock). It's big, slow and tough, no developer counters it, and letting it through costs 5 lives.
 - **Levels:** developers go from Junior Consultant to Consultant to Senior Consultant as they squash bugs.
 - **Power-ups:**
   - **Training manager:** double XP.

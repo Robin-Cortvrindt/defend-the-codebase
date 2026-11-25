@@ -242,6 +242,7 @@ function drawBug(ctx, bug) {
   ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
+  if (def.drawIcon) { try { def.drawIcon(ctx, r); } catch (e) { console.error(e); } }
   ctx.restore();
   if (bug.hp < bug.maxHp) {
     const w = Math.max(12, r * 2.2);

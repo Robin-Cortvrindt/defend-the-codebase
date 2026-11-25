@@ -9,6 +9,7 @@ export const CONTENT = [
   './bugs/typo.js',
   './bugs/nullpointer.js',
   './bugs/legacy.js',
+  './bugs/security-risk.js', // boss at the end of every sprint
   // Waves
   './waves.js',
   // Power-ups
