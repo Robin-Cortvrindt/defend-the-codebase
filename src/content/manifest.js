@@ -30,6 +30,11 @@ export const CONTENT = [
   './upgrades/coffee.js',
   './upgrades/fridge.js',
   './upgrades/generator.js',
+  // Investments (permanent, bought between runs with Investor Capital)
+  './investments/better-laptops.js',
+  './investments/agile-coaching.js',
+  './investments/bigger-monitors.js',
+  './investments/recruitment-network.js',
   // Features (teammates' add-ons, Nexios references, ...)
   './features/mailbox.js',
 ];

@@ -71,3 +71,36 @@ test('resetProgress clears capital and levels', () => {
   resetProgress();
   assert.deepEqual(loadProgress(), { capital: 0, levels: {} });
 });
+
+// ---------- Task 2: developer investments ----------
+import { placeDev, hireCost } from '../src/engine/devs.js';
+
+async function registerDevInvestments() {
+  for (const m of ['better-laptops', 'agile-coaching', 'bigger-monitors', 'recruitment-network']) {
+    R.registerInvestment((await import(`../src/content/investments/${m}.js`)).default);
+  }
+  R.registerDeveloper({ id: 'r', cost: 50, damage: 6, fireRate: 4, range: 2.2 });
+}
+function withLevels(levels) {
+  saveProgress({ capital: 0, levels });
+  const g = createGame(); startGame(g); return g;
+}
+
+test('developer investments raise damage, attack speed, range and cut hiring cost', async () => {
+  await registerDevInvestments();
+  const g = withLevels({ 'better-laptops': 3, 'agile-coaching': 2, 'bigger-monitors': 1, 'recruitment-network': 2 });
+  assert.ok(Math.abs(g.mods.damageMultiplier - 1.3) < 1e-9);
+  assert.ok(Math.abs(g.mods.fireRateMultiplier - 1.16) < 1e-9);
+  assert.ok(Math.abs(g.mods.rangeMultiplier - 1.05) < 1e-9);
+  assert.equal(hireCost(g, 'r'), 45);
+  const dev = placeDev(g, 'r', 3, 3);
+  assert.equal(dev.spent, 45);
+  assert.equal(g.warrants, 100 - 45);
+});
+
+test('no investments: hireCost equals the base cost; unknown type is Infinity', async () => {
+  await registerDevInvestments();
+  const g = withLevels({});
+  assert.equal(hireCost(g, 'r'), 50);
+  assert.equal(hireCost(g, 'nope'), Infinity);
+});

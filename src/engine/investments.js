@@ -19,7 +19,7 @@ function memoryStore() {
 
 function defaultStore() {
   try {
-    const ls = globalThis.localStorage;
+    const ls = globalThis.window?.localStorage;   // only in a browser (Node warns on bare localStorage)
     if (ls) { ls.getItem(CAPITAL_KEY); return ls; }
   } catch { /* storage blocked */ }
   return memoryStore();

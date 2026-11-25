@@ -3,7 +3,7 @@ import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
 import { buyUpgrade } from '../src/engine/upgrades.js';
-import { placeDev, grantXp } from '../src/engine/devs.js';
+import { placeDev, grantXp, hireCost } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
 import { getDeveloper } from '../src/engine/registry.js';
@@ -27,7 +27,7 @@ function play(strategy, usePowers) {
   const buy = () => {
     while (true) {
       const type = order[i % order.length];
-      if (g.warrants < getDeveloper(type).cost) return;
+      if (g.warrants < hireCost(g, type)) return;
       const cell = cells.find(x => !g.devs.some(d => d.col === x.c && d.row === x.r));
       if (!cell) return;
       placeDev(g, type, cell.c, cell.r); i++;

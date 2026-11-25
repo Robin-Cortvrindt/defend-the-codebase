@@ -2,7 +2,7 @@
 import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
-import { LEVELS, sellDev } from './devs.js';
+import { LEVELS, sellDev, hireCost } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
@@ -70,7 +70,7 @@ function buildHire() {
     const btn = h('button', { class: 'hire-btn', style: `--accent:${def.accent}`, title: `Hotkey ${i + 1}`, onclick: () => selectHire(def.id) },
       cv, h('span', { class: 'hire-text' }, h('b', {}, def.name), h('small', {}, def.blurb || '')), cost);
     bar.append(btn);
-    return { def, btn };
+    return { def, btn, cost };
   });
   refs.selPanel = h('div', { class: 'sel-panel hidden' });
   bar.append(refs.selPanel);
@@ -153,9 +153,11 @@ export function updateUI() {
   set(refs.pause, 'textContent', v.paused ? 'Resume' : 'Pause');
   set(refs.mute, 'textContent', isMuted() ? 'Sound off' : 'Sound on');
 
-  for (const { def, btn } of refs.hire) {
+  for (const { def, btn, cost } of refs.hire) {
+    const price = hireCost(g, def.id);
     toggle(btn, 'active', v.hire === def.id);
-    toggle(btn, 'poor', g.warrants < def.cost);
+    toggle(btn, 'poor', g.warrants < price);
+    set(cost, 'textContent', String(price));
   }
 
   for (const { def, card, status, cd } of refs.powerups) {

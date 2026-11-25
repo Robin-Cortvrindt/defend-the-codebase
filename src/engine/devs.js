@@ -14,17 +14,24 @@ const LEVEL_FIRE_RATE = 1.15;
 
 export const devAt = (game, col, row) => game.devs.find(d => d.col === col && d.row === row);
 
+// What hiring a developer costs right now (the recruitment investment lowers it).
+export function hireCost(game, typeId) {
+  const def = getDeveloper(typeId);
+  return def ? Math.round(def.cost * (game.mods.devCostMultiplier ?? 1)) : Infinity;
+}
+
 export function canPlace(game, typeId, col, row) {
   const def = getDeveloper(typeId);
-  return !!def && isBuildable(col, row) && !devAt(game, col, row) && game.warrants >= def.cost;
+  return !!def && isBuildable(col, row) && !devAt(game, col, row) && game.warrants >= hireCost(game, typeId);
 }
 
 export function placeDev(game, typeId, col, row) {
   if (!canPlace(game, typeId, col, row)) return null;
   const def = getDeveloper(typeId);
   const { x, y } = cellCenter(col, row);
-  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, xp: 0, cooldown: 0, spent: def.cost, kills: 0 };
-  game.warrants -= def.cost;
+  const cost = hireCost(game, typeId);
+  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, xp: 0, cooldown: 0, spent: cost, kills: 0 };
+  game.warrants -= cost;
   game.devs.push(dev);
   emit('dev:placed', { game, dev });
   return dev;
