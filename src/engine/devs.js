@@ -116,8 +116,11 @@ export function bugsInRange(game, dev, range) {
     .sort((a, b) => b.distance - a.distance);
 }
 
+// One shot's animation from the developer to `bug`: the developer's own attack look (drawAttack),
+// or a straight beam in `color` (default its accent) for developers without one.
 export function shotBeam(game, dev, bug, color, damage = getDeveloper(dev.type).damage) {
-  addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: bug.x, y: bug.y }, color: color ?? getDeveloper(dev.type).accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
+  dev.lastShotAt = game.time;
+  addAttack(game, dev, { x: dev.x, y: dev.y }, bug, { color, damage });
 }
 
 export function hitBug(game, dev, bug, damage) {
@@ -131,6 +134,20 @@ export function hitBug(game, dev, bug, damage) {
   dev.kills++;
   grantXp(game, dev, 1);
   return true;
+}
+
+// The animation of one hit. Damage is dealt by the caller, at once; this is only what you see.
+// The effect follows `target` while it lives (see tickEffects) and the developer may draw it (drawAttack).
+// `damage` sets the fallback beam's width; `color` overrides its colour.
+export function addAttack(game, dev, from, target, { color, damage } = {}) {
+  const def = getDeveloper(dev.type);
+  addEffect(game, {
+    kind: 'attack', dev: dev.type, from, to: { x: target.x, y: target.y }, target,
+    seed: game.random(), shot: dev.shots ?? 0,
+    ttl: def?.attackDuration ?? 0.12, hitAt: def?.attackHitAt ?? 0,
+    color, width: Math.min(5, 1.5 + (damage ?? devStats(game, dev).damage) / 15),
+  });
+  dev.shots = (dev.shots ?? 0) + 1;
 }
 
 export function tickDevs(game, dt) {

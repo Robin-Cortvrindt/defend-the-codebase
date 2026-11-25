@@ -17,7 +17,7 @@ export function render(ctx, game, view) {
   drawRanges(ctx, game, view);
   for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
-  for (const bug of game.bugs) drawBug(ctx, bug);
+  for (const bug of game.bugs) drawBug(ctx, game, bug);
   drawActiveEvent(ctx, game, view);
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
@@ -359,7 +359,20 @@ function drawHover(ctx, game, view) {
   }
 }
 
-function drawBug(ctx, bug) {
+// How strongly a bug flashes white right now (0..1): full the moment an attack on it lands
+// (its `hitAt` progress), fading over the next 30% of the attack.
+export function hitFlash(game, bug) {
+  let best = 0;
+  for (const e of game.effects) {
+    if (e.kind !== 'attack' || e.target !== bug) continue;
+    const since = attackProgress(e) - (e.hitAt ?? 0);
+    if (since >= -1e-9) best = Math.max(best, Math.min(1, 1 - since / 0.3));
+  }
+  return best;
+}
+const attackProgress = e => Math.min(1, Math.max(0, 1 - e.ttl / (e.maxTtl || 1)));
+
+function drawBug(ctx, game, bug) {
   const def = getBug(bug.type);
   if (!def) return;
   const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
@@ -382,6 +395,12 @@ function drawBug(ctx, bug) {
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
   if (def.drawIcon) { try { def.drawIcon(ctx, r, bug); } catch (e) { console.error(e); } }
+  const flash = hitFlash(game, bug);
+  if (flash > 0) {
+    ctx.globalAlpha = 0.7 * flash; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
   if (bug.hp < bug.maxHp) {
     const w = Math.max(12, r * 2.2);
@@ -390,10 +409,30 @@ function drawBug(ctx, bug) {
   }
 }
 
+// A developer's attack: its own drawAttack if it has one, else today's straight beam.
+function drawAttack(ctx, game, e, t) {
+  const def = getDeveloper(e.dev);
+  const accent = def?.accent || '#fff';
+  if (def?.drawAttack) {
+    ctx.save();
+    try {
+      def.drawAttack(ctx, { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, accent });
+    } catch (err) { console.error(`[developer ${e.dev}] drawAttack`, err); }
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha = t;
+  ctx.strokeStyle = e.color || accent; ctx.lineWidth = e.width || 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
 function drawEffects(ctx, game) {
   for (const e of game.effects) {
     const t = Math.max(0, e.ttl / (e.maxTtl || 1)); // 1 → 0
-    if (e.kind === 'beam') {
+    if (e.kind === 'attack') {
+      drawAttack(ctx, game, e, t);
+    } else if (e.kind === 'beam') {
       ctx.globalAlpha = t;
       ctx.strokeStyle = e.color; ctx.lineWidth = e.width || 2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y); ctx.stroke();
