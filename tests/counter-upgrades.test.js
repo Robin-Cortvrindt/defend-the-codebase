@@ -16,9 +16,9 @@ beforeEach(async () => {
   for (const id of EVENTS) { const m = await import(`../src/content/events/${id}.js`); defs[id] = m.default; R.registerEvent(m.default); }
 });
 
-const reviewGame = () => { const g = createGame(); startGame(g); g.phase = 'review'; g.coins = 100; return g; };
+const reviewGame = () => { const g = createGame(); startGame(g); g.phase = 'review'; g.warrants = 100; return g; };
 
-test('every event has exactly one counter-upgrade (3 levels, 3/5/7 coins)', () => {
+test('every event has exactly one counter-upgrade (3 levels, 3/5/7 warrants)', () => {
   for (const [up, ev] of Object.entries(COUNTERS)) {
     assert.equal(R.getUpgrade(up).counters, ev, up);
     const g = reviewGame();

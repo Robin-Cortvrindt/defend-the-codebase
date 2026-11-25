@@ -99,7 +99,7 @@ test('xpMultiplier 2 doubles xp; fireRateMultiplier 1.5 raises fire rate', () =>
   assert.equal(devStats(g, d).fireRate, 6);
 });
 
-test('upgrade is gated by xp then warrants; spent grows; refund includes upgrades', () => {
+test('upgrade is gated by xp then drinks; spent grows; refund includes upgrades', () => {
   const g = waveGame(); g.drinks.coffee = 1000;
   const d = placeDev(g, 'u', 3, 3);
   assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'xp' });

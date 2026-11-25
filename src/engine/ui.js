@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getDrinks, getDrink, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
 import { loadProgress, capitalFor } from './investments.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_WARRANTS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, effectiveCooldown } from './powerups.js';
@@ -31,7 +31,7 @@ function buildHud() {
     h('img', { src: 'assets/nexios-wordmark-white.webp', alt: 'Nexios', class: 'wordmark' }),
     stat('Drinks', refs.drinks = h('span', { class: 'drinks' }), refs.raise = h('em', { class: 'raise' }, '')),
     stat('Production', refs.prod = h('div', { class: 'prod' })),
-    stat('Coins', refs.coins = h('b', {}, '0')),
+    stat('Warrants', refs.warrants = h('b', {}, '0')),
     stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
     stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
     h('div', { class: 'hud-spacer' }),
@@ -173,7 +173,7 @@ export function updateUI() {
   updateDrinks(g);
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
-  set(refs.coins, 'textContent', String(g.coins));
+  set(refs.warrants, 'textContent', String(g.warrants));
   set(refs.raise, 'textContent', g.raise > 1.0001 ? ` +${Math.round((g.raise - 1) * 100)}%` : '');
   const ev = g.activeEvent && getEvent(g.activeEvent);
   set(refs.incident, 'textContent', ev ? ev.name : 'None');
@@ -347,7 +347,7 @@ function showOverlay(phase) {
     ov.append(h('div', { class: 'bell-card' },
       bellWrap,
       h('div', {},
-        h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 coin`),
+        h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 Warrant`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
         h('small', {}, 'Hiring and selling still work'),
       ),
@@ -412,7 +412,7 @@ function renderReview(ov, g) {
     ov.append(h('div', { class: `review-min${g.pendingYearReview ? ' locked' : ''}` },
       bell,
       h('div', {},
-        h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.coins} coins`),
+        h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.warrants} Warrants`),
         h('h2', {}, g.pendingYearReview ? 'Yearly review still open' : ringLabel),
         h('small', {}, 'Hire, place and sell developers on the map'),
       ),
@@ -428,7 +428,7 @@ function renderReview(ov, g) {
       h('div', { class: 'stats' },
         h('div', {}, h('b', {}, String(g.quarterStats.squashed)), h('small', {}, 'Bugs squashed')),
         h('div', {}, h('b', {}, String(g.quarterStats.leaked)), h('small', {}, 'Production lost')),
-        h('div', {}, h('b', { class: 'coins' }, String(g.coins)), h('small', {}, 'Nexios Coins')),
+        h('div', {}, h('b', { class: 'warrants' }, String(g.warrants)), h('small', {}, 'Warrants')),
       ),
     ),
   );
@@ -442,16 +442,16 @@ function renderReview(ov, g) {
     card.append(h('div', { class: `year-review result ${msg[2]}` },
       h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year}`),
       h('b', { class: 'result-title' }, msg[0]), h('small', {}, ` — ${msg[1]}`),
-      h('div', { class: 'cao' }, h('b', { class: 'coins' }, `+${CAO_COINS} Nexios Coins`), h('small', {}, ' — CAO paid out, spend it on the building below')),
+      h('div', { class: 'cao' }, h('b', { class: 'warrants' }, `+${CAO_WARRANTS} Warrants`), h('small', {}, ' — CAO paid out, spend it on the building below')),
     ));
   }
 
   if (g.pendingYearReview) {
     const choose = choice => { chooseYearReview(g, choice); playSound(choice === 'raise' ? 'claude' : 'powerup'); rerender(); };
     card.append(h('div', { class: 'year-review' },
-      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year} · CAO +${CAO_COINS} Nexios Coins either way`),
+      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year} · CAO +${CAO_WARRANTS} Warrants either way`),
       h('div', { class: 'choices' },
-        h('button', { class: 'choice', onclick: () => choose('accept') }, h('b', {}, 'Accept the review'), h('small', {}, '+10% Warrants, guaranteed')),
+        h('button', { class: 'choice', onclick: () => choose('accept') }, h('b', {}, 'Accept the review'), h('small', {}, '+10% Drinks, guaranteed')),
         h('button', { class: 'choice gamble', onclick: () => choose('raise') }, h('b', {}, 'Ask for a raise'), h('small', {}, '50% chance of +20%, otherwise nothing')),
       ),
     ));

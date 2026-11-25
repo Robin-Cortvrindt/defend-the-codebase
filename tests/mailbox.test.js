@@ -209,7 +209,7 @@ import { TEMPLATES, trackMail, isDone, claimMail } from '../src/content/features
 import { emit } from '../src/engine/events.js';
 import { usePowerup, powerupState } from '../src/engine/powerups.js';
 
-// Offer and accept a specific template (real unless phishing: true, Warrants reward unless claude: true).
+// Offer and accept a specific template (real unless phishing: true, drinks reward unless claude: true).
 function give(id, { phishing = false, claude = false } = {}) {
   const open = new Set(g.mailbox.mails.map(m => m.template));
   const pool = TEMPLATES.filter(t => !open.has(t.id) && (t.available?.(g) ?? true));

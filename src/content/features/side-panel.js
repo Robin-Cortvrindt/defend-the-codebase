@@ -5,7 +5,7 @@ import { upgradeLevel } from '../../engine/upgrades.js';
 import { drawDevTile } from '../../engine/render.js';
 
 // ---------- plain helpers (tested in Node) ----------
-export const buildingInfo = game => ({ floors: game.floors, lives: game.lives, maxLives: game.maxLives, coins: game.coins });
+export const buildingInfo = game => ({ floors: game.floors, lives: game.lives, maxLives: game.maxLives, warrants: game.warrants });
 
 export const buildingRows = game => getUpgrades()
   .filter(def => def.id !== 'floor')
@@ -45,7 +45,7 @@ function renderBuilding(sec, game) {
   const share = info.maxLives > 0 ? info.lives / info.maxLives : 0;
   const bar = el('div', `sp-bar${share <= 0.4 ? ' low' : ''}`);
   const fill = el('i'); fill.style.width = `${Math.round(Math.max(0, Math.min(1, share)) * 100)}%`; bar.append(fill);
-  sec.append(bar, kv('Nexios Coins', info.coins, 'sp-coins'));
+  sec.append(bar, kv('Warrants', info.warrants, 'sp-warrants'));
   // Compact: one row of small tiles (short label + pips); the full name and counter are in the tooltip.
   const tiles = el('div', 'sp-upgs');
   for (const r of rows) {

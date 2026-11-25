@@ -16,9 +16,9 @@ beforeEach(() => {
   g = createGame();
 });
 
-test('buildingInfo reads floors, lives and coins', () => {
-  g.floors = 3; g.lives = 17; g.maxLives = 25; g.coins = 6;
-  assert.deepEqual(buildingInfo(g), { floors: 3, lives: 17, maxLives: 25, coins: 6 });
+test('buildingInfo reads floors, lives and warrants', () => {
+  g.floors = 3; g.lives = 17; g.maxLives = 25; g.warrants = 6;
+  assert.deepEqual(buildingInfo(g), { floors: 3, lives: 17, maxLives: 25, warrants: 6 });
 });
 
 test('buildingRows skips the floor upgrade and reports levels', () => {

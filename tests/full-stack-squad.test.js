@@ -91,7 +91,7 @@ test('bounce on a typo bug (React counter) does double', () => {
   assert.equal(typo.hp, 100 - devStats(g, react).damage);
 });
 
-test('bounce kill credits the React developer: XP, kill, Warrants', () => {
+test('bounce kill credits the React developer: XP, kill, drinks', () => {
   const { g, react } = squadGame();
   bugAt(g, 'b', react.x + 30, react.y);
   const weak = bugAt(g, 'b', react.x + 30 + CELL, react.y, 1);

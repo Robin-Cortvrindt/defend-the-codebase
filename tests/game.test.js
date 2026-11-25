@@ -109,13 +109,13 @@ test('sprintInfo maps global sprint index to year, quarter and sprint', () => {
 
 const clear = g => { g.spawnQueue = []; g.bugs = []; step(g, 0.01); };
 
-test('clearing a sprint gives 1 coin; sprint 7 gives 4 and enters the quarter review', () => {
+test('clearing a sprint gives 1 warrant; sprint 7 gives 4 and enters the quarter review', () => {
   const g = createGame(); startGame(g); startWave(g);
   let reviews = 0; on('quarter:review', () => reviews++);
   clear(g);
-  assert.equal(g.coins, 1);
+  assert.equal(g.warrants, 1);
   g.sprint = 6; g.phase = 'bell'; ringBell(g); clear(g);
-  assert.equal(g.coins, 5);
+  assert.equal(g.warrants, 5);
   assert.equal(g.phase, 'review');
   assert.equal(reviews, 1);
   assert.equal(g.pendingYearReview, false);

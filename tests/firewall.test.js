@@ -68,7 +68,7 @@ test('damages a bug inside the cell at 10/s (bosses too), not one outside', () =
   assert.equal(outside.hp, 100);
 });
 
-test('kill pays Warrants and gives XP + a kill to both developers', () => {
+test('kill pays drinks and gives XP + a kill to both developers', () => {
   const { g, a, b } = pairGame();
   const bug = spawnBug(g, 'b', 100); bug.hp = 5;
   const before = totalDrinks(g);

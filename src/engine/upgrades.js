@@ -1,4 +1,4 @@
-// Nexios building upgrades, bought with Nexios Coins in the quarter review.
+// Nexios building upgrades, bought with Warrants in the quarter review.
 import { getUpgrade } from './registry.js';
 import { emit } from './events.js';
 
@@ -10,7 +10,7 @@ export function resistanceTo(game, eventId) {
   return Math.min(1, Math.max(0, r || 0));
 }
 
-// A counter-upgrade: 3 levels for 3/5/7 coins, each level takes a third off one event.
+// A counter-upgrade: 3 levels for 3/5/7 Warrants, each level takes a third off one event.
 export const COUNTER_COSTS = [3, 5, 7];
 export function counterUpgrade({ id, name, description, counters, onApply }) {
   return {
@@ -35,13 +35,13 @@ export function canBuy(game, id) {
   const def = getUpgrade(id);
   if (!def || game.phase !== 'review') return false;
   if (upgradeLevel(game, id) >= (def.maxLevel ?? Infinity)) return false;
-  return game.coins >= upgradeCost(game, id);
+  return game.warrants >= upgradeCost(game, id);
 }
 
 export function buyUpgrade(game, id) {
   if (!canBuy(game, id)) return false;
   const def = getUpgrade(id);
-  game.coins -= upgradeCost(game, id);
+  game.warrants -= upgradeCost(game, id);
   const level = upgradeLevel(game, id) + 1;
   game.upgrades[id] = level;
   try { def.apply(game, level); } catch (e) { console.error(`[upgrade ${id}]`, e); }

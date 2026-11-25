@@ -22,13 +22,13 @@ export function createGame() {
     sprint: 0,                // global index of the current (or next) sprint, 0-based
     get wave() { return this.sprint; },      // old name, kept so existing code and features keep working
     set wave(v) { this.sprint = v; },
-    coins: 0,                 // Nexios Coins, earned per sprint, spent in the quarter review
+    warrants: 0,              // Warrants, earned per sprint, spent in the quarter review
     pendingYearReview: false,
     lastYearReview: null,     // 'accepted' | 'approved' | 'denied' after the latest yearly review
     floors: 1,                // Nexios building floors (upgrade)
     heatResistance: 0,        // 0..1, set by the air-conditioning upgrade (old name, same as resistance['heat-wave'])
     resistance: {},           // event id -> 0..1, set by counter-upgrades; each event scales its effect by (1 - resistance)
-    raise: 1,                 // total yearly-review Warrant multiplier
+    raise: 1,                 // total yearly-review drink multiplier
     upgrades: {},
     unlocks: {},              // mechanics unlocked by investments, e.g. unlocks.firewall
     powerupMods: {},          // per power-up investment bonuses, see powerupMod() in powerups.js
@@ -191,13 +191,13 @@ function checkEnd(game) {
   const info = sprintInfo(game.sprint);
   const bonus = sprintBonus(game.sprint);
   addEachDrink(game, bonus);
-  game.coins += 1;
+  game.warrants += 1;
   const cleared = { game, sprint: game.sprint + 1, wave: game.sprint + 1, bonus, info };
   emit('sprint:cleared', cleared);
   emit('wave:cleared', cleared);
   game.sprint++;
   if (info.sprint === SPRINTS_PER_QUARTER) {
-    game.coins += 3;
+    game.warrants += 3;
     game.pendingYearReview = info.quarter === QUARTERS_PER_YEAR;
     if (game.pendingYearReview) game.lastYearReview = null;
     game.phase = 'review';
@@ -240,7 +240,7 @@ function tickEffects(game, dt) {
 export const REVIEW_ACCEPT = 1.1;
 export const REVIEW_RAISE = 1.2;
 export const RAISE_CHANCE = 0.5;
-export const CAO_COINS = 10;   // CAO: collective labour agreement bonus, paid in Nexios Coins with every yearly review
+export const CAO_WARRANTS = 10;   // CAO: collective labour agreement bonus, paid in Warrants with every yearly review
 
 export function chooseYearReview(game, choice) {
   if (!game.pendingYearReview || (choice !== 'accept' && choice !== 'raise')) return null;
@@ -252,11 +252,11 @@ export function chooseYearReview(game, choice) {
   game.mods.drinkMultiplier *= factor;
   game.raise *= factor;
   game.lastYearReview = result;
-  game.coins += CAO_COINS;
+  game.warrants += CAO_WARRANTS;
   const banners = {
-    accepted: ['Yearly review', `Review accepted — Drinks +10% · CAO +${CAO_COINS} coins`, '#2563EB'],
-    approved: ['Yearly review', `Raise approved — Drinks +20% · CAO +${CAO_COINS} coins`, '#16A34A'],
-    denied: ['Yearly review', `Raise denied — but CAO +${CAO_COINS} coins`, '#EA580C'],
+    accepted: ['Yearly review', `Review accepted — Drinks +10% · CAO +${CAO_WARRANTS} Warrants`, '#2563EB'],
+    approved: ['Yearly review', `Raise approved — Drinks +20% · CAO +${CAO_WARRANTS} Warrants`, '#16A34A'],
+    denied: ['Yearly review', `Raise denied — but CAO +${CAO_WARRANTS} Warrants`, '#EA580C'],
   };
   const [title, text, accent] = banners[result];
   addEffect(game, { kind: 'banner', title, text, accent, ttl: 3 });

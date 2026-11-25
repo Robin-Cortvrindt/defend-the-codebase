@@ -84,9 +84,9 @@ export function updateMenu() {
 
 const STEPS = [
   ['Hire next to the path', 'Developers squash bugs in range. Each type counters one kind of bug.'],
-  ['Earn Warrants', 'Every squashed bug pays out. Spend Warrants on more hires.'],
+  ['Earn drinks', 'Every squashed bug drops drinks. Spend them on more hires.'],
   ['Ring the bell', 'After each sprint, ring the Nexios bell to start the next one.'],
-  ['Quarterly review', 'Every 7 sprints, spend Nexios Coins on the building.'],
+  ['Quarterly review', 'Every 7 sprints, spend Warrants on the building.'],
 ];
 const KEYS = [['1 2 3', 'hire'], ['Shift-click', 'keep hiring'], ['Right-click / Esc', 'cancel'], ['Space', 'start the sprint or ring the bell'], ['P', 'pause'], ['F / Shift+F', 'speed'], ['M', 'sound']];
 

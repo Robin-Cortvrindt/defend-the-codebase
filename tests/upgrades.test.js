@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
-import { createGame, startGame, ringBell, chooseYearReview, CAO_COINS } from '../src/engine/game.js';
+import { createGame, startGame, ringBell, chooseYearReview, CAO_WARRANTS } from '../src/engine/game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from '../src/engine/upgrades.js';
 
 beforeEach(async () => {
@@ -11,15 +11,15 @@ beforeEach(async () => {
   R.registerWaves([{ groups: [] }]);
 });
 
-function reviewGame(coins = 100) {
-  const g = createGame(); startGame(g); g.phase = 'review'; g.coins = coins; return g;
+function reviewGame(warrants = 100) {
+  const g = createGame(); startGame(g); g.phase = 'review'; g.warrants = warrants; return g;
 }
 
 test('floor costs 3,4,5; adds 5 max lives and heals 5; floors++', () => {
   const g = reviewGame(); g.lives = 10;
   assert.equal(upgradeCost(g, 'floor'), 3);
   assert.equal(buyUpgrade(g, 'floor'), true);
-  assert.deepEqual([g.maxLives, g.lives, g.floors, g.coins], [25, 15, 2, 97]);
+  assert.deepEqual([g.maxLives, g.lives, g.floors, g.warrants], [25, 15, 2, 97]);
   assert.equal(upgradeCost(g, 'floor'), 4);
   buyUpgrade(g, 'floor');
   assert.equal(upgradeCost(g, 'floor'), 5);
@@ -41,23 +41,23 @@ test('aircon costs 3,5,7, max 3, sets heatResistance level/3', () => {
   assert.equal(g.heatResistance, 1);
   assert.equal(upgradeLevel(g, 'aircon'), 3);
   assert.equal(canBuy(g, 'aircon'), false);
-  assert.equal(g.coins, 85);
+  assert.equal(g.warrants, 85);
 });
 
-test('Review Focus 4: buy refused outside review, with too few coins, or at max — coins unchanged', () => {
+test('Review Focus 4: buy refused outside review, with too few warrants, or at max — warrants unchanged', () => {
   const g = reviewGame(2);
   assert.equal(buyUpgrade(g, 'floor'), false);
-  assert.equal(g.coins, 2);
-  g.coins = 50; g.phase = 'bell';
+  assert.equal(g.warrants, 2);
+  g.warrants = 50; g.phase = 'bell';
   assert.equal(buyUpgrade(g, 'floor'), false);
-  assert.equal(g.coins, 50);
+  assert.equal(g.warrants, 50);
   assert.equal(buyUpgrade(g, 'nope'), false);
 });
 
 test('Review Focus 2: a new game starts clean after upgrades', () => {
   const g = reviewGame(); buyUpgrade(g, 'floor'); buyUpgrade(g, 'aircon');
   const fresh = createGame();
-  assert.deepEqual([fresh.floors, fresh.heatResistance, fresh.raise, fresh.coins, fresh.maxLives], [1, 0, 1, 0, 20]);
+  assert.deepEqual([fresh.floors, fresh.heatResistance, fresh.raise, fresh.warrants, fresh.maxLives], [1, 0, 1, 0, 20]);
   assert.deepEqual(fresh.upgrades, {});
 });
 
@@ -93,21 +93,21 @@ test('yearly review result is stored so the review screen can show it', () => {
   assert.equal(g.lastYearReview, 'denied');
 });
 
-test('Review Focus 4: buying at max level is refused and coins stay', () => {
+test('Review Focus 4: buying at max level is refused and warrants stay', () => {
   const g = reviewGame(100);
   buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon');
-  const coins = g.coins;
+  const warrants = g.warrants;
   assert.equal(buyUpgrade(g, 'aircon'), false);
-  assert.equal(g.coins, coins);
+  assert.equal(g.warrants, warrants);
 });
 
-test('Yearly review pays out the CAO in Nexios Coins, whatever the choice', () => {
+test('Yearly review pays out the CAO in Warrants, whatever the choice', () => {
   for (const [choice, roll] of [['accept', 0.9], ['raise', 0.2], ['raise', 0.8]]) {
     const g = reviewGame(5); g.pendingYearReview = true; g.random = () => roll;
     chooseYearReview(g, choice);
-    assert.equal(g.coins, 5 + CAO_COINS);
+    assert.equal(g.warrants, 5 + CAO_WARRANTS);
   }
   const g = reviewGame(5); g.pendingYearReview = true;
   chooseYearReview(g, 'accept'); chooseYearReview(g, 'accept');
-  assert.equal(g.coins, 5 + CAO_COINS, 'paid once per review');
+  assert.equal(g.warrants, 5 + CAO_WARRANTS, 'paid once per review');
 });
