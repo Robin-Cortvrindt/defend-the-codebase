@@ -1,5 +1,6 @@
 import { registerDeveloper } from '../../engine/registry.js';
 import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
+import { zigzagPoint } from '../../engine/zigzag.js';
 
 // React (front-end): fast, light hits. Counters swarms of typo bugs.
 // Its attack: small hooks thrown spinning on a curve, alternating left and right, that stick in the bug.
@@ -72,14 +73,16 @@ registerDeveloper({
   },
   attackDuration: 0.22,
   attackHitAt: FLY,
-  drawAttack(ctx, { from, to, progress, shot }) {
+  // A tipsy hook (wine tasting) zigzags to the bug instead of flying its curve.
+  drawAttack(ctx, { from, to, progress, shot, seed, tipsy }) {
     const side = shot % 2 ? 1 : -1;
     const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
     const nx = -dy / len, ny = dx / len, ang = Math.atan2(dy, dx);
     ctx.save();
     if (progress < FLY) {
       const f = progress / FLY, bow = Math.sin(Math.PI * f) * 30 * side;
-      ctx.translate(from.x + dx * f + nx * bow, from.y + dy * f + ny * bow);
+      if (tipsy) { const p = zigzagPoint(from, to, f, seed, 18); ctx.translate(p.x, p.y); }
+      else ctx.translate(from.x + dx * f + nx * bow, from.y + dy * f + ny * bow);
       ctx.rotate(f * Math.PI * 4 * side);
     } else {
       const k = (progress - FLY) / (1 - FLY);

@@ -2,6 +2,7 @@ import { registerDeveloper } from '../../engine/registry.js';
 import { addEffect } from '../../engine/game.js';
 import { on } from '../../engine/events.js';
 import { bugsInRange, hitBug } from '../../engine/devs.js';
+import { zigzagPoint } from '../../engine/zigzag.js';
 
 on('dev:placed', ({ game, dev }) => {
   if (dev.type !== 'java') return;
@@ -16,18 +17,20 @@ const STEAM_REGROW = 0.35;    // seconds for new steam to rise out of the cup af
 const BODY = 0.5;             // length of a wisp, as a share of the distance to the bug
 
 // A point on a wisp from `from` to `to` at s (0..1): lazy S-curves, pinned at both ends.
-function wispPoint(s, from, to, time, phase, side) {
+// A tipsy wisp (wine tasting) weaves around a zigzag centre line instead of a straight one.
+function wispPoint(s, from, to, time, phase, side, zig) {
   const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
   const nx = -dy / len, ny = dx / len;
   const waves = Math.max(1.2, len / 70), env = Math.sin(Math.PI * s);
-  const off = 10 * env * Math.sin(2 * Math.PI * waves * s - time * 9 + phase) + side * 3 * env;
-  return { x: from.x + dx * s + nx * off, y: from.y + dy * s + ny * off };
+  const off = (zig == null ? 10 : 8) * env * Math.sin(2 * Math.PI * waves * s - time * 9 + phase) + side * 3 * env;
+  const c = zig == null ? { x: from.x + dx * s, y: from.y + dy * s } : zigzagPoint(from, to, s, zig, 16);
+  return { x: c.x + nx * off, y: c.y + ny * off };
 }
 
-function strokeWisp(ctx, tail, head, from, to, time, phase, side) {
+function strokeWisp(ctx, tail, head, from, to, time, phase, side, zig) {
   if (head <= tail) return;
   const N = 28, pts = [];
-  for (let i = 0; i <= N; i++) pts.push(wispPoint(tail + (head - tail) * (i / N), from, to, time, phase, side));
+  for (let i = 0; i <= N; i++) pts.push(wispPoint(tail + (head - tail) * (i / N), from, to, time, phase, side, zig));
   ctx.lineCap = 'round';
   // White haze under an orange-hot core; thinner and fainter towards the tail, as if evaporating.
   for (const pass of [{ c: '#fff', w: 7, a: 0.12 }, { c: ORANGE, w: 3, a: 0.95 }]) {
@@ -90,13 +93,13 @@ registerDeveloper({
   },
   attackDuration: 0.42,
   attackHitAt: 0.66,   // the head of the steam reaches the bug
-  drawAttack(ctx, { from, to, progress, time, seed }) {
+  drawAttack(ctx, { from, to, progress, time, seed, tipsy }) {
     const travel = progress * (1 + BODY);
     const head = Math.min(1, travel), tail = Math.max(0, travel - BODY);
     const phase = seed * 6.28;
     STEAM_X.forEach((sx, i) => {
       const origin = { x: from.x + sx, y: from.y - 10 };
-      strokeWisp(ctx, tail, head, origin, to, time, phase + i * Math.PI, i ? 1 : -1);
+      strokeWisp(ctx, tail, head, origin, to, time, phase + i * Math.PI, i ? 1 : -1, tipsy ? seed : null);
     });
     // A few small puffs where the steam sinks into the bug.
     if (head >= 1 && tail < 1) {
