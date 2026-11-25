@@ -4,6 +4,7 @@ import { emit } from './events.js';
 import { pointAt, PATH_LENGTH } from './map.js';
 import { tickDevs } from './devs.js';
 import { tickPowerups } from './powerups.js';
+import { rollEvent, endEvent } from './random-events.js';
 
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
@@ -26,6 +27,7 @@ export function createGame() {
       timeScale: 1, devFireRate: {},
     },
     powerups: {},
+    activeEvent: null,        // id of the random event running this wave
     stats: { squashed: 0, warrantsEarned: 0, seniors: 0, backfires: 0 },
     time: 0,
     nextId: 1,
@@ -52,6 +54,7 @@ export function startWave(game) {
   game.spawnQueue = queue;
   game.waveTime = 0;
   game.phase = 'wave';
+  rollEvent(game);
   emit('wave:start', { game, wave: game.wave + 1 });
   return true;
 }
@@ -108,16 +111,19 @@ function moveBugs(game, dt) {
 
 function checkEnd(game) {
   if (game.lives <= 0) {
+    endEvent(game);
     game.phase = 'lost';
     emit('game:lost', { game, wave: game.wave + 1 });
     return;
   }
   if (game.spawnQueue.length || game.bugs.length) return;
   if (game.wave >= totalWaves() - 1) {
+    endEvent(game);
     game.phase = 'won';
     emit('game:won', { game });
     return;
   }
+  endEvent(game);
   const bonus = 20 + 5 * (game.wave + 1);
   addWarrants(game, bonus);
   emit('wave:cleared', { game, wave: game.wave + 1, bonus });

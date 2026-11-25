@@ -3,6 +3,7 @@ const developers = new Map();
 const bugs = new Map();
 const powerups = new Map();
 const features = new Map();
+const events = new Map();
 let waves = [];
 
 function put(map, kind, def) {
@@ -19,6 +20,7 @@ export const registerDeveloper = def => put(developers, 'developer', def);
 export const registerBug = def => put(bugs, 'bug', def);
 export const registerPowerup = def => put(powerups, 'powerup', def);
 export const registerFeature = def => put(features, 'feature', def);
+export const registerEvent = def => put(events, 'event', def);
 export function registerWaves(list) { waves = list; }
 
 export const getDevelopers = () => [...developers.values()];
@@ -29,7 +31,9 @@ export const getPowerups = () => [...powerups.values()];
 export const getPowerup = id => powerups.get(id);
 export const getFeatures = () => [...features.values()];
 export const getWaves = () => waves;
+export const getEvents = () => [...events.values()];
+export const getEvent = id => events.get(id);
 
 export function resetRegistry() {
-  developers.clear(); bugs.clear(); powerups.clear(); features.clear(); waves = [];
+  developers.clear(); bugs.clear(); powerups.clear(); features.clear(); events.clear(); waves = [];
 }
