@@ -20,6 +20,11 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 - **Nexios Coins:** 1 per sprint and 3 more per quarter. At each **quarter review** you spend them on the Nexios building: **add a floor** (+5 production, heals 5; the building grows) or a counter-upgrade for each random event, 3 levels each: **air conditioning** (heat wave), **server heat recovery** (heating out), **coffee bar** (out of coffee), **energy drink fridge** (out of Red Bull) and **backup generator** (PROD is down). Every upgrade shows on the building.
 - **Yearly review** after every Q4: accept a guaranteed +10% on Warrants, or ask for a raise (50% chance of +20%, otherwise nothing).
 - **Lose:** when too many bugs reach the Nexios building, production is down. Your best run (year, quarter, sprint) is remembered in the browser.
+- **Investments (between runs):** after a loss you find new investors, and they put in **Investor Capital** depending on how far you got: 1 per sprint, 5 more per quarter and 15 more per year. Spend it in **Investments** (start menu or game-over screen) on permanent upgrades for every later run:
+  - **Developers** (all at once): more damage, attack speed and range, and cheaper hires.
+  - **Power-ups:** a stronger training manager, business manager and CEO with shorter cooldowns, and a Claude that backfires less and costs less.
+  - **Unlocks:** **Security training (.NET)**. Two .NET developers facing each other across the lane build a **firewall** that damages bugs passing through, and a firewall kill gives XP to both developers.
+  - Progress is saved in this browser. **Reset progress** in the shop starts over.
 
 Controls:
 
