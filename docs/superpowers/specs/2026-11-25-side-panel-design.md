@@ -84,10 +84,12 @@ Option 1 won because a permanent panel is layout, not an add-on.
 - `#stage` and a new `<aside id="side-panel" aria-label="Your run">` are wrapped in a new `<div id="play">`, laid out as a grid: board `1fr`, panel `280px`.
 - `#app`'s `max-width` goes from `1100px` to `1380px` (my call). The board then keeps roughly its current size, and the panel is added next to it.
 - The panel has three `<section>` children, with ids `panel-building`, `panel-devs` and `panel-tasks`, so each feature knows where to render. A feature that fails to load leaves its section empty, and the game still runs.
-- **Height (decided after the mockup).** The panel is as tall as its content, and the board sits at the top of its column.
-  - With the full upgrade list, the panel can be taller than the board. The strip under the board is then plain background. That's accepted: the team approved the mockup with the full list.
-  - The Tasks list does not scroll on its own.
-  - Mockup: `docs/mockups/side-panel.html`.
+- **Height (decided after the mockup).** The panel is exactly as tall as the board: the board sets the row height, so the empty strip from the mockup goes away.
+  - Building and Developers take their natural height. The Tasks section fills the rest of the panel.
+  - The task list scrolls inside Tasks with its own scrollbar. The Tasks header and the offer card stay pinned at the top of the section, so a new offer is always visible without scrolling.
+  - Making the board set the height (my call): the panel's content sits in an absolutely positioned inner wrapper (`inset: 0`), so it never stretches the grid row.
+  - **Floor:** Tasks keeps a minimum height of 160 px. On a very short board, the panel scrolls as a whole instead of squashing Tasks to nothing.
+  - Mockup: `docs/mockups/side-panel.html`. Its states show the panel taller than the board; the task scrollbar replaces that.
 - **Phones.** On a phone, the Building section shows a one-line upgrade summary ("N of M levels") instead of the full list, as in mockup state 4.
 - **Phones.** At `max-width: 720px`, `#play` becomes one column, with the panel below the board.
 - **Canvas.** Because `resize()` reads `#stage.clientWidth`, the board shrinks to its grid column automatically.
@@ -186,6 +188,8 @@ Option 1 won because a permanent panel is layout, not an add-on.
 - **Browser check (headless Edge):**
   - the panel is on the right and the board is still at least 760 px wide on a 1366 px window
   - the panel moves below the board at 700 px wide
+  - the panel's height equals the board's height on a 1366 px window
+  - the task list scrolls when 4 tasks and an offer don't fit, with the offer card staying visible
   - the offer card in the panel accepts a task on click, and a missed offer adds nothing
   - the offer card never overlaps the board
   - Claim works from the panel
