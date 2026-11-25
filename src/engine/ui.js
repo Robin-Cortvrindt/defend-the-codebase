@@ -14,6 +14,7 @@ import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
 import { drawDrinkIcon } from './drink-icons.js';
 import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
+import { getBellActions } from './bell.js';
 
 let app;
 const refs = { hire: [], powerups: [] };
@@ -351,6 +352,26 @@ const BELL_SVG = `
   <path class="waves" d="M-60 -20 q-8 10 0 20 M-70 -26 q-12 16 0 32 M60 -20 q8 10 0 20 M70 -26 q12 16 0 32" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>`;
 
+// Choices that features offer at the bell (see bell.js), e.g. summoning a Trojan horse. null when there are none.
+function bellActionsEl(g, rerender) {
+  const list = getBellActions(g);
+  if (!list.length) return null;
+  const call = (fn, fallback) => { try { return fn ? fn(g) : fallback; } catch (e) { console.error(e); return fallback; } };
+  return h('div', { class: 'bell-actions' }, list.map(({ action }) => {
+    const cost = call(action.cost, null);
+    const props = {
+      class: 'btn bell-action',
+      onclick: () => { try { action.onClick(g); playSound('powerup'); } catch (e) { console.error(e); } rerender(); },
+    };
+    if (!call(action.enabled, true)) props.disabled = '';
+    return h('button', props,
+      h('b', {}, call(action.label, action.id)),
+      cost ? h('span', { class: 'bell-cost' }, Object.entries(cost).map(([id, n]) => h('span', { class: 'cost' }, drinkIconEl(id, 14), String(n)))) : null,
+      action.hint ? h('small', {}, call(action.hint, '')) : null,
+    );
+  }));
+}
+
 function showOverlay(phase) {
   const ov = $('#overlay');
   setScreen(['lost', 'won'].includes(phase) ? phase : 'run');
@@ -369,6 +390,7 @@ function showOverlay(phase) {
         h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 Warrant`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
         h('small', {}, 'Hiring and selling still work'),
+        bellActionsEl(g, () => showOverlay('bell')),
       ),
     ));
   } else if (phase === 'review') {
@@ -434,6 +456,7 @@ function renderReview(ov, g) {
         h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.warrants} Warrants`),
         h('h2', {}, g.pendingYearReview ? 'Yearly review still open' : ringLabel),
         h('small', {}, 'Hire, place and sell developers on the map'),
+        bellActionsEl(g, rerender),
       ),
       h('button', { class: 'btn ghost', onclick: () => setMin(false) }, 'Back to review'),
     ));
@@ -497,6 +520,7 @@ function renderReview(ov, g) {
     h('div', {},
       h('h2', {}, g.pendingYearReview ? 'Finish the yearly review first' : ringLabel),
       h('small', {}, 'Sprints get harder every quarter'),
+      bellActionsEl(g, rerender),
     ),
     h('button', { class: 'btn ghost hire-from-review', onclick: () => setMin(true) }, 'Hire developers →'),
   ));
