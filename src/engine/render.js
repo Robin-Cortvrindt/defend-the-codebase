@@ -76,6 +76,12 @@ function drawRanges(ctx, game, view) {
   if (dev && game.devs.includes(dev)) {
     const def = getDeveloper(dev.type);
     circleRange(ctx, dev.x, dev.y, devStats(game, dev).range, def.accent);
+    const aura = dev.upgrade?.aura;
+    if (aura) {
+      ctx.beginPath();
+      ctx.arc(dev.x, dev.y, aura.radius * CELL, 0, Math.PI * 2);
+      ctx.strokeStyle = hexA(def.accent, 0.3); ctx.lineWidth = 1; ctx.stroke();
+    }
   }
 }
 
@@ -200,7 +206,7 @@ function drawEffects(ctx, game) {
     } else if (e.kind === 'ring') {
       ctx.globalAlpha = t;
       ctx.strokeStyle = e.color || COLORS.green; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(e.x, e.y, 18 + (1 - t) * 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.radius ? e.radius * (0.3 + 0.7 * (1 - t)) : 18 + (1 - t) * 16, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
     } else if (e.kind === 'banner') {
       drawBanner(ctx, e, t);

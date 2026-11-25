@@ -59,6 +59,8 @@ export function buyUpgrade(game, dev, upgradeId) {
   dev.upgrade = upgrade;
   if (dev.level === 2) game.stats.seniors++;
   emit('dev:levelup', { game, dev, level: dev.level, upgrade });
+  // XP may already be past the next gate (earned while waiting to buy this one)
+  if (nextUpgrades(dev).length > 0 && dev.xp >= XP_GATES[dev.level + 1]) emit('dev:upgradeready', { game, dev, level: dev.level + 1 });
   return true;
 }
 

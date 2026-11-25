@@ -123,6 +123,18 @@ test('level 3 needs 30 xp, is one branch only, inherits level-2 stats', () => {
   assert.equal(g.stats.seniors, 1);
 });
 
+test('events: upgradeready fires on purchase when xp already passed the next gate', () => {
+  const g = waveGame(); g.warrants = 1000;
+  const d = placeDev(g, 'u', 3, 3);
+  grantXp(g, d, 10); grantXp(g, d, 25);
+  const ready = [];
+  on('dev:upgradeready', e => ready.push(e.level));
+  buyUpgrade(g, d, 'two');
+  assert.deepEqual(ready, [2]);
+  buyUpgrade(g, d, 'a');
+  assert.deepEqual(ready, [2]);                          // maxed: nothing further to unlock
+});
+
 test('events: upgradeready on crossing a gate, levelup on purchase', () => {
   const g = waveGame(); g.warrants = 1000;
   const d = placeDev(g, 'u', 3, 3);

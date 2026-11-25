@@ -1,6 +1,7 @@
 import { registerDeveloper } from '../../engine/registry.js';
 import { addEffect } from '../../engine/game.js';
 import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
+import { CELL } from '../../engine/map.js';
 
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
 registerDeveloper({
@@ -39,9 +40,9 @@ registerDeveloper({
         fire(game, dev, target, stats) {
           const { x, y } = target;
           shotBeam(game, dev, target);
-          addEffect(game, { kind: 'ring', x, y, color: dev.accent ?? '#C026D3', ttl: 0.4 });
-          for (const bug of bugsInRange(game, dev, stats.range + 40)) {
-            if (Math.hypot(bug.x - x, bug.y - y) <= 40) hitBug(game, dev, bug, stats.damage);
+          addEffect(game, { kind: 'ring', x, y, color: '#C026D3', ttl: 0.4 });
+          for (const bug of bugsInRange(game, dev, stats.range + CELL)) {
+            if (Math.hypot(bug.x - x, bug.y - y) <= CELL) hitBug(game, dev, bug, stats.damage);
           }
         },
         panelButtons(game, dev) {

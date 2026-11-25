@@ -38,7 +38,7 @@ registerDeveloper({
           st.gcT = (st.gcT ?? 0) + dt;
           if (st.gcT >= 9) {
             for (const bug of bugsInRange(game, dev, stats.range)) hitBug(game, dev, bug, 2 * stats.damage);
-            addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#EA580C', ttl: 0.5 });
+            addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#EA580C', radius: stats.range, ttl: 0.5 });
             st.gcT = 0; st.stopped = false;
             return true;
           }

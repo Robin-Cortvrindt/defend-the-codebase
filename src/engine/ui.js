@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs } from './registry.js';
 import { totalWaves, startWave, startGame, ringBell } from './game.js';
-import { sellDev, nextUpgrades, upgradeStatus, upgradeUnlocked, buyUpgrade, levelName, XP_GATES } from './devs.js';
+import { sellDev, nextUpgrades, upgradeStatus, buyUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
@@ -171,16 +171,17 @@ function updateSelPanel() {
   const ups = nextUpgrades(dev).map(up => ({ up, status: upgradeStatus(app.game, dev, up) }));
   let extra = [];
   try { extra = dev.upgrade?.panelButtons?.(app.game, dev) ?? []; } catch (e) { console.error(`panelButtons failed for ${dev.type}`, e); }
-  const key = [dev.id, dev.level, Math.floor(dev.xp), dev.kills,
+  const key = [dev.id, dev.level,
     ups.map(u => `${u.up.id}=${u.status.reason}`).join(','), extra.map(b => b.label).join('|')].join(':');
   toggle(p, 'hidden', false);
-  if (p.dataset.key === key) return;
+  const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
+  if (p.dataset.key === key && refs.selXp) { set(refs.selXp, 'textContent', xpLine); return; }
   p.dataset.key = key;
   p.style.setProperty('--accent', def.accent);
   p.innerHTML = '';
-  const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
+  refs.selXp = h('small', {}, xpLine);
   p.append(
-    h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), h('small', {}, xpLine)),
+    h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
     ups.map(({ up, status }) => {
       const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
       const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
