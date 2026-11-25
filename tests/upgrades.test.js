@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.js';
+import { getDeveloper } from '../src/engine/registry.js';
 import { placeDev, sellDev, tickDevs, devStats, buyUpgrade, levelName } from '../src/engine/devs.js';
 
 const { failed } = await loadModules(CONTENT_URLS);
@@ -74,4 +75,57 @@ test('java: "Initializing 847 beans…" pop for 1 s on placement, java only', ()
   assert.ok(e);
   assert.equal(e.kind, 'pop');
   assert.equal(e.ttl, 1);
+});
+
+test('react: Vite fire rate, names, tooltip', () => {
+  const g = waveGame();
+  const d = devAt(g, 'react', 3, 3);
+  assert.equal(levelName(d), 'Create React App');
+  buyUpgrade(g, d, 'vite');
+  assert.equal(levelName(d), 'Vite');
+  assert.equal(devStats(g, d).fireRate, 6);
+  assert.equal(getDeveloper('react').upgrades.level2.tooltip, 'CRA is deprecated, sorry.');
+});
+
+test('react: ecosystem +10% fire rate per other React dev, capped at +50%', () => {
+  const g = waveGame();
+  const d = devAt(g, 'react', 3, 3);
+  assert.equal(devStats(g, d).fireRate, 4);
+  devAt(g, 'java', 3, 4);
+  assert.equal(devStats(g, d).fireRate, 4);
+  const cells = [[0,0],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7]];
+  devAt(g, 'react', ...cells[0]); devAt(g, 'react', ...cells[1]);
+  near(devStats(g, d).fireRate, 4 * 1.2);
+  for (const c of cells.slice(2)) devAt(g, 'react', ...c);
+  near(devStats(g, d).fireRate, 4 * 1.5);
+});
+
+test('react: Next.js hits the target and the next 2 bugs behind it', () => {
+  const g = waveGame();
+  devAt(g, 'react', 3, 3, 'vite', 'nextjs');
+  const bugs = [220, 240, 260, 280].map(dist => { const b = spawnBug(g, 'nullpointer', dist, 1000); b.slow = 0; return b; });
+  tickDevs(g, 0.05);
+  assert.deepEqual(bugs.map(b => 1000 - b.hp), [0, 6, 6, 6]);
+});
+
+test('react: useEffect Hell chains at 20%, capped at 10', () => {
+  const g = waveGame();
+  devAt(g, 'react', 3, 3, 'vite', 'effecthell');
+  const b = spawnBug(g, 'nullpointer', 260, 1000); b.slow = 0;
+  g.random = () => 0.1;
+  tickDevs(g, 0.05);
+  assert.equal(1000 - b.hp, 66);
+  b.hp = 1000; g.devs[0].cooldown = 0;
+  g.random = () => 0.5;
+  tickDevs(g, 0.05);
+  assert.equal(1000 - b.hp, 6);
+
+  const g2 = waveGame();
+  devAt(g2, 'react', 3, 3, 'vite', 'effecthell');
+  const a = spawnBug(g2, 'nullpointer', 280, 6); a.slow = 0;
+  const c = spawnBug(g2, 'nullpointer', 220, 1000); c.slow = 0;
+  g2.random = () => 0.1;
+  tickDevs(g2, 0.05);
+  assert.ok(a.hp <= 0 || a.dead);
+  assert.ok(c.hp < 1000);
 });
