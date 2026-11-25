@@ -52,7 +52,8 @@ The judging prizes are: most features (counted live), most fun (audience vote), 
 
 ### Map
 - A single fixed map on a 16 × 8 grid of 40 px cells (640 × 320 logical pixels), scaled to fit the window.
-- A winding path from the left edge to the PROD box on the right, as shown in the mockups.
+- A winding path from the left edge to the PROD box on the right, as shown in the mockups. Path waypoints in logical pixels: `(0,60) → (180,60) → (180,260) → (420,260) → (420,140) → (576,140)`. The path is 36 px wide.
+- The PROD box sits **inside** the grid, in the rightmost column (x 576–632, y 106–174). Its cells can't be built on.
 - Developers can only be placed on free cells that aren't part of the path.
 
 ### Developers
@@ -147,7 +148,10 @@ src/
 - **Content files are data plus small hooks.** For example, a developer file registers `{ id, name, accent, cost, damage, fireRate, range, counters, drawIcon(ctx) }`. A power-up file registers `{ id, name, duration, cooldown, cost?, activate(game), deactivate(game) }`.
 - **Adding something new** means creating one file and adding one `import` line in `main.js`. That one line is the only shared edit.
 - **The event bus** lets features react without touching the engine. Events include `game:start`, `wave:start`, `wave:cleared`, `bell:rung`, `bug:spawned`, `bug:killed`, `bug:leaked`, `dev:placed`, `dev:levelup`, `dev:sold`, `powerup:activated`, `claude:backfire`, `game:won` and `game:lost`. A feature might ring a sound on `bell:rung`, or show a Pizza Hut bonus on `wave:cleared`.
-- **Modifiers:** power-ups and features change the game through a shared modifier object (`game.mods.xpMultiplier`, `warrantMultiplier`, `fireRateMultiplier`, `damageMultiplier`), never by patching engine functions.
+- **Modifiers:** power-ups and features change the game through a shared modifier object (`game.mods.xpMultiplier`, `warrantMultiplier`, `fireRateMultiplier`, `damageMultiplier`, `bugSpeedMultiplier`, `rangeMultiplier`), never by patching engine functions. *(Builder call: `bugSpeedMultiplier` and `rangeMultiplier` were added so slow, freeze and buff power-ups work without engine edits.)*
+- **Features:** `registerFeature({ id, init(game), update(game, dt), draw(ctx, game), hudButtons })` covers per-frame logic, map overlays (e.g. a Pizza Hut bonus popup) and extra HUD buttons. Every hook is optional. *(Builder call.)*
+- **Bug hooks:** bug definitions may add optional `onHit(bug, game)`, `onDeath(bug, game)` and `update(bug, game, dt)` for special behaviour such as splitting or shields. *(Builder call.)*
+- **Fault isolation:** `main.js` loads each content file through its own guarded dynamic `import()`. A broken teammate file is logged to the console and skipped, and the game keeps running. This protects the live link on `main`. *(Builder call.)*
 - **Sound:** a tiny `playSound(name)` helper built on `Audio`. It fails silently if a file is missing. Placeholder sounds for the bell, hits, a level-up, Claude and game over.
 
 ## 7. Deployment
@@ -156,6 +160,16 @@ src/
 - Live URL: `https://robin-cortvrindt.github.io/defend-the-codebase/`
 - All asset paths are relative, so the `/defend-the-codebase/` sub-path works.
 - The link goes in the bootcamp channel before 15:45. Fallback: run locally over HDMI.
+- **Workflow (builder call):** teammates push straight to `main` and keep commits small. Before every push, load the page locally with `python -m http.server` and play one wave. Freeze `main` at 15:30 and only push fixes after that.
+
+### Build order (builder call)
+1. **Contract first:** the registry, event bus, modifiers, guarded loader and one stub file of each kind. Push it, so teammates can start right away.
+2. Core loop: map, path, spawner, the three bugs, the three developers, placing developers, combat, Warrants, lives.
+3. The bell, the 10 waves, and the win and lose screens.
+4. Levelling, selling, and the power-ups (Thomas, Jeroen, Bart, then Claude).
+5. Start screen, placeholder sounds, polish.
+
+If time runs short, cut from the bottom of this list. Steps 1–3 alone are a playable demo.
 
 ## 8. Left to the builder
 
