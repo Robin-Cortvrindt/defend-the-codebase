@@ -6,6 +6,7 @@ import { tickDevs } from './devs.js';
 import { tickPowerups } from './powerups.js';
 import { rollEvent, endEvent } from './random-events.js';
 import { applyInvestments } from './investments.js';
+import { startingDrinks } from './drinks.js';
 
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
@@ -34,7 +35,8 @@ export function createGame() {
     investmentsApplied: false,
     capitalEarned: null,      // Investor Capital paid out when this run was lost
     quarterStats: { squashed: 0, leaked: 0 },
-    warrants: START_WARRANTS,
+    drinks: startingDrinks(),
+    warrants: START_WARRANTS, // removed in Task 5
     lives: START_LIVES,
     maxLives: START_LIVES,
     bugs: [],

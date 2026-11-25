@@ -5,11 +5,13 @@ import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/game.js';
 import { placeDev, sellDev, tickDevs, grantXp, devStats, nextUpgrades, upgradeUnlocked, upgradeStatus, buyUpgrade, levelName, bugsInRange, hitBug } from '../src/engine/devs.js';
 import { pointAt } from '../src/engine/map.js';
+import { registerTestDrinks } from './helpers/drinks.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll();
-  R.registerDeveloper({ id: 'r', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'small' });
-  R.registerDeveloper({ id: 'u', cost: 50, damage: 10, fireRate: 1, range: 2, counters: 'small', levelName: 'Base',
+  R.resetRegistry(); clearAll(); registerTestDrinks();
+  R.registerDeveloper({ id: 'rb', drink: 'redbull', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'small' });
+  R.registerDeveloper({ id: 'r', drink: 'coffee', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'small' });
+  R.registerDeveloper({ id: 'u', drink: 'coffee', cost: 50, damage: 10, fireRate: 1, range: 2, counters: 'small', levelName: 'Base',
     upgrades: {
       level2: { id: 'two', name: 'Two', cost: 40, description: 'd', stats: { damage: 20, range: 3 } },
       level3: [
@@ -31,21 +33,26 @@ test('Review Focus 2: placeDev refuses path, PROD, occupied, off-grid, unafforda
   assert.equal(placeDev(g, 'r', 15, 3), null);  // PROD
   assert.equal(placeDev(g, 'r', -1, 0), null);  // off-grid
   assert.equal(placeDev(g, 'nope', 3, 3), null); // unknown type
-  assert.equal(g.warrants, 100);
+  assert.equal(g.drinks.coffee, 50);
   assert.ok(placeDev(g, 'r', 3, 3));
   assert.equal(placeDev(g, 'r', 3, 3), null);   // occupied
-  assert.equal(g.warrants, 50);
-  g.warrants = 49;
+  assert.deepEqual(g.drinks, { coffee: 0, monster: 50, redbull: 50 });
+  g.drinks.coffee = 49;
   assert.equal(placeDev(g, 'r', 3, 4), null);   // unaffordable
-  assert.equal(g.warrants, 49);
+  assert.deepEqual(g.drinks, { coffee: 49, monster: 50, redbull: 50 });
+  g.drinks.coffee = 0; g.drinks.redbull = 999;
+  assert.equal(placeDev(g, 'r', 3, 4), null);   // wrong drink
+  assert.equal(g.drinks.redbull, 999);
+  assert.ok(placeDev(g, 'rb', 3, 4));
+  assert.equal(g.drinks.redbull, 949);
 });
 
 test('placeDev deducts cost; sellDev refunds floor(50%)', () => {
   const g = createGame(); startGame(g);
   const d = placeDev(g, 'r', 3, 3);
-  assert.equal(g.warrants, 50);
+  assert.equal(g.drinks.coffee, 0);
   assert.equal(sellDev(g, d), 25);
-  assert.equal(g.warrants, 75);
+  assert.deepEqual(g.drinks, { coffee: 25, monster: 50, redbull: 50 });
   assert.equal(g.devs.length, 0);
 });
 
@@ -93,16 +100,16 @@ test('xpMultiplier 2 doubles xp; fireRateMultiplier 1.5 raises fire rate', () =>
 });
 
 test('upgrade is gated by xp then warrants; spent grows; refund includes upgrades', () => {
-  const g = waveGame(); g.warrants = 1000;
+  const g = waveGame(); g.drinks.coffee = 1000;
   const d = placeDev(g, 'u', 3, 3);
   assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'xp' });
   assert.equal(buyUpgrade(g, d, 'two'), false);
   grantXp(g, d, 10);
-  g.warrants = 39;
-  assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'warrants' });
-  g.warrants = 1000;
+  g.drinks.coffee = 39;
+  assert.deepEqual(upgradeStatus(g, d, nextUpgrades(d)[0]), { ok: false, reason: 'drink' });
+  g.drinks.coffee = 1000;
   assert.equal(buyUpgrade(g, d, 'two'), true);
-  assert.equal(g.warrants, 960);
+  assert.equal(g.drinks.coffee, 960);
   assert.equal(d.level, 1);
   assert.equal(levelName(d), 'Two');
   assert.equal(d.spent, 90);
@@ -110,7 +117,7 @@ test('upgrade is gated by xp then warrants; spent grows; refund includes upgrade
 });
 
 test('level 3 needs 30 xp, is one branch only, inherits level-2 stats', () => {
-  const g = waveGame(); g.warrants = 1000;
+  const g = waveGame(); g.drinks.coffee = 1000;
   const d = placeDev(g, 'u', 3, 3);
   grantXp(g, d, 35);
   assert.equal(buyUpgrade(g, d, 'a'), false);            // must buy level 2 first
@@ -124,7 +131,7 @@ test('level 3 needs 30 xp, is one branch only, inherits level-2 stats', () => {
 });
 
 test('events: upgradeready fires on purchase when xp already passed the next gate', () => {
-  const g = waveGame(); g.warrants = 1000;
+  const g = waveGame(); g.drinks.coffee = 1000;
   const d = placeDev(g, 'u', 3, 3);
   grantXp(g, d, 10); grantXp(g, d, 25);
   const ready = [];
@@ -136,7 +143,7 @@ test('events: upgradeready fires on purchase when xp already passed the next gat
 });
 
 test('events: upgradeready on crossing a gate, levelup on purchase', () => {
-  const g = waveGame(); g.warrants = 1000;
+  const g = waveGame(); g.drinks.coffee = 1000;
   const d = placeDev(g, 'u', 3, 3);
   const ready = [], ups = [];
   on('dev:upgradeready', e => ready.push(e.level));
@@ -212,4 +219,27 @@ test('devFireRate scales only the named developer type', () => {
   g.mods.devFireRate = { j: 0.5 };
   assert.equal(devStats(g, j).fireRate, 1);
   assert.equal(devStats(g, r).fireRate, 4);
+});
+
+test('Review Focus 3: sell refund after hire + upgrade is floor(50%) of spent, in the dev drink only', () => {
+  const g = waveGame();
+  g.drinks.coffee = 100;
+  const d = placeDev(g, 'u', 3, 3);
+  d.xp = 30;
+  assert.ok(buyUpgrade(g, d, 'two'));
+  assert.equal(d.spent, 90);
+  const before = { ...g.drinks };
+  assert.equal(sellDev(g, d), 45);
+  assert.equal(g.drinks.coffee, before.coffee + 45);
+  assert.equal(g.drinks.monster, before.monster);
+  assert.equal(g.drinks.redbull, before.redbull);
+});
+
+test('dev:sold carries refund and drink', () => {
+  const g = waveGame();
+  const d = placeDev(g, 'rb', 3, 3);
+  let ev; on('dev:sold', e => { ev = e; });
+  sellDev(g, d);
+  assert.equal(ev.refund, 25);
+  assert.equal(ev.drink, 'redbull');
 });

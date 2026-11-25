@@ -3,6 +3,7 @@ import { getDeveloper, getBug } from './registry.js';
 import { emit } from './events.js';
 import { isBuildable, cellCenter, CELL } from './map.js';
 import { killBug, addEffect } from './game.js';
+import { drinkFor, canAfford, spendDrink } from './drinks.js';
 
 export const XP_GATES = [0, 10, 30];
 
@@ -16,7 +17,7 @@ export function hireCost(game, typeId) {
 
 export function canPlace(game, typeId, col, row) {
   const def = getDeveloper(typeId);
-  return !!def && isBuildable(col, row) && !devAt(game, col, row) && game.warrants >= hireCost(game, typeId);
+  return !!def && isBuildable(col, row) && !devAt(game, col, row) && canAfford(game, drinkFor(typeId), hireCost(game, typeId));
 }
 
 export function placeDev(game, typeId, col, row) {
@@ -25,7 +26,7 @@ export function placeDev(game, typeId, col, row) {
   const { x, y } = cellCenter(col, row);
   const cost = hireCost(game, typeId);
   const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, upgrade: null, state: {}, xp: 0, cooldown: 0, spent: cost, kills: 0 };
-  game.warrants -= cost;
+  spendDrink(game, drinkFor(typeId), cost);
   game.devs.push(dev);
   emit('dev:placed', { game, dev });
   return dev;
@@ -36,8 +37,9 @@ export function sellDev(game, dev) {
   if (i < 0) return 0;
   game.devs.splice(i, 1);
   const refund = Math.floor(dev.spent * 0.5);
-  game.warrants += refund;
-  emit('dev:sold', { game, dev, refund });
+  const drink = drinkFor(dev.type);
+  game.drinks[drink] = (game.drinks[drink] ?? 0) + refund;
+  emit('dev:sold', { game, dev, refund, drink });
   return refund;
 }
 
@@ -53,14 +55,14 @@ export const upgradeUnlocked = dev => nextUpgrades(dev).length > 0 && dev.xp >= 
 
 export function upgradeStatus(game, dev, upgrade) {
   if (dev.xp < XP_GATES[dev.level + 1]) return { ok: false, reason: 'xp' };
-  if (game.warrants < upgrade.cost) return { ok: false, reason: 'warrants' };
+  if (!canAfford(game, drinkFor(dev.type), upgrade.cost)) return { ok: false, reason: 'drink' };
   return { ok: true, reason: null };
 }
 
 export function buyUpgrade(game, dev, upgradeId) {
   const upgrade = nextUpgrades(dev).find(u => u.id === upgradeId);
   if (!upgrade || !upgradeStatus(game, dev, upgrade).ok) return false;
-  game.warrants -= upgrade.cost;
+  spendDrink(game, drinkFor(dev.type), upgrade.cost);
   dev.spent += upgrade.cost;
   dev.level++;
   dev.upgrade = upgrade;

@@ -1,6 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
+import { registerTestDrinks } from './helpers/drinks.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame } from '../src/engine/game.js';
 import {
@@ -9,7 +10,7 @@ import {
 } from '../src/engine/investments.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll(); setStorage(null);
+  R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   R.registerWaves([{ groups: [] }]);
   R.registerInvestment({ id: 'x', group: 'developers', maxLevel: 2, getCost: l => [10, 20][l], apply: (g, l) => { g.mods.damageMultiplier *= 1 + 0.1 * l; } });
 });
@@ -95,7 +96,7 @@ test('developer investments raise damage, attack speed, range and cut hiring cos
   assert.equal(hireCost(g, 'r'), 45);
   const dev = placeDev(g, 'r', 3, 3);
   assert.equal(dev.spent, 45);
-  assert.equal(g.warrants, 100 - 45);
+  assert.equal(g.drinks.coffee, 50 - 45);
 });
 
 test('no investments: hireCost equals the base cost; unknown type is Infinity', async () => {

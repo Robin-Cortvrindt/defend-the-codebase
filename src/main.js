@@ -95,6 +95,7 @@ resize();
 if (DEMO) {
   startGame(app.game);
   app.game.warrants = 1000;
+  for (const id of Object.keys(app.game.drinks)) app.game.drinks[id] = 1000;
   placeDev(app.game, 'react', 3, 3);
   placeDev(app.game, 'java', 6, 5);
   placeDev(app.game, 'dotnet', 9, 5);

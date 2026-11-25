@@ -1,3 +1,4 @@
+import { registerTestDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -8,14 +9,14 @@ import { setStorage, saveProgress } from '../src/engine/investments.js';
 import crossFunctional, { crossFunctionalFeature, teamCounts, isBalanced, BALANCED_BONUS } from '../src/content/investments/cross-functional.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll(); setStorage(null);
+  R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   for (const id of ['react', 'java', 'dotnet']) R.registerDeveloper({ id, cost: 10, damage: 1, fireRate: 1, range: 2 });
   R.registerWaves([{ groups: [] }]);
   R.registerInvestment(crossFunctional);
   R.registerFeature(crossFunctionalFeature);
 });
 
-function game() { const g = createGame(); startGame(g); g.warrants = 9999; g.unlocks.crossFunctional = true; return g; }
+function game() { const g = createGame(); startGame(g); g.drinks = { coffee: 9999, monster: 9999, redbull: 9999 }; g.unlocks.crossFunctional = true; return g; }
 const hire = (g, type, col) => placeDev(g, type, col, 3);
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 

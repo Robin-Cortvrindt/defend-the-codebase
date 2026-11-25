@@ -2,6 +2,7 @@ import { registerDeveloper } from '../../engine/registry.js';
 import { addEffect } from '../../engine/game.js';
 import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
 import { CELL } from '../../engine/map.js';
+import { spendDrink } from '../../engine/drinks.js';
 
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
 registerDeveloper({
@@ -31,12 +32,9 @@ registerDeveloper({
           if (dev.state.azureOff) return false;
           if (bugsInRange(game, dev, stats.range).length === 0) return true;
           dev.state.bill = (dev.state.bill ?? 0) + dt;
-          while (dev.state.bill >= 0.5 && game.warrants > 0) {
-            game.warrants -= 1;
-            dev.state.bill -= 0.5;
-          }
-          if (game.warrants <= 0) dev.state.bill = 0; // no debt while broke
-          return game.warrants > 0;
+          while (dev.state.bill >= 0.5 && spendDrink(game, 'monster', 1)) dev.state.bill -= 0.5;
+          if (game.drinks.monster <= 0) dev.state.bill = 0; // no debt while broke
+          return game.drinks.monster > 0;
         },
         fire(game, dev, target, stats) {
           const { x, y } = target;

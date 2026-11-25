@@ -1,3 +1,4 @@
+import { registerTestDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -9,7 +10,7 @@ import { setStorage, saveProgress } from '../src/engine/investments.js';
 import securityTraining, { firewallFeature, findFirewalls, tickFirewalls, FIREWALL_DPS } from '../src/content/investments/security-training.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll(); setStorage(null);
+  R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   R.registerDeveloper({ id: 'dotnet', cost: 110, damage: 55, fireRate: 0.6, range: 2.6, counters: 'legacy' });
   R.registerDeveloper({ id: 'react', cost: 50, damage: 6, fireRate: 4, range: 2.2, counters: 'typo' });
   R.registerBug({ id: 'b', hp: 100, speed: 0, livesLost: 1, reward: 3, radius: 5 });
@@ -20,7 +21,7 @@ beforeEach(() => {
 });
 
 function dotnetGame() {
-  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.warrants = 9999; g.unlocks.firewall = true; return g;
+  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.drinks = { coffee: 9999, monster: 9999, redbull: 9999 }; g.unlocks.firewall = true; return g;
 }
 // Two .NET developers across the horizontal lane at row 1: firewall on cell (2,1). Distance 100 on the path → (100, 60).
 function pairGame() {

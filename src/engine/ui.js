@@ -1,10 +1,11 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
+import { getDevelopers, getDeveloper, getDrinks, getDrink, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
 import { loadProgress, capitalFor } from './investments.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
+import { drinkFor, drinkName, canAfford } from './drinks.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
 import { drawDevTile } from './render.js';
@@ -28,7 +29,7 @@ function buildHud() {
   const hud = $('#hud');
   hud.append(
     h('img', { src: 'assets/nexios-wordmark-white.webp', alt: 'Nexios', class: 'wordmark' }),
-    stat('Warrants', refs.warrants = h('b', {}, '0'), refs.raise = h('em', { class: 'raise' }, '')),
+    stat('Drinks', refs.drinks = h('span', { class: 'drinks' }), refs.raise = h('em', { class: 'raise' }, '')),
     stat('Production', refs.prod = h('div', { class: 'prod' })),
     stat('Coins', refs.coins = h('b', {}, '0')),
     stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
@@ -169,7 +170,7 @@ function swingBell() {
 
 export function updateUI() {
   const g = app.game, v = app.view;
-  set(refs.warrants, 'textContent', String(Math.floor(g.warrants)));
+  updateDrinks(g);
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
   set(refs.coins, 'textContent', String(g.coins));
@@ -192,8 +193,8 @@ export function updateUI() {
   for (const { def, btn, cost } of refs.hire) {
     const price = hireCost(g, def.id);
     toggle(btn, 'active', v.hire === def.id);
-    toggle(btn, 'poor', g.warrants < price);
-    set(cost, 'textContent', String(price));
+    toggle(btn, 'poor', !canAfford(g, drinkFor(def.id), price));
+    set(cost, 'textContent', `${getDrink(drinkFor(def.id))?.icon ?? ''} ${price}`.trim());
   }
 
   for (const { def, card, status, cd } of refs.powerups) {
@@ -228,9 +229,18 @@ export function updateUI() {
   updateMenu();
 }
 
+// Plain per-drink counters; Task 8 styles them.
+function updateDrinks(g) {
+  const list = getDrinks();
+  if (refs.drinks.children.length !== list.length) {
+    refs.drinks.replaceChildren(...list.map(d => h('span', { class: 'drink', title: d.name }, `${d.icon ?? d.name} `, h('b', { 'data-drink': d.id }, '0'))));
+  }
+  for (const b of refs.drinks.querySelectorAll('b[data-drink]')) set(b, 'textContent', String(Math.floor(g.drinks[b.dataset.drink] ?? 0)));
+}
+
 function upgradeBtn({ up, status }, dev, gate) {
   const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
-  const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
+  const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} ${drinkName(drinkFor(dev.type))}`;
   const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
     h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
     h('small', {}, kind + line));
@@ -270,7 +280,7 @@ function updateSelPanel() {
       ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
         try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
       } }, b.label)),
-      h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
+      h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)} ${drinkName(drinkFor(dev.type))}`),
     ),
     refs.selArrow,
   );

@@ -1,3 +1,4 @@
+import { registerTestDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -8,7 +9,7 @@ import { setStorage, saveProgress } from '../src/engine/investments.js';
 import gc, { gcFeature, gcOnKill, inJavaSquare, GC_EVERY, GC_SLOW, GC_BOSS_SLOW, GC_DURATION } from '../src/content/investments/garbage-collection.js';
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll(); setStorage(null);
+  R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   R.registerDeveloper({ id: 'java', cost: 10, damage: 1, fireRate: 1, range: 2.4, counters: 'np' });
   R.registerDeveloper({ id: 'react', cost: 10, damage: 1, fireRate: 1, range: 2.2 });
   R.registerBug({ id: 'b', hp: 1000, speed: 40, livesLost: 1, reward: 1, radius: 5 });
@@ -20,7 +21,7 @@ beforeEach(() => {
 });
 
 function game() {
-  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.warrants = 9999; g.unlocks.garbageCollection = true; return g;
+  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.drinks = { coffee: 9999, monster: 9999, redbull: 9999 }; g.unlocks.garbageCollection = true; return g;
 }
 const hire = (g, type, col, row) => { const d = placeDev(g, type, col, row); assert.ok(d, `cell (${col},${row}) must be buildable`); d.cooldown = 999; return d; };
 // A 2x2 Java square next to the lane (row 1 is lane for columns 0-4; rows 2-3, columns 2-3 are buildable).

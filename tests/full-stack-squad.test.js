@@ -1,3 +1,4 @@
+import { registerTestDrinks } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -9,7 +10,7 @@ import { CELL } from '../src/engine/map.js';
 
 let squad;
 beforeEach(async () => {
-  R.resetRegistry(); clearAll(); setStorage(null);
+  R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   // Re-import fresh each time: the module subscribes to dev:hit at top level, and clearAll() drops listeners.
   squad = await import(`../src/content/investments/full-stack-squad.js?t=${Math.random()}`);
   R.registerDeveloper({ id: 'react', cost: 10, damage: 6, fireRate: 4, range: 2.2, counters: 'typo', accent: '#2563EB' });
@@ -21,7 +22,7 @@ beforeEach(async () => {
 });
 
 function game(unlocked = true) {
-  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.warrants = 9999;
+  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; g.drinks = { coffee: 9999, monster: 9999, redbull: 9999 };
   g.unlocks.fullStackSquad = unlocked;
   return g;
 }

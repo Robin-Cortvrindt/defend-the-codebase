@@ -16,7 +16,7 @@ function waveGame() {
 }
 
 function devAt(g, type, col, row, ...upgradeIds) {
-  g.warrants = 10000;
+  g.drinks = { coffee: 10000, monster: 10000, redbull: 10000 };
   const d = placeDev(g, type, col, row); d.xp = 30;
   for (const id of upgradeIds) assert.ok(buyUpgrade(g, d, id), id);
   return d;
@@ -67,7 +67,7 @@ test('java: Garbage Collector holds fire 1 s every 8 s, then pulses 2x to all in
 
 test('java: "Initializing 847 beans…" pop for 1 s on placement, java only', () => {
   const g = waveGame();
-  g.warrants = 1000;
+  g.drinks.coffee = g.drinks.monster = g.drinks.redbull = 1000;
   placeDev(g, 'react', 2, 3);
   assert.ok(!g.effects.some(e => e.text === 'Initializing 847 beans…'));
   placeDev(g, 'java', 3, 3);
@@ -153,29 +153,29 @@ test('dotnet: Azure splashes everything within 1 cell of the target', () => {
   assert.equal(1000 - f.hp, 0);
 });
 
-test('Review Focus 3: Azure bills 1 Warrant per 0.5 s with a bug in range, never below 0, stops at 0', () => {
+test('Review Focus 3: Azure bills 1 White Monster per 0.5 s with a bug in range, never below 0, stops at 0', () => {
   const g = waveGame();
   devAt(g, 'dotnet', 3, 3, 'core', 'azure');
   const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
-  g.warrants = 3;
+  g.drinks.monster = 3;
   for (let i = 0; i < 40; i++) {
     tickDevs(g, 0.05);
-    assert.ok(g.warrants >= 0 && Number.isInteger(g.warrants));
+    assert.ok(g.drinks.monster >= 0 && Number.isInteger(g.drinks.monster));
   }
-  assert.equal(g.warrants, 0);
+  assert.equal(g.drinks.monster, 0);
   const hp = b.hp;
   assert.ok(hp < 100000);
   for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
   assert.equal(b.hp, hp);
-  g.warrants = 5;
+  g.drinks.monster = 5;
   for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
   assert.ok(b.hp < hp);
 
   const g2 = waveGame();
   devAt(g2, 'dotnet', 3, 3, 'core', 'azure');
-  g2.warrants = 5;
+  g2.drinks.monster = 5;
   for (let i = 0; i < 40; i++) tickDevs(g2, 0.05);
-  assert.equal(g2.warrants, 5);
+  assert.equal(g2.drinks.monster, 5);
 });
 
 test('dotnet: Azure toggle', () => {
@@ -186,8 +186,21 @@ test('dotnet: Azure toggle', () => {
   const btn = () => d.upgrade.panelButtons(g, d)[0];
   btn().onClick(g, d);
   assert.equal(btn().label, 'Azure off');
-  g.warrants = 5;
+  g.drinks.monster = 5;
   for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
   assert.equal(b.hp, 100000);
-  assert.equal(g.warrants, 5);
+  assert.equal(g.drinks.monster, 5);
+});
+
+test('Review Focus 2: Azure with 1 monster bills once, resets the bill, stops at 0', () => {
+  const g = waveGame();
+  const d = devAt(g, 'dotnet', 3, 3, 'core', 'azure');
+  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
+  g.drinks.monster = 1; g.drinks.coffee = 7;
+  tickDevs(g, 0.6);
+  assert.equal(g.drinks.monster, 0);
+  assert.equal(d.state.bill, 0);
+  assert.equal(d.upgrade.update(g, d, 0.6, { range: 2.6 * 40 }), false);
+  assert.equal(g.drinks.monster, 0);
+  assert.equal(g.drinks.coffee, 7);
 });
