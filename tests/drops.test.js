@@ -4,7 +4,7 @@ import { registerTestDrinks } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, step, spawnBug, killBug, quitRun } from '../src/engine/game.js';
-import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, nearestDrop, stealDrop, isLanded, DROP_TTL, FLIGHT, PICK_RADIUS, SWEEP_RADIUS } from '../src/engine/drops.js';
+import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, nearestDrop, stealDrop, isLanded, landingSpot, DROP_TTL, DROP_RANGE, FLIGHT, PICK_RADIUS, SWEEP_RADIUS } from '../src/engine/drops.js';
 import { on } from '../src/engine/events.js';
 import { placeDev } from '../src/engine/devs.js';
 import { cellAt, isBuildable, COLS, ROWS } from '../src/engine/map.js';
@@ -243,4 +243,25 @@ test('drops never land under the bell card in the bottom-right corner', () => {
     const { col, row } = cellAt(g.drops.at(-1).x, g.drops.at(-1).y);
     assert.ok(!(col >= COLS / 2 && row >= ROWS - 2), `cell ${col},${row} is under the bell card`);
   }
+});
+
+test('a drop lands within DROP_RANGE of the bug that dropped it (plus jitter)', () => {
+  const g = waveGame();
+  let seed = 13; g.random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 200; i++) {
+    const bug = spawnBug(g, 'b', (i * 37) % 900);
+    const { x, y } = bug;
+    killBug(g, bug);
+    const d = g.drops.at(-1);
+    assert.ok(Math.hypot(d.x - x, d.y - y) <= DROP_RANGE + 8 * Math.SQRT2, `drop ${Math.round(Math.hypot(d.x - x, d.y - y))} px from the bug`);
+  }
+});
+
+test('no free cell in range: the drop lands on the nearest free cell', () => {
+  const g = waveGame(); g.random = () => 0.5;
+  // Far off the board's top-left corner: nothing is within range, cell 0,0 or its neighbour is the closest.
+  const { x, y } = landingSpot(g, -500, -500);
+  const { col, row } = cellAt(x, y);
+  assert.ok(isBuildable(col, row));
+  assert.ok(col <= 1 && row <= 1, `cell ${col},${row}`);
 });

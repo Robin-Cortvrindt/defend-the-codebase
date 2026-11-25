@@ -1,4 +1,4 @@
-// Drinks that a squashed bug leaves on the board. Each one flies to a random free floor cell, then must be
+// Drinks that a squashed bug leaves on the board. Each one flies to a random free floor cell near the bug, then must be
 // clicked before it times out; one click on a drop sweeps up every drop around it.
 import { getDrinks, getDrink } from './registry.js';
 import { addDrink, randomDrink } from './drinks.js';
@@ -11,23 +11,32 @@ export const BLINK_AT = 3;      // a drop blinks for its last 3 s
 export const PICK_RADIUS = 20;  // logical px: how close a click must be to a drop
 export const SWEEP_RADIUS = 48; // logical px: a hit then collects every drop this close to the click
 export const FLIGHT = 0.5;      // seconds a drop flies from the bug to its landing spot (its ttl starts on landing)
+export const DROP_RANGE = 100; // logical px (2.5 cells): a drop lands on a free cell this close to the bug
 const JITTER = 8;               // +/- px around the landing cell's centre
 
 // The bell card (style.css .bell-overlay) covers the bottom-right corner between sprints: up to half the
 // board wide and two rows high. Drops never land there, or they couldn't be clicked.
 export const underBellCard = (col, row) => col >= COLS / 2 && row >= ROWS - 2;
 
-// A random free floor cell (buildable, no developer, not under the bell card) for a drop, its centre +/- JITTER.
-// Random order: cell, then x jitter, then y jitter. No free cell: lands where the bug died.
-export function landingSpot(game, fromX, fromY) {
+// A random free floor cell (buildable, no developer, not under the bell card) whose centre is within `maxDist`
+// of where the bug died, its centre +/- JITTER. None that close: the nearest free cell. No free cell at all:
+// lands where the bug died. Random order: cell, then x jitter, then y jitter.
+export function landingSpot(game, fromX, fromY, maxDist = DROP_RANGE) {
   const free = [];
   for (let col = 0; col < COLS; col++) {
     for (let row = 0; row < ROWS; row++) {
-      if (isBuildable(col, row) && !underBellCard(col, row) && !game.devs.some(d => d.col === col && d.row === row)) free.push([col, row]);
+      if (!isBuildable(col, row) || underBellCard(col, row) || game.devs.some(d => d.col === col && d.row === row)) continue;
+      const c = cellCenter(col, row);
+      free.push({ ...c, dist: Math.hypot(c.x - fromX, c.y - fromY) });
     }
   }
+  let near = free.filter(c => c.dist <= maxDist);
+  if (!near.length && free.length) {
+    const min = Math.min(...free.map(c => c.dist));
+    near = free.filter(c => c.dist === min);
+  }
   let { x, y } = { x: fromX, y: fromY };
-  if (free.length) ({ x, y } = cellCenter(...free[Math.min(free.length - 1, Math.floor(game.random() * free.length))]));
+  if (near.length) ({ x, y } = near[Math.min(near.length - 1, Math.floor(game.random() * near.length))]);
   return { x: x + (game.random() * 2 - 1) * JITTER, y: y + (game.random() * 2 - 1) * JITTER };
 }
 
