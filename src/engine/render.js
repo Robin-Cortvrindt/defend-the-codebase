@@ -5,6 +5,7 @@ import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawLane } from './lane.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
+import { drawDrinkIcon } from './drink-icons.js';
 
 export const COLORS = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', pathLine: '#1E4A6A',
@@ -39,18 +40,14 @@ export function drawDrops(ctx, game) {
     ctx.save();
     ctx.translate(d.x, d.y);
     ctx.scale(k, k);
-    ctx.beginPath();
-    ctx.arc(0, 0, 11, 0, Math.PI * 2);
-    ctx.fillStyle = def?.color ?? COLORS.s500;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.stroke();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `700 12px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(def?.icon ?? '', 0, 1);
+    if (def?.drawIcon) {
+      // a white halo so the lid stands out on the dark map
+      ctx.beginPath();
+      ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fill();
+    }
+    drawDrinkIcon(ctx, def, 22);
     ctx.restore();
   }
 }
