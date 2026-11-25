@@ -65,7 +65,7 @@ Flavour: after placement, "Initializing 847 beans…" shows above the tower for 
 
 Azure details *(design calls)*: it starts **on** after purchase. It charges only while it's on **and** has a bug in range, at 1 Warrant every 0.5 s, so Warrants stay whole numbers and never go below 0. At 0 Warrants it stops firing until you have Warrants again.
 
-Running gag: every .NET upgrade first opens a prompt "Is it Core? Standard? Just .NET?" with a single "Yes" button. Esc or clicking outside cancels; "Yes" buys. The game pauses while the prompt is open, the same as `P` *(design call: the joke shouldn't cost the player lives, and a free pause gives nothing that `P` doesn't already)*. The sim and tests call the buy function directly and skip the prompt.
+Running gag: every .NET upgrade first opens a prompt "Is it Core? Standard? Just .NET?" with a single "Yes" button. Esc or clicking outside cancels; "Yes" buys. The game keeps running while the prompt is open (user's call): the joke costs real time mid-wave. The sim and tests call the buy function directly and skip the prompt.
 
 ### React — fast, light hits
 
