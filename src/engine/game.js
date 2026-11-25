@@ -65,7 +65,8 @@ export function spawnBug(game, bugId, distance = 0, hp) {
   const def = getBug(bugId);
   if (!def) { console.warn(`[game] unknown bug "${bugId}"`); return null; }
   const p = pointAt(distance);
-  const bug = { id: game.nextId++, type: bugId, hp: hp ?? def.hp, maxHp: def.hp, distance, x: p.x, y: p.y, slow: 1 };
+  const maxHp = Math.round(def.hp * (getWaves()[game.wave]?.hp ?? 1));
+  const bug = { id: game.nextId++, type: bugId, hp: hp ?? maxHp, maxHp, distance, x: p.x, y: p.y, slow: 1 };
   game.bugs.push(bug);
   emit('bug:spawned', { game, bug });
   return bug;

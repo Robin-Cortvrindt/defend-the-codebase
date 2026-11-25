@@ -77,3 +77,10 @@ test('bugSpeedMultiplier 0.5 halves distance travelled', () => {
   step(g, 0.05);
   assert.equal(bug.distance, 2.5);
 });
+
+test('wave hp multiplier scales bug health', () => {
+  R.registerWaves([{ hp: 2, groups: [] }]);
+  const g = createGame(); startGame(g); startWave(g);
+  const b = spawnBug(g, 'b', 0);
+  assert.equal(b.hp, 20); assert.equal(b.maxHp, 20);
+});

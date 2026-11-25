@@ -1,0 +1,93 @@
+// Boots the game: loads content, wires events to sound and effects, runs the loop.
+import { CONTENT_URLS } from './content/manifest.js';
+import { loadModules } from './engine/loader.js';
+import { getFeatures } from './engine/registry.js';
+import { on } from './engine/events.js';
+import { createGame, startGame, startWave, step, addEffect } from './engine/game.js';
+import { placeDev } from './engine/devs.js';
+import { WIDTH, HEIGHT } from './engine/map.js';
+import { render } from './engine/render.js';
+import { initUI, updateUI, resetUI } from './engine/ui.js';
+import { initInput } from './engine/input.js';
+import { playSound } from './engine/sound.js';
+
+const { failed } = await loadModules(CONTENT_URLS);
+if (failed.length) console.warn(`[main] ${failed.length} content file(s) failed to load and were skipped`, failed);
+
+const app = {
+  game: createGame(),
+  view: { hire: null, selected: null, hover: null, paused: false, speed: 1 },
+  restart() {
+    this.game = createGame();
+    Object.assign(this.view, { hire: null, selected: null, paused: false });
+    initFeatures();
+    resetUI();
+    startGame(this.game);
+  },
+};
+window.game = app; // handy in the browser console while developing
+
+function initFeatures() {
+  for (const f of getFeatures()) {
+    try { f.init?.(app.game); } catch (e) { console.error(`[feature ${f.id}] init failed`, e); }
+  }
+}
+
+// ----- events → feedback -----
+on('bug:killed', ({ game, bug }) => {
+  if (game !== app.game) return;
+  playSound('squash', 40);
+});
+on('bug:leaked', () => playSound('leak', 80));
+on('dev:levelup', ({ game, dev }) => {
+  addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#16A34A', ttl: 0.6 });
+  addEffect(game, { kind: 'pop', x: dev.x, y: dev.y - 26, text: dev.level === 2 ? 'Senior' : 'Promoted', color: '#4ADE80', size: 12, ttl: 1 });
+  playSound('levelup');
+});
+on('claude:backfire', () => playSound('backfire'));
+on('game:won', () => playSound('won'));
+on('game:lost', () => playSound('lost'));
+
+// ----- canvas -----
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+function resize() {
+  const stage = document.getElementById('stage');
+  const cssW = stage.clientWidth;
+  const cssH = cssW * (HEIGHT / WIDTH);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+initUI(app);
+initInput(canvas, app);
+initFeatures();
+resize();
+
+// ?demo=1 jumps straight into wave 1 with one of each developer (handy for testing)
+if (new URLSearchParams(location.search).has('demo')) {
+  startGame(app.game);
+  app.game.warrants = 1000;
+  placeDev(app.game, 'react', 3, 3);
+  placeDev(app.game, 'java', 6, 5);
+  placeDev(app.game, 'dotnet', 9, 5);
+  startWave(app.game);
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (!app.view.paused) {
+    for (let i = 0; i < app.view.speed; i++) step(app.game, dt);
+  }
+  render(ctx, app.game, app.view);
+  updateUI();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
