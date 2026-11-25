@@ -28,6 +28,10 @@ test('real content: React, Java and .NET counters', async () => {
   R.resetRegistry();
   const { failed } = await loadModules(CONTENT_URLS);
   assert.equal(failed.length, 0);
-  const names = R.getDevelopers().map((d, i) => hireCardInfo(d, i).strong.name);
+  const names = R.getDevelopers().map((d, i) => {
+    const info = hireCardInfo(d, i);
+    assert.ok(info.strong, `${d.id} counters a registered bug`);
+    return info.strong.name;
+  });
   assert.deepEqual(names, ['Typo bug', 'Null pointer', 'Legacy bug']);
 });
