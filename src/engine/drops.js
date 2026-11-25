@@ -13,13 +13,17 @@ export const SWEEP_RADIUS = 48; // logical px: a hit then collects every drop th
 export const FLIGHT = 0.5;      // seconds a drop flies from the bug to its landing spot (its ttl starts on landing)
 const JITTER = 8;               // +/- px around the landing cell's centre
 
-// A random free floor cell (buildable, no developer) for a drop, its centre +/- JITTER.
+// The bell card (style.css .bell-overlay) covers the bottom-right corner between sprints: up to half the
+// board wide and two rows high. Drops never land there, or they couldn't be clicked.
+export const underBellCard = (col, row) => col >= COLS / 2 && row >= ROWS - 2;
+
+// A random free floor cell (buildable, no developer, not under the bell card) for a drop, its centre +/- JITTER.
 // Random order: cell, then x jitter, then y jitter. No free cell: lands where the bug died.
 export function landingSpot(game, fromX, fromY) {
   const free = [];
   for (let col = 0; col < COLS; col++) {
     for (let row = 0; row < ROWS; row++) {
-      if (isBuildable(col, row) && !game.devs.some(d => d.col === col && d.row === row)) free.push([col, row]);
+      if (isBuildable(col, row) && !underBellCard(col, row) && !game.devs.some(d => d.col === col && d.row === row)) free.push([col, row]);
     }
   }
   let { x, y } = { x: fromX, y: fromY };

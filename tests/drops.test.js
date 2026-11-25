@@ -230,3 +230,13 @@ test('Review Focus 5: no free cell left, the drop lands where the bug died', () 
   const d = g.drops[0];
   assert.ok(Math.abs(d.x - x) <= 8 && Math.abs(d.y - y) <= 8);
 });
+
+test('drops never land under the bell card in the bottom-right corner', () => {
+  const g = waveGame();
+  let seed = 11; g.random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 300; i++) {
+    killBug(g, spawnBug(g, 'b', 100));
+    const { col, row } = cellAt(g.drops.at(-1).x, g.drops.at(-1).y);
+    assert.ok(!(col >= COLS / 2 && row >= ROWS - 2), `cell ${col},${row} is under the bell card`);
+  }
+});

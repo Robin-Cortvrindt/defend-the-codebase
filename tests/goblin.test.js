@@ -109,7 +109,7 @@ test('draws without throwing, empty or with a full sack', () => {
   const g = setup();
   for (const carried of [0, 8]) {
     g.goblin.carried = carried;
-    assert.doesNotThrow(() => goblinFeature.draw(stubCtx(), g));
+    assert.doesNotThrow(() => goblinFeature.drawUnder(stubCtx(), g));
   }
 });
 

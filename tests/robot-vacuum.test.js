@@ -90,7 +90,7 @@ test('only moves during a sprint', () => {
 
 test('draws without throwing, parked or driving', () => {
   const g = game(1);
-  assert.doesNotThrow(() => vacuumFeature.draw(stubCtx(), g));
+  assert.doesNotThrow(() => vacuumFeature.drawUnder(stubCtx(), g));
   g.vacuum.moving = true;
-  assert.doesNotThrow(() => vacuumFeature.draw(stubCtx(), g));
+  assert.doesNotThrow(() => vacuumFeature.drawUnder(stubCtx(), g));
 });

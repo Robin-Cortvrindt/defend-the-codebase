@@ -47,7 +47,7 @@ export const vacuumFeature = {
     }
     if (target && Math.hypot(target.x - v.x, target.y - v.y) <= COLLECT_RADIUS) collectDrop(game, target);
   },
-  draw(ctx, game) {
+  drawUnder(ctx, game) {   // on the floor: under effects and the PROD-is-down darkness
     if (!game.unlocks?.vacuum) return;
     const v = state(game);
     const time = game.time || 0;
