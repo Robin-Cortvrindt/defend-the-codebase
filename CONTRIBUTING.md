@@ -46,7 +46,7 @@ Multiply when your effect starts and divide when it ends, so effects stack.
 - `game.mods.devCostMultiplier` scales hiring cost. Use `hireCost(game, typeId)` from `src/engine/devs.js`, not `def.cost`.
 - `powerupMod(game, id)` from `src/engine/powerups.js` returns `{ cooldown, effect, cost }` for a power-up: a cooldown multiplier, an effect level your power-up reads in `activate`, and a price multiplier. Store the factor you applied on `st` and divide by exactly that in `deactivate`.
 - `game.unlocks` holds flags for unlocked mechanics, e.g. `game.unlocks.firewall`.
-- **New unlock** (React and Java are next): copy `src/content/investments/security-training.js`. It registers the investment (its `apply` sets a `game.unlocks` flag) and a feature whose `update`/`draw` do nothing until the flag is set. One file, one manifest line.
+- **New unlock:** copy `src/content/investments/security-training.js` (or `cross-functional.js` for a passive bonus that switches on and off). It registers the investment (its `apply` sets a `game.unlocks` flag) and a feature whose `update`/`draw` do nothing until the flag is set. One file, one manifest line.
 - In the browser console, `localStorage.setItem('dtc-investments', JSON.stringify({ capital: 999, levels: {} }))` and a reload give you capital to test with.
 
 ## Effects and sound

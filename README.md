@@ -23,7 +23,7 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 - **Investments (between runs):** after a loss you find new investors, and they put in **Investor Capital** depending on how far you got: 1 per sprint, 5 more per quarter and 15 more per year. Spend it in **Investments** (start menu or game-over screen) on permanent upgrades for every later run:
   - **Developers** (all at once): more damage, attack speed and range, and cheaper hires.
   - **Power-ups:** a stronger training manager, business manager and CEO with shorter cooldowns, and a Claude that backfires less and costs less.
-  - **Unlocks:** **Security training (.NET)**. Two .NET developers facing each other across the lane build a **firewall** that damages bugs passing through, and a firewall kill gives XP to both developers.
+  - **Unlocks:** **Security training (.NET)**. Two .NET developers facing each other across the lane build a **firewall** that damages bugs passing through, and a firewall kill gives XP to both developers. **Cross-functional team**: while you have as many React as Java as .NET developers (1-1-1, 2-2-2, ...), every developer attacks 25% faster.
   - Progress is saved in this browser. **Reset progress** in the shop starts over.
 
 Controls:
