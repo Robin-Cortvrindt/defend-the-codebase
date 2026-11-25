@@ -35,6 +35,14 @@ export const CONTENT = [
   './investments/agile-coaching.js',
   './investments/bigger-monitors.js',
   './investments/recruitment-network.js',
+  './investments/training-budget.js',
+  './investments/training-planning.js',
+  './investments/sales-targets.js',
+  './investments/sales-pipeline.js',
+  './investments/leadership-coaching.js',
+  './investments/ceo-calendar.js',
+  './investments/prompt-engineering.js',
+  './investments/enterprise-plan.js',
   // Features (teammates' add-ons, Nexios references, ...)
   './features/mailbox.js',
 ];

@@ -3,7 +3,7 @@ import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEven
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { LEVELS, sellDev, hireCost } from './devs.js';
-import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
+import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 
@@ -168,9 +168,11 @@ export function updateUI() {
     toggle(card, 'ready', usable && !st.active);
     toggle(card, 'disabled', !usable && !st.active);
     let text, pct = 0;
-    if (st.active) { text = `${def.description} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
-    else if (st.cooldownLeft > 0) { text = `${def.description} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / def.cooldown; }
-    else text = cost ? `${def.description} · ${cost}` : `${def.description} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
+    let desc = def.description;
+    try { if (def.describe) desc = def.describe(g); } catch (e) { console.error(`[powerup ${def.id}]`, e); }
+    if (st.active) { text = `${desc} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
+    else if (st.cooldownLeft > 0) { text = `${desc} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / (effectiveCooldown(g, def.id) || 1); }
+    else text = cost ? `${desc} · ${cost}` : `${desc} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
     set(status, 'textContent', text);
     cd.style.width = `${Math.round(pct * 100)}%`;
   }

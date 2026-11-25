@@ -7,6 +7,17 @@ export function powerupState(game, id) {
   return game.powerups[id];
 }
 
+// Permanent bonuses from investments: cooldown multiplier, effect level, price multiplier.
+export function powerupMod(game, id) {
+  if (!game.powerupMods) game.powerupMods = {};
+  if (!game.powerupMods[id]) game.powerupMods[id] = { cooldown: 1, effect: 0, cost: 1 };
+  return game.powerupMods[id];
+}
+
+export function effectiveCooldown(game, id) {
+  return (getPowerup(id)?.cooldown || 0) * powerupMod(game, id).cooldown;
+}
+
 // Content hooks are guarded: a broken power-up becomes unusable instead of crashing the game.
 function safe(id, fn, fallback) {
   try { return fn(); } catch (e) { console.error(`[powerup ${id}]`, e); return fallback; }
@@ -34,7 +45,7 @@ export function usePowerup(game, id) {
   st.uses++;
   const duration = def.duration || 0;
   if (duration > 0) { st.active = true; st.remaining = duration; }
-  else st.cooldownLeft = def.cooldown || 0;
+  else st.cooldownLeft = effectiveCooldown(game, id);
   try { def.activate(game, st); } catch (e) { console.error(`[powerup ${id}]`, e); }
   emit('powerup:activated', { game, id });
   return true;
@@ -48,7 +59,7 @@ export function tickPowerups(game, dt) {
       if (st.remaining <= 0) {
         const overflow = -st.remaining;
         st.active = false; st.remaining = 0;
-        st.cooldownLeft = Math.max(0, (def.cooldown || 0) - overflow);
+        st.cooldownLeft = Math.max(0, effectiveCooldown(game, def.id) - overflow);
         try { def.deactivate?.(game, st); } catch (e) { console.error(`[powerup ${def.id}]`, e); }
       }
     } else if (st.cooldownLeft > 0) {
