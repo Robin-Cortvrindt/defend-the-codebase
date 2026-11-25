@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef, deathAnimDone, DEATH_ANIM } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef, deathAnimDone, DEATH_ANIM, quitRun } from '../src/engine/game.js';
 import { PATH_LENGTH } from '../src/engine/map.js';
 
 beforeEach(() => {
@@ -153,4 +153,33 @@ test('game over: the collapse timer runs after production goes down, then the en
   for (let t = 0; t < DEATH_ANIM; t += 0.05) step(g, 0.05);
   step(g, 0.05);
   assert.equal(deathAnimDone(g), true);
+});
+
+test('quitRun ends the run as a loss', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  let lost = 0; on('game:lost', () => lost++);
+  assert.equal(quitRun(g), true);
+  assert.equal(g.phase, 'lost');
+  assert.equal(g.quit, true);
+  assert.equal(g.lives, 0);
+  assert.equal(lost, 1);
+  run(g, DEATH_ANIM + 0.1);
+  assert.equal(deathAnimDone(g), true);
+  assert.equal(lost, 1);
+});
+
+test('quitRun works between sprints', () => {
+  const g = createGame(); startGame(g);
+  assert.equal(quitRun(g), true);
+  assert.equal(g.phase, 'lost');
+});
+
+test('quitRun is ignored in the menu and after a loss', () => {
+  const g = createGame();
+  let lost = 0; on('game:lost', () => lost++);
+  assert.equal(quitRun(g), false);
+  assert.equal(g.phase, 'menu');
+  startGame(g); quitRun(g);
+  assert.equal(quitRun(g), false);
+  assert.equal(lost, 1);
 });

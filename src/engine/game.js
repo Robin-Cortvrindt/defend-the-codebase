@@ -169,13 +169,23 @@ function moveBugs(game, dt) {
   }
 }
 
+function loseRun(game) {
+  endEvent(game);
+  game.phase = 'lost';
+  emit('game:lost', { game, wave: game.wave + 1, sprint: game.sprint + 1, info: sprintInfo(game.sprint) });
+}
+
+// The player gives up: production goes down exactly as if the bugs had won, so investors still pay out.
+export function quitRun(game) {
+  if (!['building', 'wave', 'bell', 'review'].includes(game.phase)) return false;
+  game.quit = true;
+  game.lives = 0;
+  loseRun(game);
+  return true;
+}
+
 function checkEnd(game) {
-  if (game.lives <= 0) {
-    endEvent(game);
-    game.phase = 'lost';
-    emit('game:lost', { game, wave: game.wave + 1, sprint: game.sprint + 1, info: sprintInfo(game.sprint) });
-    return;
-  }
+  if (game.lives <= 0) { loseRun(game); return; }
   if (game.spawnQueue.length || game.bugs.length) return;
   endEvent(game);
   const info = sprintInfo(game.sprint);
