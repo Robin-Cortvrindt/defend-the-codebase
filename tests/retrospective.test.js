@@ -148,3 +148,10 @@ test('mailbox emits mail:phished on a phishing claim', () => {
   assert.equal(got[0].mail, m);
   assert.equal(g.retro.phished, 1);
 });
+
+test('one bug squashed is singular', () => {
+  g.devs = [{ id: 1, type: 'react', kills: 1 }];
+  g.stats.squashed = 1;
+  assert.match(award('MVP developer').text, / · 1 bug squashed$/);
+  assert.match(award('Survived').text, / · 1 bug squashed$/);
+});
