@@ -8,7 +8,7 @@ import { createGame, startGame, startWave } from '../src/engine/game.js';
 import { placeDev, devStats } from '../src/engine/devs.js';
 import { usePowerup, tickPowerups } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
-import { isBuildable } from '../src/engine/map.js';
+import { isBuildable, COLS, ROWS } from '../src/engine/map.js';
 import { devEffects } from '../src/engine/effects.js';
 
 // Content modules register themselves once (imports are cached), so load them once for the file.
@@ -79,7 +79,12 @@ test('Full-stack squad, Garbage collection and Security training describe team l
   const g2 = game({ 'garbage-collection': 1 });
   const sq = [[0, 4], [1, 4], [0, 5], [1, 5]].map(([c, r]) => hire(g2, 'java', c, r));
   assert.ok(line(g2, sq[0], 'team').some(l => l.text === 'every 10th kill slows bugs nearby'));
-  const lone = hire(g2, 'java', 5, 5);
+  // Any free buildable cell well away from the square (the map changes, so don't hard-code one).
+  let lone = null;
+  for (let c = COLS - 1; c >= 0 && !lone; c--) for (let r = 0; r < ROWS && !lone; r++) {
+    if (c > 3 && isBuildable(c, r)) lone = hire(g2, 'java', c, r);
+  }
+  assert.ok(lone, 'found a free cell for the lone Java developer');
   assert.ok(!line(g2, lone, 'team').some(l => l.text.includes('10th')));
 });
 
