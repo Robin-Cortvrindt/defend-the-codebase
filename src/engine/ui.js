@@ -1,5 +1,6 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
+import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades, getInvestments } from './registry.js';
+import { loadProgress, investmentLevel, investmentCost, canInvest, invest, resetProgress } from './investments.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { LEVELS, sellDev, hireCost } from './devs.js';
@@ -236,7 +237,10 @@ function showOverlay(phase) {
       h('h1', {}, 'Defend the Codebase'),
       h('p', { class: 'lede' }, 'Bugs are crawling toward the Nexios building. Hire developers next to the path, earn Warrants for every bug they squash and ring the Nexios bell after each sprint. Every quarter ends with a review where you spend Nexios Coins on the building. How many years can you keep production up?'),
       legend,
-      h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
+      h('div', { class: 'screen-actions' },
+        h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
+        h('button', { class: 'btn ghost big', onclick: showShop }, `Investments · 💼 ${loadProgress().capital}`),
+      ),
     ));
   } else if (phase === 'bell') {
     ov.className = 'bell-overlay';
@@ -259,14 +263,20 @@ function showOverlay(phase) {
     ], h('button', { class: 'btn primary big', onclick: () => app.restart() }, 'Play again →')));
   } else if (phase === 'lost') {
     ov.className = 'screen lost';
-    const best = recordBest(g.sprint);
+    // Kept on the game, so coming back from the shop still shows "New" for a new record.
+    g.bestResult ??= recordBest(g.sprint);
+    const best = g.bestResult;
     const si = sprintInfo(g.sprint);
     const bi = sprintInfo(best.sprint);
     ov.append(endCard('#EA580C', `Fell in Year ${si.year} · Q${si.quarter} · Sprint ${si.sprint}`, 'Production is down', [
       [g.stats.squashed, 'Bugs squashed'], [g.floors, 'Floors'],
       [best.isNew ? 'New' : `Y${bi.year} Q${bi.quarter} S${bi.sprint}`, 'Best run'],
     ], h('pre', { class: 'trace' }, '500 · NullPointerException\n  at prod.main(Legacy.java:1)\non-call: you'),
-    h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →')));
+    h('p', { class: 'lede investors' }, `New investors put in +${g.capitalEarned ?? 0} 💼 · you now have ${loadProgress().capital} 💼`),
+    h('div', { class: 'screen-actions' },
+      h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →'),
+      h('button', { class: 'btn ghost big', onclick: showShop }, 'Investments'),
+    )));
   }
 }
 
@@ -282,6 +292,56 @@ function endCard(accent, eyebrow, title, stats, ...extra) {
 }
 
 export function resetUI() { lastPhase = null; buildPowerups(); }
+
+// ---------- investments shop (between runs) ----------
+
+const INVEST_GROUPS = [['developers', 'Developers'], ['powerups', 'Power-ups'], ['unlocks', 'Unlocks']];
+
+function investmentText(def, level) {
+  try { if (level > 0 && def.effectText) return def.effectText(level); } catch (e) { console.error(`[investment ${def.id}]`, e); }
+  return def.description || '';
+}
+
+function showShop() {
+  const ov = $('#overlay');
+  ov.className = 'screen invest';
+  ov.innerHTML = '';
+  const rerender = () => showShop();
+  const { capital } = loadProgress();
+  const sections = INVEST_GROUPS.map(([group, title]) => {
+    const defs = getInvestments().filter(d => (d.group || 'developers') === group);
+    if (!defs.length) return null;
+    return h('div', { class: 'shop' }, h('div', { class: 'eyebrow' }, title), defs.map(def => {
+      const level = investmentLevel(def.id);
+      const max = def.maxLevel ?? Infinity;
+      const maxed = level >= max;
+      const unlock = group === 'unlocks';
+      const cost = investmentCost(def.id);
+      const label = maxed ? (unlock ? 'Owned' : 'Max') : `💼 ${cost}`;
+      const btnProps = { class: 'btn primary', onclick: () => { if (invest(def.id)) { playSound('powerup'); rerender(); } } };
+      if (!canInvest(def.id)) btnProps.disabled = '';
+      return h('div', { class: 'shop-row' },
+        h('div', {}, h('b', {}, def.name), h('small', {}, investmentText(def, level))),
+        unlock || !Number.isFinite(max) ? null : h('span', { class: 'lvl' }, `Lv ${level}/${max}`),
+        h('button', btnProps, label),
+      );
+    }));
+  });
+  const reset = () => {
+    if (!window.confirm('Reset all investments and Investor Capital?')) return;
+    resetProgress(); rerender();
+  };
+  ov.append(h('div', { class: 'screen-card invest-card' },
+    h('div', { class: 'eyebrow' }, 'Between runs'),
+    h('h1', {}, 'Investments'),
+    h('p', { class: 'lede' }, `Investor Capital: 💼 ${capital}. Every investment stays for all your future runs.`),
+    sections,
+    h('div', { class: 'screen-actions' },
+      h('button', { class: 'btn light big', onclick: () => showOverlay(app.game.phase) }, '← Back'),
+      h('button', { class: 'btn ghost', onclick: reset }, 'Reset progress'),
+    ),
+  ));
+}
 
 // ---------- quarter review ----------
 

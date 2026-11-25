@@ -161,3 +161,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .review-min.locked .bell-wrap { opacity: .35; cursor: not-allowed; }
 .review-min .btn { flex: none; }
 @media (max-width: 720px) { .shop { grid-template-columns: 1fr; } }
+
+/* investments shop */
+.screen-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.screen.invest { overflow-y: auto; align-items: flex-start; padding-top: 24px; padding-bottom: 24px; }
+.invest-card { max-width: 640px; width: 100%; gap: 12px; }
+.invest-card h1 { margin: 4px 0 0; }
+.invest-card .lede { margin: 0; }
+.invest-card .shop { width: 100%; }
+.shop-row .lvl { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--s400); white-space: nowrap; }
+.lede.investors { color: #FACC15; font-weight: 700; }
