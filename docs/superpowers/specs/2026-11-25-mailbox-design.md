@@ -51,7 +51,7 @@ Option 1 won because it keeps all the risk inside one file.
 
 ### Mail flow
 
-- **Arrival:** the first mail arrives 5 s after `game:start`. After that, one arrives every 30 s of game time, in the `building`, `wave` and `bell` phases.
+- **Arrival:** the first mail arrives 5 s after `game:start`. After that, one arrives every 30 s of game time, in the `building`, `wave` and `bell` phases. It pauses on the quarter `review` screen, where the panel and popup are hidden.
   - The timer counts the scaled `dt` that `update` receives, so the heating-out event and 2× speed affect it naturally.
   - It pauses while the inbox holds 4 mails.
 - **Phishing roll:** each mail is rolled as phishing at arrival, with `PHISH_CHANCE = 1/6` using `game.random`. A phishing mail uses a normal task template, so its task and progress are real.
@@ -73,8 +73,8 @@ Option 1 won because it keeps all the risk inside one file.
 | IT service desk | Squash 25 typo bugs | `bug:killed`, type `typo` | 50 W |
 | IT service desk | Squash 15 null pointers | `bug:killed`, type `nullpointer` | 50 W |
 | IT service desk | Squash 8 legacy bugs | `bug:killed`, type `legacy` | 60 W |
-| CEO | Survive wave N (N = current wave + 2, capped at the last wave) | `wave:cleared`, wave ≥ N | 50 W |
-| Business manager | Clear a wave without a single leak | a wave that starts after arrival with no `bug:leaked` | 70 W |
+| CEO | Survive 2 more sprints | `sprint:cleared` after arrival | 50 W |
+| Business manager | Clear a sprint without a single leak | a sprint that starts after arrival with no `bug:leaked` | 70 W |
 
 The senders are roles, not people's names, matching the recent rename of the power-ups.
 
@@ -89,8 +89,8 @@ Only Claude costs Warrants. The other power-ups are free and limited only by coo
 ### Penalties
 
 - **Stolen:** `warrants = max(0, warrants - reward)`.
-- **Malware:** spawns `3 + floor(wave / 3)` bugs of random existing types at distance 0, slightly spread out.
-  - If the player claims outside a wave, the bugs are queued and spawn on the next `wave:start`.
+- **Malware:** spawns `min(8, 3 + floor(sprint / 3))` bugs of random non-boss types at distance 0, slightly spread out. The game is endless now, so the count is capped.
+  - If the player claims outside a sprint, the bugs are queued and spawn on the next `wave:start`.
 - **Compromised:** picks a random developer and sets `dev.cooldown = 10` (`tickDevs` already skips a developer on cooldown). The file tracks the locked developer until `game.time` passes the 10 seconds, and its `draw` greys the developer out and draws a padlock with canvas shapes (no emoji).
   - With no developers on the board, it falls back to Stolen.
 
@@ -113,7 +113,16 @@ Only Claude costs Warrants. The other power-ups are free and limited only by coo
 - `tests/mailbox.test.js` covers that logic in Node.
 - DOM code is guarded with `typeof document !== 'undefined'`.
 - `scripts/sim.mjs` doesn't claim mail, so the balance check is unchanged.
-- **Before pushing:** run `node --test` and play at least one wave in the browser.
+- **Before pushing:** run `node --test` and play at least one sprint in the browser.
+
+## Changes after the sprints update (my calls)
+
+After this design was approved, the game became endless sprints with quarter reviews and a boss. That led to these changes:
+
+- **Survive task:** "Survive wave N" became "Survive 2 more sprints". There's no last wave any more, and a goal relative to now avoids confusing global sprint numbers.
+- **Malware:** it never spawns the boss, and its count is capped at 8.
+- **Quarter review:** the mail timer pauses on the review screen, and the panel and popup are hidden there.
+- **Wording:** player-facing text says "sprint" instead of "wave".
 
 ## Left to the builder (my calls)
 
