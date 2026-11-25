@@ -4,6 +4,7 @@ import { emit } from './events.js';
 import { isBuildable, cellCenter, CELL } from './map.js';
 import { killBug, addEffect } from './game.js';
 import { drinkFor, canAfford, spendDrink } from './drinks.js';
+import { resistanceTo } from './upgrades.js';
 
 export const XP_GATES = [0, 10, 30];
 
@@ -119,6 +120,15 @@ export function bugsInRange(game, dev, range) {
     .sort((a, b) => b.distance - a.distance);
 }
 
+// Which bug a developer shoots: the one furthest along. During Thomas's wine tasting a shot is tipsy
+// (chance 1 - water cooler resistance) and goes to a random bug in range instead.
+export function pickTarget(game, dev, range) {
+  const bugs = bugsInRange(game, dev, range);
+  if (!bugs.length) return { target: null, tipsy: false };
+  const tipsy = game.activeEvent === 'wine-tasting' && game.random() >= resistanceTo(game, 'wine-tasting');
+  return { target: tipsy ? bugs[Math.floor(game.random() * bugs.length)] : bugs[0], tipsy };
+}
+
 // One shot's animation from the developer to `bug`: the developer's own attack look (drawAttack),
 // or a straight beam in `color` (default its accent) for developers without one.
 export function shotBeam(game, dev, bug, color, damage = getDeveloper(dev.type).damage) {
@@ -153,7 +163,7 @@ export function addAttack(game, dev, from, target, { color, damage } = {}) {
     kind: 'attack', dev: dev.type, from, to: { x: target.x, y: target.y }, target,
     // Visual-only randomness, worked out from the shot itself so the game's own random numbers
     // (events, mails, Claude's backfire) aren't used up by animations.
-    seed: shotSeed(dev, target), shot: dev.shots ?? 0, counter: target.type === def?.counters,
+    seed: shotSeed(dev, target), shot: dev.shots ?? 0, counter: target.type === def?.counters, tipsy: !!dev.tipsy,
     ttl: def?.attackDuration ?? 0.12, hitAt: def?.attackHitAt ?? 0,
     color, width: Math.min(5, 1.5 + (damage ?? devStats(game, dev).damage) / 15),
   });
@@ -168,12 +178,14 @@ export function tickDevs(game, dt) {
     try { hold = dev.upgrade?.update?.(game, dev, dt, stats) === false; } catch (e) { console.error(`[dev ${dev.type}] update failed`, e); }
     if (hold) { dev.cooldown = 0; continue; }
     if (dev.cooldown > 0) continue;
-    const target = bugsInRange(game, dev, stats.range)[0];
+    const { target, tipsy } = pickTarget(game, dev, stats.range);
     if (!target) { dev.cooldown = 0; continue; }
+    dev.tipsy = tipsy; // read by addAttack so this shot's animation zigzags
     try {
       if (dev.upgrade?.fire) dev.upgrade.fire(game, dev, target, stats);
       else { shotBeam(game, dev, target, undefined, stats.damage); hitBug(game, dev, target, stats.damage); }
     } catch (e) { console.error(`[dev ${dev.type}] fire failed`, e); }
+    dev.tipsy = false; // follow-up hits (e.g. a bounce on dev:hit) fly straight
     // Once per shot, after the kill check, so a listener (e.g. a bounce) never kills the same bug twice.
     const counter = target.type === getDeveloper(dev.type)?.counters;
     emit('dev:hit', { game, dev, bug: target, damage: stats.damage * (counter ? 2 : 1), counter });

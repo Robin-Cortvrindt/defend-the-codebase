@@ -29,7 +29,7 @@ test('manifest registers 3 developers, 7 bugs, 10 consistent waves with a boss',
     assert.ok(!['#2563EB', '#EA580C', '#C026D3'].includes(R.getBug(id).ring), `${id} has a neutral ring`);
     assert.ok(R.getBug(id).reward > 0, `${id} pays a reward`);
   }
-  assert.deepEqual(R.getEvents().map(e => e.id), ['prod-down', 'heating-out', 'no-coffee', 'no-redbull', 'heat-wave']);
+  assert.deepEqual(R.getEvents().map(e => e.id), ['prod-down', 'heating-out', 'no-coffee', 'no-redbull', 'heat-wave', 'wine-tasting']);
 
   // each event's end exactly undoes its start
   for (const e of R.getEvents()) {

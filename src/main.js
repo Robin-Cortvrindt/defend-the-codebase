@@ -18,8 +18,8 @@ const CORE = [
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
   'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',
-  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js',
-  'upgrades/floor.js', 'upgrades/aircon.js', 'upgrades/heating.js', 'upgrades/coffee.js', 'upgrades/fridge.js', 'upgrades/generator.js',
+  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js', 'events/wine-tasting.js',
+  'upgrades/floor.js', 'upgrades/aircon.js', 'upgrades/heating.js', 'upgrades/coffee.js', 'upgrades/fridge.js', 'upgrades/generator.js', 'upgrades/water.js',
 ].map(p => new URL(`./content/${p}`, import.meta.url).href);
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);

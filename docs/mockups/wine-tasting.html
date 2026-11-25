@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wine Tasting Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#001E32;--navy2:#0A2A40;--navy3:#123650;--orange:#EA580C;--fuchsia:#C026D3;--blue:#2563EB;--wine:#9F1239;
+        --s600:#475569;--s500:#64748B;--s400:#94A3B8;--s200:#E2E8F0;--tint:#EEF1F5}
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 16px 64px;background:var(--tint);color:var(--navy);font-family:Lato,system-ui,sans-serif}
+  main{max-width:1240px;margin:0 auto}
+  h1{margin:0 0 4px;font-size:26px;font-weight:900}
+  h2{margin:40px 0 4px;font-size:20px;font-weight:900}
+  p.sub{margin:0 0 20px;color:var(--s600);max-width:820px;line-height:1.5}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;position:sticky;top:0;padding:8px 0;background:var(--tint);z-index:1}
+  .controls span{font-size:13px;font-weight:700;color:var(--s600);margin-left:8px}
+  button{font:inherit;font-weight:700;font-size:13px;border:1px solid var(--s200);background:#fff;color:var(--navy);border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  button.wine.on{background:var(--wine);border-color:var(--wine)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+  .card{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+  .cap{padding:12px 16px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .cap h3{margin:2px 0 0;font-size:17px}
+  canvas.board{display:block;width:100%;aspect-ratio:3/2;background:var(--navy)}
+  .note{font-size:13px;line-height:1.5;color:var(--s600);padding:10px 16px 14px}
+  .note b{color:var(--navy)}
+  .bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+  canvas.bld{display:block;width:100%;aspect-ratio:1/1;background:var(--navy)}
+  .banner{background:var(--navy);border-radius:12px;padding:28px 16px;display:flex;justify-content:center}
+  .bn{background:rgba(0,30,50,.94);border:2px solid var(--wine);border-radius:12px;padding:12px 26px;text-align:center;color:#fff}
+  .bn b{display:block;font-size:20px;font-weight:900;color:#FDA4AF}
+  .bn small{color:var(--s200);font-size:13px}
+  .panel{background:var(--navy);border-radius:12px;padding:16px;color:#fff;max-width:340px}
+  .sp-title{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400);margin-bottom:8px}
+  .sp-upgs{display:flex;flex-wrap:wrap;gap:6px}
+  .sp-upg{display:inline-flex;flex-direction:column;align-items:center;gap:3px;background:var(--navy2);border:1px solid var(--navy3);border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700}
+  .sp-upg.new{border-color:#38BDF8}
+  .sp-pips{display:flex;gap:2px}.sp-pips i{width:6px;height:6px;border-radius:50%;background:var(--navy3)}.sp-pips i.on{background:#4ADE80}
+  .shop{display:flex;gap:12px;flex-wrap:wrap}
+  .sc{background:var(--navy);color:#fff;border:1px solid var(--navy3);border-radius:12px;padding:14px 16px;width:230px}
+  .sc h4{margin:0 0 2px;font-size:16px}.sc p{margin:0 0 10px;color:var(--s400);font-size:13px}
+  .sc .row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+  .sc .buy{background:#16A34A;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:900}
+</style>
+</head>
+<body>
+<main>
+<h1>Thomas organized a wine tasting</h1>
+<p class="sub">A new random event. While it's on, developers shoot a <b>random bug in range</b> instead of the one furthest along, and those tipsy shots <b>zigzag</b> to their target. The new <b>Water cooler</b> upgrade sobers the team up: each level makes a third of the shots straight and on target again.</p>
+
+<h2>1 · The banner when it starts</h2>
+<div class="banner"><div class="bn"><b>Thomas organized a wine tasting</b><small>Developers shoot at random bugs</small></div></div>
+
+<h2>2 · Shots on the board</h2>
+<p class="sub">Each developer keeps their own attack. Only the path changes: the hook, steam and bolt all zigzag. The faint ring marks which bug was aimed at. Change the water cooler level to see the mix of tipsy and sober shots.</p>
+<div class="controls">
+  <button id="wine" class="wine on">Wine tasting: on</button>
+  <span>Water cooler:</span>
+  <button data-lvl="0" class="on">None</button><button data-lvl="1">Level 1</button><button data-lvl="2">Level 2</button><button data-lvl="3">Level 3</button>
+  <button id="slow">Slow motion (¼×)</button>
+</div>
+<div class="grid">
+  <div class="card"><div class="cap"><div class="eyebrow">React</div><h3>Thrown hooks, zigzagging</h3></div>
+    <canvas class="board" data-dev="react" width="480" height="320"></canvas>
+    <div class="note">The hook still spins, but it flies along a <b>zigzag</b> instead of a smooth curve.</div></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Java</div><h3>Steam, weaving</h3></div>
+    <canvas class="board" data-dev="java" width="480" height="320"></canvas>
+    <div class="note">The two wisps keep their braid, but follow a <b>zigzag centre line</b>.</div></div>
+  <div class="card"><div class="cap"><div class="eyebrow">.NET</div><h3>Lightning, swerving</h3></div>
+    <canvas class="board" data-dev="dotnet" width="480" height="320"></canvas>
+    <div class="note">The bolt is already jagged, so a tipsy bolt makes <b>wide, regular zags</b> (with its usual small jitter on top).</div></div>
+</div>
+
+<h2>3 · The Water cooler on the building</h2>
+<p class="sub">A water cooler stands against the wall at the building's left foot, below the door, where nothing else is drawn. The jug fills up with each level, and at level 3 bubbles rise in it. Shown at 3× zoom.</p>
+<div class="bgrid">
+  <div class="card"><div class="cap"><div class="eyebrow">Level 0</div><h3>Today</h3></div><canvas class="bld" data-lvl="0" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 1</div><h3>Jug ⅓ full</h3></div><canvas class="bld" data-lvl="1" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 2</div><h3>Jug ⅔ full</h3></div><canvas class="bld" data-lvl="2" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 3</div><h3>Full, bubbling</h3></div><canvas class="bld" data-lvl="3" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 3, everything</div><h3>With all upgrades</h3></div><canvas class="bld" data-lvl="3" data-all="1" width="240" height="240"></canvas></div>
+</div>
+
+<h2>4 · Side panel and quarter review</h2>
+<p class="sub">No new layout: the side panel gets one more tile (short label "Water"), and the shop gets one more card in the same style as the others.</p>
+<div class="grid">
+  <div class="panel"><div class="sp-title">Nexios building</div>
+    <div class="sp-upgs">
+      <span class="sp-upg">Aircon<span class="sp-pips"><i class="on"></i><i></i><i></i></span></span>
+      <span class="sp-upg">Heating<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg">Coffee<span class="sp-pips"><i class="on"></i><i class="on"></i><i></i></span></span>
+      <span class="sp-upg">Fridge<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg">Power<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg new">Water<span class="sp-pips"><i class="on"></i><i></i><i></i></span></span>
+    </div></div>
+  <div class="shop">
+    <div class="sc"><h4>Water cooler</h4><p>Counters: wine tasting</p><div class="row"><span>Level 1 → 2</span><button class="buy">5 Warrants</button></div></div>
+  </div>
+</div>
+</main>
+
+<script>
+const NAVY = '#001E32', NAVY2 = '#0A2A40', NAVY3 = '#123650', PATH = '#1E4A6A', S200 = '#E2E8F0', S400 = '#94A3B8', WINE = '#9F1239';
+const DEVS = {
+  java:   { accent: '#EA580C', fireRate: 1.5, range: 210, dur: 0.42 },
+  dotnet: { accent: '#C026D3', fireRate: 0.9, range: 230, dur: 0.28 },
+  react:  { accent: '#2563EB', fireRate: 3,   range: 210, dur: 0.22 },
+};
+let speed = 1, wine = true, cooler = 0;
+document.getElementById('slow').onclick = e => { speed = speed === 1 ? 0.25 : 1; e.target.classList.toggle('on', speed !== 1); };
+document.getElementById('wine').onclick = e => { wine = !wine; e.target.classList.toggle('on', wine); e.target.textContent = `Wine tasting: ${wine ? 'on' : 'off'}`; };
+document.querySelectorAll('[data-lvl]').forEach(b => { if (b.tagName === 'BUTTON') b.onclick = () => { cooler = +b.dataset.lvl; document.querySelectorAll('button[data-lvl]').forEach(x => x.classList.toggle('on', x === b)); }; });
+const ICON = 0.6;
+
+// ---------- the proposed shared helper ----------
+// A point `s` (0..1) along a zigzag from `from` to `to`: straight-line progress plus a triangle-wave
+// sideways offset. The offset is 0 at both ends so the shot still leaves the developer and lands on the bug.
+function zigzagPoint(from, to, s, seed, amp = 16) {
+  const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len, zigs = Math.max(2, Math.round(len / 45));
+  const ph = s * zigs + seed, tri = 1 - 4 * Math.abs(ph - Math.floor(ph) - 0.5); // -1..1 triangle wave
+  const env = Math.min(1, s * 6, (1 - s) * 6);                                   // pinned at both ends
+  const off = tri * amp * env;
+  return { x: from.x + dx * s + nx * off, y: from.y + dy * s + ny * off };
+}
+const straightPoint = (from, to, s) => ({ x: from.x + (to.x - from.x) * s, y: from.y + (to.y - from.y) * s });
+
+// ---------- shared drawing ----------
+function drawGrid(ctx, W, H) {
+  ctx.fillStyle = NAVY; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = NAVY2; ctx.lineWidth = 1;
+  for (let x = 40; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke(); }
+  for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); ctx.stroke(); }
+}
+function drawDevIcon(ctx, type, x, y) {
+  const ACC = DEVS[type].accent;
+  ctx.fillStyle = NAVY3; ctx.beginPath(); ctx.arc(x, y, 19, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = ACC; ctx.lineWidth = 3; ctx.stroke();
+  ctx.save(); ctx.translate(x, y); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#fff'; ctx.lineCap = 'round';
+  if (type === 'java') {
+    ctx.scale(ICON, ICON);
+    ctx.beginPath(); ctx.moveTo(-9, -1); ctx.lineTo(6, -1); ctx.lineTo(6, 5); ctx.arc(-1.5, 5, 7.5, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(7.5, 4, 3, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-11, 14.5); ctx.lineTo(8, 14.5); ctx.stroke();
+  } else if (type === 'dotnet') {
+    ctx.scale(ICON * 1.4, ICON * 1.4);
+    ctx.font = '900 13px Lato, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('.NET', 0, 1);
+  } else {
+    ctx.scale(ICON, ICON); ctx.lineWidth = 1.8;
+    for (const a of [0, Math.PI / 3, -Math.PI / 3]) { ctx.beginPath(); ctx.ellipse(0, 0, 13, 5, a, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0, 0, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawBug(ctx, b, t) {
+  ctx.save(); ctx.translate(b.x, b.y);
+  ctx.strokeStyle = S200; ctx.lineWidth = 1.5;
+  const w = Math.sin(t * 18 + b.x) * 2;
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-5, s * 6); ctx.lineTo(-9 - w, s * 13); ctx.moveTo(1, s * 7); ctx.lineTo(1 + w, s * 14); ctx.moveTo(6, s * 6); ctx.lineTo(9 - w, s * 13); ctx.stroke(); }
+  ctx.beginPath(); ctx.ellipse(0, 0, 12, 9, 0, 0, Math.PI * 2);
+  ctx.fillStyle = b.flash > 0.3 ? '#fff' : S200; ctx.fill();
+  ctx.strokeStyle = S400; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+}
+function hookShape(ctx, color, scale = 1) {
+  ctx.save(); ctx.scale(scale, scale); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const path = () => { ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(3, 0); ctx.arc(3, 4, 4, -Math.PI / 2, Math.PI / 2); ctx.lineTo(-1, 8); ctx.lineTo(-1, 5.5); };
+  ctx.strokeStyle = color; ctx.lineWidth = 4.2; path(); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; path(); ctx.stroke();
+  ctx.restore();
+}
+
+// ---------- boards ----------
+function makeBoard(canvas) {
+  const ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+  const type = canvas.dataset.dev, D = DEVS[type], ACC = D.accent;
+  const dev = { x: W * 0.5, y: H * 0.78 }, laneY = H * 0.3;
+  const st = { t: 0, cd: 0.3, shots: [], n: 0, bugs: [0, 1, 2, 3, 4].map(i => ({ x: -40 - i * 95, flash: 0 })) };
+
+  function pathPoint(shot, from, to, s, amp) { return shot.tipsy ? zigzagPoint(from, to, s, shot.seed, amp) : straightPoint(from, to, s); }
+
+  function drawShot(shot) {
+    const u = shot.age / D.dur, b = shot.bug, to = { x: b.x, y: b.y }, from = { x: dev.x, y: dev.y };
+    if (type === 'react') {
+      const FLY = 0.6, side = shot.n % 2 ? 1 : -1, dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, ang = Math.atan2(dy, dx);
+      if (u < FLY) {
+        const f = u / FLY;
+        let p;
+        if (shot.tipsy) p = zigzagPoint(from, to, f, shot.seed, 18);
+        else { const bow = Math.sin(Math.PI * f) * 30 * side; p = { x: from.x + dx * f + nx * bow, y: from.y + dy * f + ny * bow }; }
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(f * Math.PI * 4 * side); hookShape(ctx, ACC, 0.75); ctx.restore();
+      } else {
+        const k = (u - FLY) / (1 - FLY);
+        ctx.save(); ctx.globalAlpha = 1 - k; ctx.translate(to.x - Math.cos(ang) * 8, to.y - Math.sin(ang) * 8); ctx.rotate(ang); hookShape(ctx, ACC, 0.75); ctx.restore();
+        if (!shot.hit) { shot.hit = true; b.flash = 1; }
+      }
+    } else if (type === 'java') {
+      const travel = u * 1.5, head = Math.min(1, travel), tail = Math.max(0, travel - 0.5);
+      [[-4, -1], [2, 1]].forEach(([sx, side], i) => {
+        const o = { x: from.x + sx * ICON, y: from.y - 10 * ICON }, N = 36, pts = [];
+        for (let j = 0; j <= N; j++) {
+          const s = tail + (head - tail) * (j / N), c = pathPoint(shot, o, to, s, 16);
+          const dx = to.x - o.x, dy = to.y - o.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, env = Math.sin(Math.PI * s);
+          const off = 8 * env * Math.sin(2 * Math.PI * Math.max(1.2, len / 70) * s - st.t * 9 + shot.seed * 6 + i * Math.PI) + side * 3 * env;
+          pts.push({ x: c.x + nx * off, y: c.y + ny * off });
+        }
+        if (head <= tail) return;
+        ctx.lineCap = 'round';
+        for (const p of [{ c: '#fff', w: 7, a: 0.12 }, { c: ACC, w: 3, a: 0.95 }]) {
+          ctx.strokeStyle = p.c;
+          for (let j = 1; j <= N; j++) { const k = j / N; ctx.globalAlpha = p.a * (0.15 + 0.85 * k); ctx.lineWidth = p.w * (0.45 + 0.55 * k); ctx.beginPath(); ctx.moveTo(pts[j - 1].x, pts[j - 1].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke(); }
+        }
+        ctx.globalAlpha = 1;
+      });
+      if (u > 0.66 && !shot.hit) { shot.hit = true; b.flash = 1; }
+    } else {
+      const a = u < 0.15 ? 1 : 1 - (u - 0.15) / 0.85, o = { x: from.x, y: from.y - 6 };
+      const segs = shot.tipsy ? 18 : 9, amp = shot.tipsy ? 6 : 22, pts = [o];
+      const dx = to.x - o.x, dy = to.y - o.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+      for (let i = 1; i < segs; i++) {
+        const f = i / segs, c = pathPoint(shot, o, to, f, 26), j = (Math.random() - 0.5) * 2 * amp * Math.sin(Math.PI * f);
+        pts.push({ x: c.x + nx * j, y: c.y + ny * j });
+      }
+      pts.push(to);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      for (const p of [{ c: ACC, w: 9, a: 0.22 }, { c: ACC, w: 4, a: 0.9 }, { c: '#fff', w: 1.6, a: 1 }]) {
+        ctx.globalAlpha = p.a * a; ctx.strokeStyle = p.c; ctx.lineWidth = p.w;
+        ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
+      }
+      ctx.globalAlpha = 1 - u; ctx.strokeStyle = ACC; ctx.lineWidth = 3 * (1 - u) + 1;
+      ctx.beginPath(); ctx.arc(to.x, to.y, 10 + u * 22, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+      if (!shot.hit) { shot.hit = true; b.flash = 1; }
+    }
+    // marker on the bug this shot is aimed at
+    ctx.globalAlpha = 0.5 * (1 - u); ctx.strokeStyle = shot.tipsy ? '#FDA4AF' : '#fff'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 20, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+
+  return function step(dt) {
+    st.t += dt; st.cd -= dt;
+    for (const b of st.bugs) { b.x += dt * 45; if (b.x > W + 40) b.x -= 5 * 95; b.y = laneY + Math.sin(st.t * 6 + b.x) * 1.5; b.flash = Math.max(0, b.flash - dt * 8); }
+    const inRange = st.bugs.filter(b => Math.hypot(b.x - dev.x, b.y - dev.y) <= D.range).sort((a, b) => b.x - a.x);
+    if (st.cd <= 0 && inRange.length) {
+      // the event: a random bug in range, unless this shot is a sober one (1/3 per water cooler level)
+      const tipsy = wine && Math.random() >= cooler / 3;
+      const bug = tipsy ? inRange[Math.floor(Math.random() * inRange.length)] : inRange[0];
+      st.shots.push({ age: 0, bug, tipsy, seed: Math.random(), n: st.n++ });
+      st.cd = 1 / D.fireRate;
+    }
+    st.shots.forEach(s => s.age += dt);
+    st.shots = st.shots.filter(s => s.age < D.dur);
+    drawGrid(ctx, W, H);
+    ctx.strokeStyle = PATH; ctx.lineWidth = 36; ctx.beginPath(); ctx.moveTo(0, laneY); ctx.lineTo(W, laneY); ctx.stroke();
+    ctx.globalAlpha = 0.25; ctx.strokeStyle = ACC; ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+    ctx.beginPath(); ctx.arc(dev.x, dev.y, D.range, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    drawDevIcon(ctx, type, dev.x, dev.y);
+    st.bugs.forEach(b => drawBug(ctx, b, st.t));
+    st.shots.forEach(drawShot);
+  };
+}
+
+// ---------- building (ported from src/engine/building.js, trimmed) ----------
+const C = { navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', glass: '#1E4A6A', blue: '#2563EB', orange: '#EA580C', fuchsia: '#C026D3', green: '#16A34A', greenL: '#4ADE80', s500: '#64748B', s400: '#94A3B8', s200: '#E2E8F0', white: '#fff', light: '#FDE68A' };
+function drawBuilding(ctx, L, t) {
+  const x = 578, w = 52, ground = 178, groundTop = 118, top = groundTop;
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + w / 2, ground + 1, w / 2 + 6, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C.navy2; ctx.fillRect(x, top, w, ground - top);
+  ctx.fillStyle = C.s200; ctx.fillRect(x - 1, top - 2, w + 2, 2);
+  if (L.aircon) { ctx.fillStyle = C.s200; ctx.fillRect(x + w - 6 - 31, top - 12, 31, 10); }
+  ctx.fillStyle = C.white; ctx.fillRect(x, groundTop, w, 12);
+  ctx.fillStyle = C.blue; ctx.fillRect(x, groundTop + 11, w, 1);
+  ctx.fillStyle = C.navy; ctx.font = '900 8px Lato, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('NEXIOS', x + w / 2 + 2, groundTop + 6.5);
+  ctx.fillStyle = C.glass; ctx.fillRect(x + 12, groundTop + 16, w - 16, 22);
+  ctx.fillStyle = C.navy3; for (let k = 1; k < 3; k++) ctx.fillRect(x + 12 + ((w - 16) / 3) * k, groundTop + 16, 1, 22);
+  for (let k = 0; k < (L.fridge || 0); k++) {
+    const fx = x + w - 4 - (k + 1) * 11, fy = groundTop + 18;
+    ctx.fillStyle = '#F0ABFC'; ctx.fillRect(fx, fy, 7, 18);
+    ctx.fillStyle = C.fuchsia; for (let s = 0; s < 3; s++) ctx.fillRect(fx + 1, fy + 3 + s * 5, 5, 2);
+  }
+  ctx.fillStyle = C.navy; ctx.fillRect(x, 128, 10, 24);
+  ctx.fillStyle = C.green; ctx.fillRect(x, 128, 10, 2);
+  ctx.fillStyle = C.s400; ctx.fillRect(x + 7, 140, 1.5, 4);
+  ctx.fillStyle = C.navy3; ctx.fillRect(x, ground - 6, w, 6);
+  if (L.generator) { const gw = 20, gh = 15; ctx.fillStyle = C.s500; ctx.fillRect(x + w - 2 - gw, ground - gh, gw, gh); ctx.fillStyle = C.s400; ctx.fillRect(x + w - 2 - gw, ground - gh, gw, 2); }
+  if (L.water) drawWaterCooler(ctx, x + 1, ground - 6, L.water, t);   // NEW
+  ctx.strokeStyle = C.s200; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, top + 0.5, w - 1, ground - top - 1);
+  if (L.coffee) { ctx.fillStyle = C.orange; ctx.beginPath(); ctx.arc(x - 12, groundTop - 9, 9.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); }
+}
+
+// NEW: a water cooler against the wall below the door. The jug fills a third per level; bubbles at level 3.
+function drawWaterCooler(ctx, leftX, floorY, level, t) {
+  const sx = leftX + 1, sw = 8, sh = 9;                    // white stand with a tap
+  ctx.fillStyle = C.s200; ctx.fillRect(sx, floorY - sh, sw, sh);
+  ctx.fillStyle = C.s400; ctx.fillRect(sx, floorY - sh, sw, 1); ctx.fillRect(sx + 1, floorY - 2, sw - 2, 1);
+  ctx.fillStyle = C.blue; ctx.fillRect(sx + sw - 3, floorY - sh + 3, 2, 1.5);       // tap
+  const jx = sx + 1, jw = 6, jh = 8, jy = floorY - sh - jh;                          // jug on top
+  ctx.fillStyle = 'rgba(186,230,253,.25)'; ctx.fillRect(jx, jy, jw, jh);
+  const fill = jh * level / 3;
+  ctx.fillStyle = '#38BDF8'; ctx.fillRect(jx, jy + jh - fill, jw, fill);
+  ctx.fillStyle = '#7DD3FC'; ctx.fillRect(jx, jy + jh - fill, jw, 0.8);                // water line
+  ctx.strokeStyle = '#BAE6FD'; ctx.lineWidth = 0.6; ctx.strokeRect(jx + 0.3, jy + 0.3, jw - 0.6, jh - 0.6);
+  ctx.fillStyle = '#BAE6FD'; ctx.fillRect(jx + 2, jy - 1.2, 2, 1.2);                   // neck
+  if (level >= 3) {
+    ctx.fillStyle = '#fff';
+    for (let k = 0; k < 2; k++) {
+      const p = (t * 0.7 + k * 0.5) % 1;
+      ctx.globalAlpha = 0.9 * (1 - p);
+      ctx.beginPath(); ctx.arc(jx + 2 + k * 2, jy + jh - 1 - p * (jh - 2), 0.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function makeBld(canvas) {
+  const ctx = canvas.getContext('2d'), lvl = +canvas.dataset.lvl, all = !!canvas.dataset.all;
+  const L = all ? { aircon: 3, fridge: 3, generator: 3, coffee: 3, water: lvl } : { water: lvl };
+  return t => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = NAVY; ctx.fillRect(0, 0, 240, 240);
+    ctx.setTransform(3, 0, 0, 3, -548 * 3, -100 * 3);
+    ctx.strokeStyle = PATH; ctx.lineWidth = 36; ctx.beginPath(); ctx.moveTo(500, 140); ctx.lineTo(576, 140); ctx.stroke();
+    drawBuilding(ctx, L, t);
+  };
+}
+
+const boards = [...document.querySelectorAll('canvas.board')].map(makeBoard);
+const blds = [...document.querySelectorAll('canvas.bld')].map(makeBld);
+let last = performance.now(), T = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * speed; last = now; T += dt;
+  boards.forEach(s => s(dt)); blds.forEach(s => s(T));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
