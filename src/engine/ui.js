@@ -4,6 +4,8 @@ import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
+import { WIDTH } from './map.js';
+import { popoverPosition } from './popover.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 
@@ -72,8 +74,14 @@ function buildHire() {
     bar.append(btn);
     return { def, btn };
   });
-  refs.selPanel = h('div', { class: 'sel-panel hidden' });
-  bar.append(refs.selPanel);
+  // The selected-developer panel lives on the map, before #overlay so overlay screens stay on top.
+  if (!refs.selPanel) {
+    refs.selPanel = h('div', { class: 'sel-panel popover hidden' });
+    refs.selArrow = h('i', { class: 'popover-arrow' });
+    refs.selPanel.dataset.key = '';
+  }
+  const stage = $('#stage');
+  if (refs.selPanel.parentNode !== stage) stage.insertBefore(refs.selPanel, $('#overlay'));
 }
 
 function buildPowerups() {
@@ -180,6 +188,19 @@ export function updateUI() {
   toggle($('#stage'), 'paused', v.paused);
 }
 
+function upgradeBtn({ up, status }) {
+  const dev = app.view.selected;
+  const gate = XP_GATES[dev.level + 1];
+  const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
+  const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
+  const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
+    h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
+    h('small', {}, kind + line));
+  btn.disabled = !status.ok;
+  if (up.tooltip) btn.title = up.tooltip;
+  return btn;
+}
+
 function updateSelPanel() {
   const dev = app.view.selected;
   const p = refs.selPanel;
@@ -193,29 +214,48 @@ function updateSelPanel() {
     ups.map(u => `${u.up.id}=${u.status.reason}`).join(','), extra.map(b => b.label).join('|')].join(':');
   toggle(p, 'hidden', false);
   const xpLine = gate != null ? `XP ${Math.floor(dev.xp)} / ${gate} · ${dev.kills} squashed` : `Max level · ${dev.kills} squashed`;
-  if (p.dataset.key === key && refs.selXp) { set(refs.selXp, 'textContent', xpLine); return; }
+  if (p.dataset.key === key && refs.selXp) { set(refs.selXp, 'textContent', xpLine); positionPopover(dev); return; }
   p.dataset.key = key;
   p.style.setProperty('--accent', def.accent);
   p.innerHTML = '';
   refs.selXp = h('small', {}, xpLine);
+  // The arrow sits outside the box, so scrolling happens in an inner body, not on the popover.
   p.append(
+    h('div', { class: 'popover-body' },
     h('div', {}, h('b', {}, `${def.name} · ${levelName(dev)}`), refs.selXp),
     // Element.append does not flatten arrays (h() does), so spread them.
-    ...ups.map(({ up, status }) => {
-      const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
-      const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
-      const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
-        h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
-        h('small', {}, kind + line));
-      btn.disabled = !status.ok;
-      if (up.tooltip) btn.title = up.tooltip;
-      return btn;
-    }),
+    ...(ups.length === 2 ? [
+      h('div', { class: 'choice-head' }, h('b', {}, 'Choose one'), h('small', {}, "You can't change this later.")),
+      h('div', { class: 'choice' }, upgradeBtn(ups[0]), h('span', { class: 'choice-or' }, 'or'), upgradeBtn(ups[1])),
+    ] : ups.map(upgradeBtn)),
     ...extra.map(b => h('button', { class: 'btn ghost', onclick: () => {
       try { b.onClick(app.game, dev); } catch (e) { console.error(`panel button failed for ${dev.type}`, e); }
     } }, b.label)),
     h('button', { class: 'btn ghost', onclick: () => { sellDev(app.game, dev); app.view.selected = null; } }, `Sell +${Math.floor(dev.spent * 0.5)}`),
+    ),
+    refs.selArrow,
   );
+  positionPopover(dev);
+}
+
+// Place the popover next to its tower. Measure its natural size first (caps cleared) so the
+// capped size from the previous frame cannot feed back into the side choice.
+function positionPopover(dev) {
+  const p = refs.selPanel;
+  const stage = $('#stage');
+  set(p.style, 'maxWidth', '');
+  set(p.style, 'maxHeight', '');
+  const stageW = stage.clientWidth;
+  const { left, top, side, arrowY, maxW, maxH } = popoverPosition({
+    x: dev.x, y: dev.y, scale: stageW / WIDTH, stageW, stageH: stage.clientHeight,
+    popW: p.offsetWidth, popH: p.offsetHeight,
+  });
+  set(p.style, 'maxWidth', `${maxW}px`);
+  set(p.style, 'maxHeight', `${maxH}px`);
+  set(p.style, 'left', `${left}px`);
+  set(p.style, 'top', `${top}px`);
+  toggle(p, 'left', side === 'left');
+  set(refs.selArrow.style, 'top', `${arrowY}px`);
 }
 
 // ---------- overlays ----------
