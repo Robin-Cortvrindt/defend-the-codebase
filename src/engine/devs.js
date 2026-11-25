@@ -78,8 +78,8 @@ export function devStats(game, dev) {
   const stats = { damage: def.damage, fireRate: def.fireRate, range: def.range };
   if (dev.level >= 1 && ups?.level2?.stats) Object.assign(stats, ups.level2.stats);
   if (dev.level === 2 && dev.upgrade?.stats) Object.assign(stats, dev.upgrade.stats);
-  try { def.modifyStats?.(game, dev, stats); } catch (e) { console.error(e); }
-  try { dev.upgrade?.modifyStats?.(game, dev, stats); } catch (e) { console.error(e); }
+  try { def.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] modifyStats failed`, e); }
+  try { dev.upgrade?.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] upgrade modifyStats failed`, e); }
   // Aura step: Task 4 applies nearby developers' auras to `stats` here.
   return {
     ...stats,
@@ -98,28 +98,43 @@ export function grantXp(game, dev, amount) {
   }
 }
 
+export function bugsInRange(game, dev, range) {
+  return game.bugs
+    .filter(b => !b.dead && Math.hypot(b.x - dev.x, b.y - dev.y) <= range)
+    .sort((a, b) => b.distance - a.distance);
+}
+
+export function shotBeam(game, dev, bug, color, damage = getDeveloper(dev.type).damage) {
+  addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: bug.x, y: bug.y }, color: color ?? getDeveloper(dev.type).accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
+}
+
+export function hitBug(game, dev, bug, damage) {
+  if (bug.dead) return false;
+  const counter = bug.type === getDeveloper(dev.type).counters;
+  bug.hp -= damage * (counter ? 2 : 1);
+  if (counter) addEffect(game, { kind: 'pop', x: bug.x, y: bug.y - 12, text: '×2', ttl: 0.6 });
+  try { getBug(bug.type)?.onHit?.(bug, game); } catch (e) { console.error(`[bug ${bug.type}] onHit failed`, e); }
+  if (bug.hp > 0) return false;
+  killBug(game, bug, dev);
+  dev.kills++;
+  grantXp(game, dev, 1);
+  return true;
+}
+
 export function tickDevs(game, dt) {
   for (const dev of game.devs) {
     dev.cooldown -= dt;
+    const stats = devStats(game, dev);
+    let hold = false;
+    try { hold = dev.upgrade?.update?.(game, dev, dt, stats) === false; } catch (e) { console.error(`[dev ${dev.type}] update failed`, e); }
+    if (hold) { dev.cooldown = 0; continue; }
     if (dev.cooldown > 0) continue;
-    const { damage, fireRate, range } = devStats(game, dev);
-    let target = null;
-    for (const bug of game.bugs) {
-      if (Math.hypot(bug.x - dev.x, bug.y - dev.y) > range) continue;
-      if (!target || bug.distance > target.distance) target = bug;
-    }
+    const target = bugsInRange(game, dev, stats.range)[0];
     if (!target) { dev.cooldown = 0; continue; }
-    const def = getDeveloper(dev.type);
-    const counter = target.type === def.counters;
-    target.hp -= damage * (counter ? 2 : 1);
-    addEffect(game, { kind: 'beam', from: { x: dev.x, y: dev.y }, to: { x: target.x, y: target.y }, color: def.accent, width: Math.min(5, 1.5 + damage / 15), ttl: 0.12 });
-    if (counter) addEffect(game, { kind: 'pop', x: target.x, y: target.y - 12, text: '×2', ttl: 0.6 });
-    try { getBug(target.type)?.onHit?.(target, game); } catch (e) { console.error(e); }
-    if (target.hp <= 0) {
-      killBug(game, target, dev);
-      dev.kills++;
-      grantXp(game, dev, 1);
-    }
-    dev.cooldown = 1 / fireRate;
+    try {
+      if (dev.upgrade?.fire) dev.upgrade.fire(game, dev, target, stats);
+      else { shotBeam(game, dev, target, undefined, stats.damage); hitBug(game, dev, target, stats.damage); }
+    } catch (e) { console.error(`[dev ${dev.type}] fire failed`, e); }
+    dev.cooldown = 1 / stats.fireRate;
   }
 }

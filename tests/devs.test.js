@@ -2,8 +2,8 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.js';
-import { placeDev, sellDev, tickDevs, grantXp, devStats, nextUpgrades, upgradeUnlocked, upgradeStatus, buyUpgrade, levelName } from '../src/engine/devs.js';
+import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/game.js';
+import { placeDev, sellDev, tickDevs, grantXp, devStats, nextUpgrades, upgradeUnlocked, upgradeStatus, buyUpgrade, levelName, bugsInRange, hitBug } from '../src/engine/devs.js';
 import { pointAt } from '../src/engine/map.js';
 
 beforeEach(() => {
@@ -147,4 +147,46 @@ test('Review Focus 1: a type without upgrades has none and still fires', () => {
   const b = spawnBug(g, 'other', 300);
   tickDevs(g, 0.01);
   assert.equal(b.hp, 94);
+});
+
+test('update returning false holds fire; fire hook replaces the default shot', () => {
+  R.registerDeveloper({ id: 'h', cost: 10, damage: 10, fireRate: 1, range: 2, counters: 'small',
+    upgrades: { level2: { id: 'h2', name: 'H2', cost: 0, description: 'd',
+      update: (game, dev) => dev.state.on === true,
+      fire: (game, dev, target, stats) => { for (const b of bugsInRange(game, dev, stats.range)) hitBug(game, dev, b, 5); } },
+      level3: [] } });
+  const g = waveGame();
+  const d = placeDev(g, 'h', 3, 3); d.xp = 10; buyUpgrade(g, d, 'h2');
+  const b1 = spawnBug(g, 'other', 260), b2 = spawnBug(g, 'other', 300);
+  tickDevs(g, 0.01);
+  assert.equal(b1.hp, 100);
+  d.state.on = true; tickDevs(g, 0.01);
+  assert.deepEqual([b1.hp, b2.hp], [95, 95]);
+});
+
+test('Review Focus 2: hitting an already-dead bug gives no second reward or xp', () => {
+  const g = waveGame();
+  const d = placeDev(g, 'r', 3, 3);
+  const b = spawnBug(g, 'other', 300, 1);
+  const w = g.warrants;
+  assert.equal(hitBug(g, d, b, 10), true);
+  assert.equal(hitBug(g, d, b, 10), false);
+  assert.equal(g.warrants, w + 1);
+  assert.equal(d.xp, 1);
+  assert.equal(d.kills, 1);
+});
+
+test('Review Focus 5: throwing hooks are logged and the game keeps stepping', () => {
+  const boom = () => { throw new Error('boom'); };
+  R.registerDeveloper({ id: 'x', cost: 10, damage: 10, fireRate: 1, range: 2, counters: 'small', modifyStats: boom,
+    upgrades: { level2: { id: 'x2', name: 'X2', cost: 0, description: 'd', update: boom, fire: boom, modifyStats: boom,
+      aura: { radius: 2, apply: boom } }, level3: [] } });
+  const g = waveGame();
+  const d = placeDev(g, 'x', 3, 3); d.xp = 10; buyUpgrade(g, d, 'x2');
+  placeDev(g, 'r', 2, 3);
+  spawnBug(g, 'other', 300);
+  const errors = []; const orig = console.error; console.error = (...a) => errors.push(a);
+  try { for (let i = 0; i < 5; i++) step(g, 0.1); } finally { console.error = orig; }
+  assert.ok(errors.length > 0);
+  assert.ok(devStats(g, d).damage > 0);
 });
