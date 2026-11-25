@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, ringBell, step, spawnBug } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef, deathAnimDone, DEATH_ANIM } from '../src/engine/game.js';
 import { PATH_LENGTH } from '../src/engine/map.js';
 
 beforeEach(() => {
@@ -53,16 +53,20 @@ test('ringBell starts next wave', () => {
   assert.equal(g.phase, 'wave');
 });
 
-test('clearing the last wave → won and emits game:won', () => {
+test('after the last hand-made wave, sprints continue (generated) and never reach won', () => {
   const g = createGame(); startGame(g); g.wave = 1; startWave(g);
   g.spawnQueue = []; g.bugs = [];
   let won = 0; on('game:won', () => won++);
   step(g, 0.05);
-  assert.equal(g.phase, 'won'); assert.equal(won, 1);
+  assert.equal(won, 0);
+  assert.equal(g.phase, 'bell');
+  assert.equal(g.sprint, 2);
+  assert.equal(ringBell(g), true);
+  assert.ok(g.spawnQueue.length > 0);
 });
 
-test('Review Focus 3: last life lost on last bug of final wave → lost, not won; no bell', () => {
-  const g = createGame(); startGame(g); g.wave = 1; startWave(g);
+test('Review Focus 3: last life lost on the last bug of a quarter → lost, no review, no bell', () => {
+  const g = createGame(); startGame(g); g.wave = 6; startWave(g);
   g.spawnQueue = []; g.bugs = []; g.lives = 2;
   spawnBug(g, 'b', PATH_LENGTH - 1);
   let won = 0, cleared = 0; on('game:won', () => won++); on('wave:cleared', () => cleared++);
@@ -83,4 +87,70 @@ test('wave hp multiplier scales bug health', () => {
   const g = createGame(); startGame(g); startWave(g);
   const b = spawnBug(g, 'b', 0);
   assert.equal(b.hp, 20); assert.equal(b.maxHp, 20);
+});
+
+test('timeScale 0.5 halves how far bugs move', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  g.spawnQueue = []; g.bugs = [];
+  const bug = spawnBug(g, 'b', 0);
+  g.mods.timeScale = 0.5;
+  step(g, 0.1);
+  assert.equal(bug.distance, 5);
+});
+
+test('sprintInfo maps global sprint index to year, quarter and sprint', () => {
+  assert.equal(sprintInfo(0).label, 'Year 1 · Q1 · Sprint 1 / 7');
+  assert.equal(sprintInfo(6).sprint, 7);
+  assert.equal(sprintInfo(7).quarter, 2);
+  assert.equal(sprintInfo(7).sprint, 1);
+  assert.deepEqual([sprintInfo(28).year, sprintInfo(28).quarter], [2, 1]);
+});
+
+const clear = g => { g.spawnQueue = []; g.bugs = []; step(g, 0.01); };
+
+test('clearing a sprint gives 1 coin; sprint 7 gives 4 and enters the quarter review', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  let reviews = 0; on('quarter:review', () => reviews++);
+  clear(g);
+  assert.equal(g.coins, 1);
+  g.sprint = 6; g.phase = 'bell'; ringBell(g); clear(g);
+  assert.equal(g.coins, 5);
+  assert.equal(g.phase, 'review');
+  assert.equal(reviews, 1);
+  assert.equal(g.pendingYearReview, false);
+});
+
+test('clearing sprint 28 (Q4 sprint 7) sets pendingYearReview', () => {
+  const g = createGame(); startGame(g); g.sprint = 27; startWave(g); clear(g);
+  assert.equal(g.phase, 'review');
+  assert.equal(g.pendingYearReview, true);
+});
+
+test('sprint aliases: wave:cleared and sprint:cleared both fire', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  const got = []; on('wave:cleared', () => got.push('w')); on('sprint:cleared', () => got.push('s'));
+  clear(g);
+  assert.deepEqual(got.sort(), ['s', 'w']);
+});
+
+test('Review Focus 5: generated sprint 150 has finite positive counts and interval >= 0.12', () => {
+  const d = getSprintDef(150);
+  assert.ok(Number.isFinite(d.hp) && d.hp > 1);
+  for (const gr of d.groups) {
+    assert.ok(Number.isFinite(gr.count) && gr.count > 0);
+    assert.ok(gr.interval >= 0.12);
+  }
+});
+
+test('game over: the collapse timer runs after production goes down, then the end screen may show', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  g.spawnQueue = []; g.bugs = []; g.lives = 1;
+  spawnBug(g, 'b', PATH_LENGTH - 1);
+  step(g, 0.05);
+  assert.equal(g.phase, 'lost');
+  assert.equal(g.deathTime, 0);
+  assert.equal(deathAnimDone(g), false);
+  for (let t = 0; t < DEATH_ANIM; t += 0.05) step(g, 0.05);
+  step(g, 0.05);
+  assert.equal(deathAnimDone(g), true);
 });

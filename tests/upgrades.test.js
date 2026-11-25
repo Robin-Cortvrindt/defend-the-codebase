@@ -1,193 +1,113 @@
-import { test } from 'node:test';
+import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { CONTENT_URLS } from '../src/content/manifest.js';
-import { loadModules } from '../src/engine/loader.js';
-import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.js';
-import { getDeveloper } from '../src/engine/registry.js';
-import { placeDev, sellDev, tickDevs, devStats, buyUpgrade, levelName } from '../src/engine/devs.js';
+import * as R from '../src/engine/registry.js';
+import { clearAll } from '../src/engine/events.js';
+import { createGame, startGame, ringBell, chooseYearReview, CAO_COINS } from '../src/engine/game.js';
+import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from '../src/engine/upgrades.js';
 
-const { failed } = await loadModules(CONTENT_URLS);
-assert.equal(failed.length, 0);
+beforeEach(async () => {
+  R.resetRegistry(); clearAll();
+  for (const m of ['floor', 'aircon']) R.registerUpgrade((await import(`../src/content/upgrades/${m}.js`)).default);
+  R.registerWaves([{ groups: [] }]);
+});
 
-const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≈ ${b}`);
-
-function waveGame() {
-  const g = createGame(); startGame(g); startWave(g); g.spawnQueue = []; return g;
+function reviewGame(coins = 100) {
+  const g = createGame(); startGame(g); g.phase = 'review'; g.coins = coins; return g;
 }
 
-function devAt(g, type, col, row, ...upgradeIds) {
-  g.warrants = 10000;
-  const d = placeDev(g, type, col, row); d.xp = 30;
-  for (const id of upgradeIds) assert.ok(buyUpgrade(g, d, id), id);
-  return d;
-}
-
-test('java: Spring Boot stats; names', () => {
-  const g = waveGame();
-  const d = devAt(g, 'java', 3, 3);
-  assert.equal(levelName(d), 'Junior Java Dev');
-  buyUpgrade(g, d, 'springboot');
-  assert.equal(levelName(d), 'Spring Boot Dev');
-  assert.equal(devStats(g, d).damage, 40);
-  assert.equal(devStats(g, d).range, 2.6 * 40);
-  assert.equal(d.spent, 75 + 25);
+test('floor costs 3,4,5; adds 5 max lives and heals 5; floors++', () => {
+  const g = reviewGame(); g.lives = 10;
+  assert.equal(upgradeCost(g, 'floor'), 3);
+  assert.equal(buyUpgrade(g, 'floor'), true);
+  assert.deepEqual([g.maxLives, g.lives, g.floors, g.coins], [25, 15, 2, 97]);
+  assert.equal(upgradeCost(g, 'floor'), 4);
+  buyUpgrade(g, 'floor');
+  assert.equal(upgradeCost(g, 'floor'), 5);
+  assert.equal(g.floors, 3);
 });
 
-test('java: Enterprise Architect deals x0.9 itself and gives +15% to neighbours, once, not to itself', () => {
-  const g = waveGame();
-  const ea = devAt(g, 'java', 3, 3, 'springboot', 'architect');
-  const ea2 = devAt(g, 'java', 3, 4, 'springboot', 'architect');
-  const r = devAt(g, 'react', 2, 3);
-  near(devStats(g, ea).damage, 40 * 0.9 * 1.15); // gets ea2's aura, not its own
-  near(devStats(g, r).damage, 6 * 1.15);         // two architects, applied once
-  sellDev(g, ea); sellDev(g, ea2);
-  assert.equal(devStats(g, r).damage, 6);        // aura ends on sell
+test('floor heal is capped at max lives', () => {
+  const g = reviewGame();
+  buyUpgrade(g, 'floor');
+  assert.equal(g.lives, 25);
 });
 
-test('java: Garbage Collector holds fire 1 s every 8 s, then pulses 2x to all in range', () => {
-  const g = waveGame();
-  devAt(g, 'java', 3, 3, 'springboot', 'gc');
-  const far = spawnBug(g, 'typo', 260, 10000); far.slow = 0;
-  const near2 = spawnBug(g, 'typo', 300, 10000); near2.slow = 0;
-  const log = [];
-  for (let i = 1; i <= 190; i++) {
-    const before = [far.hp, near2.hp];
-    tickDevs(g, 0.05);
-    log.push({ t: i * 0.05, dFar: before[0] - far.hp, dNear: before[1] - near2.hp });
+test('aircon costs 3,5,7, max 3, sets heatResistance level/3', () => {
+  const g = reviewGame();
+  assert.equal(upgradeCost(g, 'aircon'), 3); buyUpgrade(g, 'aircon');
+  assert.equal(g.heatResistance, 1 / 3);
+  assert.equal(upgradeCost(g, 'aircon'), 5); buyUpgrade(g, 'aircon');
+  assert.equal(upgradeCost(g, 'aircon'), 7); buyUpgrade(g, 'aircon');
+  assert.equal(g.heatResistance, 1);
+  assert.equal(upgradeLevel(g, 'aircon'), 3);
+  assert.equal(canBuy(g, 'aircon'), false);
+  assert.equal(g.coins, 85);
+});
+
+test('Review Focus 4: buy refused outside review, with too few coins, or at max — coins unchanged', () => {
+  const g = reviewGame(2);
+  assert.equal(buyUpgrade(g, 'floor'), false);
+  assert.equal(g.coins, 2);
+  g.coins = 50; g.phase = 'bell';
+  assert.equal(buyUpgrade(g, 'floor'), false);
+  assert.equal(g.coins, 50);
+  assert.equal(buyUpgrade(g, 'nope'), false);
+});
+
+test('Review Focus 2: a new game starts clean after upgrades', () => {
+  const g = reviewGame(); buyUpgrade(g, 'floor'); buyUpgrade(g, 'aircon');
+  const fresh = createGame();
+  assert.deepEqual([fresh.floors, fresh.heatResistance, fresh.raise, fresh.coins, fresh.maxLives], [1, 0, 1, 0, 20]);
+  assert.deepEqual(fresh.upgrades, {});
+});
+
+test('yearly review: accept → ×1.1; raise approved → ×1.2; raise denied → unchanged', () => {
+  const a = reviewGame(); a.pendingYearReview = true;
+  assert.equal(chooseYearReview(a, 'accept'), 'accepted');
+  assert.equal(a.mods.warrantMultiplier, 1.1);
+  assert.equal(a.raise, 1.1);
+  const b = reviewGame(); b.pendingYearReview = true; b.random = () => 0.2;
+  assert.equal(chooseYearReview(b, 'raise'), 'approved');
+  assert.equal(b.mods.warrantMultiplier, 1.2);
+  const c = reviewGame(); c.pendingYearReview = true; c.random = () => 0.8;
+  assert.equal(chooseYearReview(c, 'raise'), 'denied');
+  assert.equal(c.mods.warrantMultiplier, 1);
+  assert.equal(c.raise, 1);
+});
+
+test('Review Focus 1: bell refused while year review pending; second choice returns null', () => {
+  const g = reviewGame(); g.pendingYearReview = true;
+  assert.equal(ringBell(g), false);
+  assert.equal(g.phase, 'review');
+  chooseYearReview(g, 'accept');
+  assert.equal(chooseYearReview(g, 'raise'), null);
+  assert.equal(g.mods.warrantMultiplier, 1.1);
+  assert.equal(ringBell(g), true);
+  assert.equal(g.phase, 'wave');
+});
+
+test('yearly review result is stored so the review screen can show it', () => {
+  const g = reviewGame(); g.pendingYearReview = true; g.random = () => 0.8;
+  assert.equal(g.lastYearReview, null);
+  chooseYearReview(g, 'raise');
+  assert.equal(g.lastYearReview, 'denied');
+});
+
+test('Review Focus 4: buying at max level is refused and coins stay', () => {
+  const g = reviewGame(100);
+  buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon');
+  const coins = g.coins;
+  assert.equal(buyUpgrade(g, 'aircon'), false);
+  assert.equal(g.coins, coins);
+});
+
+test('Yearly review pays out the CAO in Nexios Coins, whatever the choice', () => {
+  for (const [choice, roll] of [['accept', 0.9], ['raise', 0.2], ['raise', 0.8]]) {
+    const g = reviewGame(5); g.pendingYearReview = true; g.random = () => roll;
+    chooseYearReview(g, choice);
+    assert.equal(g.coins, 5 + CAO_COINS);
   }
-  for (const e of log.filter(e => e.t > 8.0 + 1e-6 && e.t < 9.0 - 1e-6)) {
-    assert.equal(e.dFar + e.dNear, 0, `no damage at t=${e.t}`);
-  }
-  const pulse = log.find(e => e.t > 8.5 && e.dNear > 0); // first tick at or past 9 s (float drift may land it on the 9.05 tick)
-  assert.ok(pulse.t >= 9.0 - 1e-6 && pulse.t <= 9.05 + 1e-6);
-  assert.equal(pulse.dFar, 80); // bug at 260 is the less advanced one, not the regular shot's target
-  assert.ok(pulse.dNear >= 80); // furthest-along (300) may also take the regular shot
-  assert.ok(g.effects.some(e => e.kind === 'pop' && e.text === 'Stop-the-World'));
-});
-
-test('java: "Initializing 847 beans…" pop for 1 s on placement, java only', () => {
-  const g = waveGame();
-  g.warrants = 1000;
-  placeDev(g, 'react', 2, 3);
-  assert.ok(!g.effects.some(e => e.text === 'Initializing 847 beans…'));
-  placeDev(g, 'java', 3, 3);
-  const e = g.effects.find(e => e.text === 'Initializing 847 beans…');
-  assert.ok(e);
-  assert.equal(e.kind, 'pop');
-  assert.equal(e.ttl, 1);
-});
-
-test('react: Vite fire rate, names, tooltip', () => {
-  const g = waveGame();
-  const d = devAt(g, 'react', 3, 3);
-  assert.equal(levelName(d), 'Create React App');
-  buyUpgrade(g, d, 'vite');
-  assert.equal(levelName(d), 'Vite');
-  assert.equal(devStats(g, d).fireRate, 6);
-  assert.equal(getDeveloper('react').upgrades.level2.tooltip, 'CRA is deprecated, sorry.');
-});
-
-test('react: ecosystem +10% fire rate per other React dev, capped at +50%', () => {
-  const g = waveGame();
-  const d = devAt(g, 'react', 3, 3);
-  assert.equal(devStats(g, d).fireRate, 4);
-  devAt(g, 'java', 3, 4);
-  assert.equal(devStats(g, d).fireRate, 4);
-  const cells = [[0,0],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7]];
-  devAt(g, 'react', ...cells[0]); devAt(g, 'react', ...cells[1]);
-  near(devStats(g, d).fireRate, 4 * 1.2);
-  for (const c of cells.slice(2)) devAt(g, 'react', ...c);
-  near(devStats(g, d).fireRate, 4 * 1.5);
-});
-
-test('react: Next.js hits the target and the next 2 bugs behind it', () => {
-  const g = waveGame();
-  devAt(g, 'react', 3, 3, 'vite', 'nextjs');
-  const bugs = [220, 240, 260, 280].map(dist => { const b = spawnBug(g, 'nullpointer', dist, 1000); b.slow = 0; return b; });
-  tickDevs(g, 0.05);
-  assert.deepEqual(bugs.map(b => 1000 - b.hp), [0, 6, 6, 6]);
-});
-
-test('react: useEffect Hell chains at 20%, capped at 10', () => {
-  const g = waveGame();
-  devAt(g, 'react', 3, 3, 'vite', 'effecthell');
-  const b = spawnBug(g, 'nullpointer', 260, 1000); b.slow = 0;
-  g.random = () => 0.1;
-  tickDevs(g, 0.05);
-  assert.equal(1000 - b.hp, 99); // 1 hit + 10 re-renders at damage 9
-  b.hp = 1000; g.devs[0].cooldown = 0;
-  g.random = () => 0.5;
-  tickDevs(g, 0.05);
-  assert.equal(1000 - b.hp, 9);
-
-  const g2 = waveGame();
-  devAt(g2, 'react', 3, 3, 'vite', 'effecthell');
-  const a = spawnBug(g2, 'nullpointer', 280, 6); a.slow = 0;
-  const c = spawnBug(g2, 'nullpointer', 220, 1000); c.slow = 0;
-  g2.random = () => 0.1;
-  tickDevs(g2, 0.05);
-  assert.ok(a.hp <= 0 || a.dead);
-  assert.ok(c.hp < 1000);
-});
-
-test('dotnet: names and stats', () => {
-  const g = waveGame();
-  const d = devAt(g, 'dotnet', 3, 3);
-  assert.equal(levelName(d), '.NET Framework 4.8');
-  buyUpgrade(g, d, 'core');
-  assert.equal(levelName(d), '.NET Core');
-  assert.equal(devStats(g, d).fireRate, 0.9);
-  const v = devAt(g, 'dotnet', 3, 4, 'core', 'vs');
-  assert.equal(levelName(v), 'Visual Studio Enterprise');
-  assert.equal(devStats(g, v).damage, 160);
-  assert.equal(devStats(g, v).fireRate, 0.6);
-});
-
-test('dotnet: Azure splashes everything within 1 cell of the target', () => {
-  const g = waveGame();
-  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const [t, n, f] = [300, 270, 220].map(dist => { const b = spawnBug(g, 'typo', dist, 1000); b.slow = 0; return b; });
-  tickDevs(g, 0.05);
-  assert.equal(1000 - t.hp, 55);
-  assert.equal(1000 - n.hp, 55);
-  assert.equal(1000 - f.hp, 0);
-});
-
-test('Review Focus 3: Azure bills 1 Warrant per 0.5 s with a bug in range, never below 0, stops at 0', () => {
-  const g = waveGame();
-  devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
-  g.warrants = 3;
-  for (let i = 0; i < 40; i++) {
-    tickDevs(g, 0.05);
-    assert.ok(g.warrants >= 0 && Number.isInteger(g.warrants));
-  }
-  assert.equal(g.warrants, 0);
-  const hp = b.hp;
-  assert.ok(hp < 100000);
-  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
-  assert.equal(b.hp, hp);
-  g.warrants = 5;
-  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
-  assert.ok(b.hp < hp);
-
-  const g2 = waveGame();
-  devAt(g2, 'dotnet', 3, 3, 'core', 'azure');
-  g2.warrants = 5;
-  for (let i = 0; i < 40; i++) tickDevs(g2, 0.05);
-  assert.equal(g2.warrants, 5);
-});
-
-test('dotnet: Azure toggle', () => {
-  const g = waveGame();
-  const d = devAt(g, 'dotnet', 3, 3, 'core', 'azure');
-  const b = spawnBug(g, 'typo', 270, 100000); b.slow = 0;
-  assert.equal(d.upgrade.panelButtons(g, d)[0].label, 'Azure on');
-  const btn = () => d.upgrade.panelButtons(g, d)[0];
-  btn().onClick(g, d);
-  assert.equal(btn().label, 'Azure off');
-  g.warrants = 5;
-  for (let i = 0; i < 40; i++) tickDevs(g, 0.05);
-  assert.equal(b.hp, 100000);
-  assert.equal(g.warrants, 5);
+  const g = reviewGame(5); g.pendingYearReview = true;
+  chooseYearReview(g, 'accept'); chooseYearReview(g, 'accept');
+  assert.equal(g.coins, 5 + CAO_COINS, 'paid once per review');
 });

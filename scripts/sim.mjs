@@ -1,7 +1,8 @@
-// Headless balance check: a bot hires, buys upgrades and plays all 10 waves per seed. Run: node scripts/sim.mjs [seed-count]
+// Headless balance check: a bot hires, buys upgrades and plays up to MAX_SPRINTS sprints per seed. Run: node scripts/sim.mjs [seed-count] [max-sprints]
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
-import { createGame, startGame, startWave, ringBell, step } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
+import { buyUpgrade as buyBuilding } from '../src/engine/upgrades.js';
 import { placeDev, nextUpgrades, upgradeStatus, buyUpgrade } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
 import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL } from '../src/engine/map.js';
@@ -10,6 +11,8 @@ import { getDeveloper } from '../src/engine/registry.js';
 await loadModules(CONTENT_URLS);
 
 const SEEDS = Math.max(1, parseInt(process.argv[2] ?? '10', 10) || 10);
+// The game is endless (sprints and quarters), so each run stops after MAX_SPRINTS sprints.
+const MAX_SPRINTS = Math.max(1, parseInt(process.argv[3] ?? '28', 10) || 28);
 
 // Small seeded PRNG so every run of a strategy is reproducible.
 function mulberry32(seed) {
@@ -82,15 +85,16 @@ function play({ order, powers, branch, bell }, seed) {
   };
   hire(); startWave(g);
   let t = 0;
-  while (!['won', 'lost'].includes(g.phase) && t < 3600) {
+  while (g.phase !== 'lost' && g.sprint < MAX_SPRINTS && t < 20000) {
     step(g, 0.05); t += 0.05;
-    if (powers && g.phase === 'wave') { for (const p of ['bart', 'jeroen', 'thomas']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
-    if (g.phase === 'bell') {
+    if (powers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
+    if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyBuilding(g, 'aircon') || buyBuilding(g, 'floor')); }
+    if (g.phase === 'bell' || g.phase === 'review') {
       if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); }
       ringBell(g);
     }
   }
-  return { won: g.phase === 'won', wave: g.wave + 1, lives: g.lives, bought };
+  return { survived: g.phase !== 'lost', sprints: g.sprint, lives: g.lives, bought };
 }
 
 // Level-3 upgrade ids for the types in an order, in content order.
@@ -100,10 +104,10 @@ function run(name, strategy) {
   const runs = [];
   for (let seed = 1; seed <= SEEDS; seed++) runs.push(play(strategy, seed));
   const avg = f => (runs.reduce((n, r) => n + f(r), 0) / runs.length).toFixed(1);
-  const wins = runs.filter(r => r.won).length;
+  const alive = runs.filter(r => r.survived).length;
   const ups = level3Ids(strategy.order).map(id => `${id} ${runs.reduce((n, r) => n + (r.bought[id] ?? 0), 0)}`).join(' ');
   const label = `${name} ${strategy.powers ? 'powers' : 'no powers'} ${strategy.bell === 'up' ? 'up-first' : 'hire-first'}`;
-  console.log(`${label.padEnd(36)} wins ${`${wins}/${SEEDS}`.padEnd(5)} wave ${avg(r => r.wave).padStart(4)}  lives ${avg(r => r.lives).padStart(4)}  ${ups}`);
+  console.log(`${label.padEnd(36)} survived ${`${alive}/${SEEDS}`.padEnd(5)} sprints ${avg(r => r.sprints).padStart(4)}  lives ${avg(r => r.lives).padStart(4)}  ${ups}`);
 }
 
 // Each strategy runs with and without powers, and with both bell orders.

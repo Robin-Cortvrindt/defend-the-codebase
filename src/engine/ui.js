@@ -1,7 +1,8 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs } from './registry.js';
-import { totalWaves, startWave, startGame, ringBell } from './game.js';
-import { sellDev, nextUpgrades, upgradeStatus, buyUpgrade, levelName, XP_GATES } from './devs.js';
+import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
+import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
+import { sellDev, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
@@ -39,11 +40,13 @@ function buildHud() {
   const hud = $('#hud');
   hud.append(
     h('img', { src: 'assets/nexios-wordmark-white.webp', alt: 'Nexios', class: 'wordmark' }),
-    stat('Warrants', refs.warrants = h('b', {}, '0')),
+    stat('Warrants', refs.warrants = h('b', {}, '0'), refs.raise = h('em', { class: 'raise' }, '')),
     stat('Production', refs.prod = h('div', { class: 'prod' })),
-    stat('Wave', refs.wave = h('b', {}, '0 / 10')),
+    stat('Coins', refs.coins = h('b', {}, '0')),
+    stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
+    stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
     h('div', { class: 'hud-spacer' }),
-    refs.speed = h('button', { class: 'btn ghost', title: 'Game speed (F)', onclick: toggleSpeed }, '1×'),
+    refs.speed = h('button', { class: 'btn ghost', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
     refs.pause = h('button', { class: 'btn ghost', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
     refs.mute = h('button', { class: 'btn ghost', title: 'Sound (M)', onclick: toggleMute }, 'Sound on'),
     refs.waveBtn = h('button', { class: 'btn primary', onclick: onWaveButton }, 'Start wave 1'),
@@ -51,8 +54,8 @@ function buildHud() {
   for (let i = 0; i < 10; i++) refs.prod.append(h('i'));
 }
 
-function stat(label, valueEl) {
-  return h('div', { class: 'stat' }, h('small', {}, label), valueEl);
+function stat(label, valueEl, extra) {
+  return h('div', { class: 'stat' }, h('small', {}, label, extra), valueEl);
 }
 
 function buildHire() {
@@ -101,18 +104,25 @@ function activatePowerup(id) {
 
 function onWaveButton() {
   const g = app.game;
-  if (g.phase === 'building') { unlockAudio(); startWave(g); }
-  else if (g.phase === 'bell') swingBell();
+  if (g.phase === 'menu') { unlockAudio(); startGame(g); }
+  else if (g.phase === 'building') { unlockAudio(); startWave(g); }
+  else if (g.phase === 'bell' || (g.phase === 'review' && !g.pendingYearReview)) swingBell();
 }
 
-function toggleSpeed() { app.view.speed = app.view.speed === 1 ? 2 : 1; }
-export function togglePause() { if (['wave', 'building', 'bell'].includes(app.game.phase)) app.view.paused = !app.view.paused; }
+// Game speeds, cycled with the speed button or F (Shift+F or right-click goes back down).
+export const SPEEDS = [1, 2, 3, 5, 10];
+function toggleSpeed(back = false) {
+  const i = SPEEDS.indexOf(app.view.speed);
+  const n = SPEEDS.length;
+  app.view.speed = SPEEDS[((i < 0 ? 0 : i) + (back ? n - 1 : 1)) % n];
+}
+export function togglePause() { if (['wave', 'building', 'bell', 'review'].includes(app.game.phase)) app.view.paused = !app.view.paused; }
 function toggleMute() { setMuted(!isMuted()); }
 export const uiActions = { toggleSpeed, togglePause, toggleMute, onWaveButton };
 
 let bellSwinging = false;
 function swingBell() {
-  if (bellSwinging || app.game.phase !== 'bell') return;
+  if (bellSwinging || !['bell', 'review'].includes(app.game.phase) || app.game.pendingYearReview) return;
   bellSwinging = true;
   unlockAudio();
   playSound('bell');
@@ -124,15 +134,21 @@ function swingBell() {
 export function updateUI() {
   const g = app.game, v = app.view;
   set(refs.warrants, 'textContent', String(Math.floor(g.warrants)));
-  const shownWave = Math.min(g.wave + 1, totalWaves());
-  set(refs.wave, 'textContent', `${shownWave} / ${totalWaves()}`);
+  const si = sprintInfo(g.sprint);
+  set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
+  set(refs.coins, 'textContent', String(g.coins));
+  set(refs.raise, 'textContent', g.raise > 1.0001 ? ` +${Math.round((g.raise - 1) * 100)}%` : '');
+  const ev = g.activeEvent && getEvent(g.activeEvent);
+  set(refs.incident, 'textContent', ev ? ev.name : 'None');
+  toggle(refs.incident, 'on', !!ev);
   const lit = Math.ceil((g.lives / g.maxLives) * 10);
   [...refs.prod.children].forEach((el, i) => { toggle(el, 'off', i >= lit); toggle(el, 'low', g.lives / g.maxLives <= 0.4); });
 
   const wb = refs.waveBtn;
-  if (g.phase === 'building') { set(wb, 'textContent', `Start wave ${g.wave + 1} →`); set(wb, 'disabled', false); }
+  if (g.phase === 'building') { set(wb, 'textContent', `Start sprint ${si.sprint} →`); set(wb, 'disabled', false); }
   else if (g.phase === 'bell') { set(wb, 'textContent', 'Ring the bell →'); set(wb, 'disabled', false); }
-  else { set(wb, 'textContent', g.phase === 'wave' ? 'Wave running' : '—'); set(wb, 'disabled', true); }
+  else if (g.phase === 'review') { set(wb, 'textContent', g.pendingYearReview ? 'Yearly review first' : `Start Q${si.quarter} →`); set(wb, 'disabled', g.pendingYearReview); }
+  else { set(wb, 'textContent', g.phase === 'wave' ? 'Sprint running' : '—'); set(wb, 'disabled', true); }
   set(refs.speed, 'textContent', `${v.speed}×`);
   set(refs.pause, 'textContent', v.paused ? 'Resume' : 'Pause');
   set(refs.mute, 'textContent', isMuted() ? 'Sound off' : 'Sound on');
@@ -158,7 +174,9 @@ export function updateUI() {
   }
 
   updateSelPanel();
-  if (g.phase !== lastPhase) { lastPhase = g.phase; showOverlay(g.phase); }
+  // On game over, let the building burn down first; the end screen follows once the collapse is done.
+  const waitForCollapse = g.phase === 'lost' && !deathAnimDone(g);
+  if (g.phase !== lastPhase && !waitForCollapse) { lastPhase = g.phase; showOverlay(g.phase); }
   toggle($('#stage'), 'paused', v.paused);
 }
 
@@ -185,7 +203,7 @@ function updateSelPanel() {
     ups.map(({ up, status }) => {
       const kind = up.kind === 'steady' ? 'Steady · ' : up.kind === 'gamble' ? 'Gamble · ' : '';
       const line = status.ok ? up.description : status.reason === 'xp' ? `Needs ${gate} XP` : `Needs ${up.cost} Warrants`;
-      const btn = h('button', { class: 'upgrade-btn', onclick: () => buyUpgrade(app.game, dev, up.id) },
+      const btn = h('button', { class: 'upgrade-btn', onclick: () => buyDevUpgrade(app.game, dev, up.id) },
         h('span', { class: 'upgrade-top' }, h('b', {}, up.name), h('span', { class: 'cost' }, String(up.cost))),
         h('small', {}, kind + line));
       btn.disabled = !status.ok;
@@ -230,7 +248,7 @@ function showOverlay(phase) {
       h('i', { class: 'dash', style: 'background:#2563EB' }),
       h('div', { class: 'eyebrow' }, 'Intent Engineering Bootcamp · Day 5'),
       h('h1', {}, 'Defend the Codebase'),
-      h('p', { class: 'lede' }, 'Bugs are crawling toward production. Hire developers next to the path, earn Warrants for every bug they squash, and ring the Nexios bell after each wave.'),
+      h('p', { class: 'lede' }, 'Bugs are crawling toward the Nexios building. Hire developers next to the path, earn Warrants for every bug they squash and ring the Nexios bell after each sprint. Every quarter ends with a review where you spend Nexios Coins on the building. How many years can you keep production up?'),
       legend,
       h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
     ));
@@ -240,20 +258,27 @@ function showOverlay(phase) {
     ov.append(h('div', { class: 'bell-card' },
       bellWrap,
       h('div', {},
-        h('div', { class: 'eyebrow' }, `Wave ${g.wave} squashed · +${20 + 5 * g.wave} bonus`),
-        h('h2', {}, `Ring the bell to start wave ${g.wave + 1}`),
+        h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${20 + 5 * g.sprint} Warrants · +1 coin`),
+        h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
         h('small', {}, 'Hiring and selling still work'),
       ),
     ));
+  } else if (phase === 'review') {
+    reviewMinimized = false;
+    renderReview(ov, g);
   } else if (phase === 'won') {
     ov.className = 'screen won';
-    ov.append(endCard('#16A34A', `${totalWaves()} of ${totalWaves()} waves`, 'Codebase defended', [
-      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Seniors'], [Math.floor(g.stats.warrantsEarned), 'Warrants earned'],
+    ov.append(endCard('#16A34A', 'All sprints done', 'Codebase defended', [
+      [g.stats.squashed, 'Bugs squashed'], [g.stats.seniors, 'Level 3 upgrades'], [Math.floor(g.stats.warrantsEarned), 'Warrants earned'],
     ], h('button', { class: 'btn primary big', onclick: () => app.restart() }, 'Play again →')));
   } else if (phase === 'lost') {
     ov.className = 'screen lost';
-    ov.append(endCard('#EA580C', `Fell on wave ${g.wave + 1}`, 'Production is down', [
-      [g.stats.squashed, 'Bugs squashed'], [g.stats.backfires, 'Claude backfires'],
+    const best = recordBest(g.sprint);
+    const si = sprintInfo(g.sprint);
+    const bi = sprintInfo(best.sprint);
+    ov.append(endCard('#EA580C', `Fell in Year ${si.year} · Q${si.quarter} · Sprint ${si.sprint}`, 'Production is down', [
+      [g.stats.squashed, 'Bugs squashed'], [g.floors, 'Floors'],
+      [best.isNew ? 'New' : `Y${bi.year} Q${bi.quarter} S${bi.sprint}`, 'Best run'],
     ], h('pre', { class: 'trace' }, '500 · NullPointerException\n  at prod.main(Legacy.java:1)\non-call: you'),
     h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →')));
   }
@@ -271,3 +296,103 @@ function endCard(accent, eyebrow, title, stats, ...extra) {
 }
 
 export function resetUI() { lastPhase = null; buildPowerups(); }
+
+// ---------- quarter review ----------
+
+// The review can shrink to a corner card so the map is free for hiring, placing and selling developers.
+let reviewMinimized = false;
+
+function renderReview(ov, g) {
+  ov.innerHTML = '';
+  const done = sprintInfo(g.sprint - 1);
+  const next = sprintInfo(g.sprint);
+  const rerender = () => renderReview(ov, g);
+  const setMin = m => { reviewMinimized = m; app.view.selected = null; if (!m) app.view.hire = null; rerender(); };
+  const ringLabel = `Ring the bell to start Q${next.quarter}${next.quarter === 1 ? ` of year ${next.year}` : ''}`;
+
+  if (reviewMinimized) {
+    ov.className = 'review-min-overlay';
+    const bell = h('div', { class: 'bell-wrap', html: BELL_SVG, onclick: swingBell, title: 'Ring the bell' });
+    ov.append(h('div', { class: `review-min${g.pendingYearReview ? ' locked' : ''}` },
+      bell,
+      h('div', {},
+        h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.coins} coins`),
+        h('h2', {}, g.pendingYearReview ? 'Yearly review still open' : ringLabel),
+        h('small', {}, 'Hire, place and sell developers on the map'),
+      ),
+      h('button', { class: 'btn ghost', onclick: () => setMin(false) }, 'Back to review'),
+    ));
+    return;
+  }
+  ov.className = 'screen review';
+  const card = h('div', { class: 'review-card' },
+    h('div', {},
+      h('div', { class: 'eyebrow' }, `Quarter review · Year ${done.year} · Q${done.quarter}`),
+      h('h1', {}, `Q${done.quarter} closed`),
+      h('div', { class: 'stats' },
+        h('div', {}, h('b', {}, String(g.quarterStats.squashed)), h('small', {}, 'Bugs squashed')),
+        h('div', {}, h('b', {}, String(g.quarterStats.leaked)), h('small', {}, 'Production lost')),
+        h('div', {}, h('b', { class: 'coins' }, String(g.coins)), h('small', {}, 'Nexios Coins')),
+      ),
+    ),
+  );
+
+  if (!g.pendingYearReview && g.lastYearReview && done.quarter === 4) {
+    const msg = {
+      accepted: ['Review accepted', 'Warrants +10% from now on', 'accepted'],
+      approved: ['Raise approved', 'Warrants +20% from now on', 'approved'],
+      denied: ['Raise denied', 'Maybe next year', 'denied'],
+    }[g.lastYearReview];
+    card.append(h('div', { class: `year-review result ${msg[2]}` },
+      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year}`),
+      h('b', { class: 'result-title' }, msg[0]), h('small', {}, ` — ${msg[1]}`),
+      h('div', { class: 'cao' }, h('b', { class: 'coins' }, `+${CAO_COINS} Nexios Coins`), h('small', {}, ' — CAO paid out, spend it on the building below')),
+    ));
+  }
+
+  if (g.pendingYearReview) {
+    const choose = choice => { chooseYearReview(g, choice); playSound(choice === 'raise' ? 'claude' : 'powerup'); rerender(); };
+    card.append(h('div', { class: 'year-review' },
+      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year} · CAO +${CAO_COINS} Nexios Coins either way`),
+      h('div', { class: 'choices' },
+        h('button', { class: 'choice', onclick: () => choose('accept') }, h('b', {}, 'Accept the review'), h('small', {}, '+10% Warrants, guaranteed')),
+        h('button', { class: 'choice gamble', onclick: () => choose('raise') }, h('b', {}, 'Ask for a raise'), h('small', {}, '50% chance of +20%, otherwise nothing')),
+      ),
+    ));
+  }
+
+  const shop = h('div', { class: 'shop' }, h('div', { class: 'eyebrow' }, 'Upgrade the Nexios building'));
+  for (const def of getUpgrades()) {
+    const level = upgradeLevel(g, def.id);
+    const max = def.maxLevel ?? Infinity;
+    const maxed = level >= max;
+    const cost = upgradeCost(g, def.id);
+    const btnProps = { class: 'btn primary', onclick: () => { if (buyUpgrade(g, def.id)) { playSound('levelup'); rerender(); } } };
+    if (!canBuy(g, def.id)) btnProps.disabled = '';
+    shop.append(h('div', { class: 'shop-row' },
+      h('div', {}, h('b', {}, def.name), h('small', {}, `${def.description} · ${Number.isFinite(max) ? `level ${level} / ${max}` : `level ${level}`}`)),
+      h('button', btnProps, maxed ? 'Max' : `Buy · ${cost}`),
+    ));
+  }
+  card.append(shop);
+
+  const bellWrap = h('div', { class: 'bell-wrap', html: BELL_SVG, onclick: swingBell, title: 'Ring the bell' });
+  card.append(h('div', { class: `review-foot${g.pendingYearReview ? ' locked' : ''}` },
+    bellWrap,
+    h('div', {},
+      h('h2', {}, g.pendingYearReview ? 'Finish the yearly review first' : ringLabel),
+      h('small', {}, 'Sprints get harder every quarter'),
+    ),
+    h('button', { class: 'btn ghost hire-from-review', onclick: () => setMin(true) }, 'Hire developers →'),
+  ));
+  ov.append(card);
+}
+
+// Best run (furthest sprint) is kept in this browser only.
+function recordBest(sprint) {
+  let best = -1;
+  try { best = Number(localStorage.getItem('dtc-best') ?? -1); } catch { /* storage unavailable */ }
+  const isNew = sprint > best;
+  if (isNew) { try { localStorage.setItem('dtc-best', String(sprint)); } catch { /* ignore */ } }
+  return { sprint: Math.max(sprint, best), isNew };
+}

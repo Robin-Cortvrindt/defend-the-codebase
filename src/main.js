@@ -9,12 +9,15 @@ import { render } from './engine/render.js';
 import { initUI, updateUI, resetUI } from './engine/ui.js';
 import { initInput } from './engine/input.js';
 import { playSound } from './engine/sound.js';
+import { startMusic } from './engine/music.js';
 
 // If the manifest itself is broken (a typo in the one shared file), still load the core game.
 const CORE = [
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
-  'powerups/thomas.js', 'powerups/jeroen.js', 'powerups/bart.js', 'powerups/claude.js',
+  'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',
+  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js',
+  'upgrades/floor.js', 'upgrades/aircon.js', 'upgrades/heating.js', 'upgrades/coffee.js', 'upgrades/fridge.js', 'upgrades/generator.js',
 ].map(p => new URL(`./content/${p}`, import.meta.url).href);
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);
@@ -22,7 +25,7 @@ if (failed.length) console.warn(`[main] ${failed.length} content file(s) failed 
 
 const app = {
   game: createGame(),
-  view: { hire: null, selected: null, hover: null, paused: false, speed: 1 },
+  view: { hire: null, selected: null, hover: null, cursor: null, paused: false, speed: 1 },
   restart() {
     this.game = createGame();
     Object.assign(this.view, { hire: null, selected: null, paused: false });
@@ -53,6 +56,7 @@ on('dev:levelup', ({ game, dev, upgrade }) => {
 on('claude:backfire', () => playSound('backfire'));
 on('game:won', () => playSound('won'));
 on('game:lost', () => playSound('lost'));
+startMusic(() => app.game); // background loop; silent until the first click unlocks audio
 
 // ----- canvas -----
 const canvas = document.getElementById('game');
@@ -100,7 +104,9 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (!app.view.paused) {
-    guarded('step', () => { for (let i = 0; i < app.view.speed; i++) step(app.game, dt); });
+    // the game-over collapse always plays at normal speed
+    const steps = app.game.phase === 'lost' ? 1 : app.view.speed;
+    guarded('step', () => { for (let i = 0; i < steps; i++) step(app.game, dt); });
   }
   guarded('render', () => {
     ctx.save();

@@ -30,7 +30,7 @@ registerFeature({
 
 /* ---- Other things you can register (each in its own file) ----
 
-import { registerPowerup, registerDeveloper, registerBug } from '../../engine/registry.js';
+import { registerPowerup, registerDeveloper, registerBug, registerEvent } from '../../engine/registry.js';
 
 registerPowerup({
   id: 'freeze', name: 'Code freeze', description: 'Bugs move 50% slower',
@@ -52,4 +52,9 @@ registerBug({
   onDeath(bug, game) { if (game.random() < 0.5) spawnBug(game, 'flaky', bug.distance); }, // import spawnBug from game.js
 });
 // A new bug only appears if a wave spawns it: add it to a group in src/content/waves.js.
+
+registerEvent({ // random event, rolled at wave start (put it in src/content/events/)
+  id: 'wifi-down', name: 'The wifi is down', description: 'Developers have 30% less range',
+  start(game) { game.mods.rangeMultiplier *= 0.7; }, end(game) { game.mods.rangeMultiplier /= 0.7; },
+});
 */

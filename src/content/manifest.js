@@ -9,14 +9,29 @@ export const CONTENT = [
   './bugs/typo.js',
   './bugs/nullpointer.js',
   './bugs/legacy.js',
+  './bugs/security-risk.js', // boss at the end of every sprint
   // Waves
   './waves.js',
   // Power-ups
-  './powerups/thomas.js',
-  './powerups/jeroen.js',
-  './powerups/bart.js',
+  './powerups/training-manager.js',
+  './powerups/business-manager.js',
+  './powerups/ceo.js',
   './powerups/claude.js',
+  // Random events (one may hit at the start of a wave)
+  './events/prod-down.js',
+  './events/heating-out.js',
+  './events/no-coffee.js',
+  './events/no-redbull.js',
+  './events/heat-wave.js',
+  // Building upgrades (quarter review shop)
+  './upgrades/floor.js',
+  './upgrades/aircon.js',
+  './upgrades/heating.js',
+  './upgrades/coffee.js',
+  './upgrades/fridge.js',
+  './upgrades/generator.js',
   // Features (teammates' add-ons, Nexios references, ...)
+  './features/mailbox.js',
 ];
 
 export const CONTENT_URLS = CONTENT.map(p => new URL(p, import.meta.url).href);

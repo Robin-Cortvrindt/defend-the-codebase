@@ -204,3 +204,12 @@ test('Review Focus 5: throwing hooks are logged and the game keeps stepping', ()
     assert.ok(devStats(g, d).damage > 0);
   } finally { console.error = orig; }
 });
+
+test('devFireRate scales only the named developer type', () => {
+  R.registerDeveloper({ id: 'j', cost: 50, damage: 6, fireRate: 2, range: 2.2, counters: 'small' });
+  const g = createGame();
+  const r = { type: 'r', level: 0 }, j = { type: 'j', level: 0 };
+  g.mods.devFireRate = { j: 0.5 };
+  assert.equal(devStats(g, j).fireRate, 1);
+  assert.equal(devStats(g, r).fireRate, 4);
+});

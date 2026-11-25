@@ -89,7 +89,7 @@ export function devStats(game, dev) {
   return {
     ...stats,
     damage: stats.damage * game.mods.damageMultiplier,
-    fireRate: stats.fireRate * game.mods.fireRateMultiplier,
+    fireRate: stats.fireRate * game.mods.fireRateMultiplier * (game.mods.devFireRate?.[dev.type] ?? 1),
     range: stats.range * CELL * game.mods.rangeMultiplier,
   };
 }

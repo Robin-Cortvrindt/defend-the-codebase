@@ -18,15 +18,17 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 | Call | Shape |
 |---|---|
-| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Upgrades) |
-| `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, onHit?, onDeath?, update? }` |
+| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
+| `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?, drawIcon?(ctx, radius) }` |
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), activate(game), deactivate?(game) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
-| `registerWaves` | `[{ hp /*health multiplier*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
+| `registerEvent` | `{ id, name, description, accent?, weight? /*default 1*/, minWave? /*default 2*/, start(game), end(game), draw?(ctx, game, view) }`: a random event. Each wave from wave 2 has a 25% chance to start one; it lasts until the wave ends. `view.cursor` is the mouse position or `null` (`src/content/events/`) |
+| `registerUpgrade` | `{ id, name, description, maxLevel?, getCost(game, level), apply(game, level) }` — appears in the quarter-review shop |
+| `registerWaves` | `[{ hp /*health multiplier*/, boss? /*bug id, spawns 3 s after the last bug*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
 
-## Upgrades
+## Developer upgrades
 
-Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in Warrants.
+These are the developers' own upgrades, bought with Warrants. (Building upgrades in the quarter-review shop are separate: see `registerUpgrade`.) Each developer declares its own upgrade path in its file: one level-2 upgrade, then a choice between two level-3 branches. 10 XP unlocks level 2 and 30 XP unlocks level 3. The player still pays the upgrade's cost in Warrants.
 
 In code, `dev.level` is 0-based: 0 for level 1, 1 after the level-2 upgrade, 2 after level 3.
 
@@ -81,13 +83,13 @@ Check a change with `node scripts/sim.mjs`: the `{type} A` and `{type} B` lines 
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `game:won` · `game:lost`
+`game:start` · `sprint:start` · `sprint:cleared` · `quarter:review` · `year:review` · `upgrade:bought` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:upgradeready` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost`
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`. `dev:upgradeready` gives `{ game, dev, level }` when XP unlocks the next upgrade. `dev:levelup` fires when an upgrade is bought and gives `{ game, dev, level, upgrade }`. In both, `level` is 0-based like `dev.level`: 1 for the level-2 upgrade, 2 for level 3.
 
 ## Changing the rules: `game.mods`
 
-`xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier`
+`xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier` · `timeScale` (whole simulation speed) · `devFireRate` (object keyed by developer id, e.g. `devFireRate.java`; a missing key counts as 1)
 
 Multiply when your effect starts and divide when it ends, so effects stack.
 
@@ -113,3 +115,20 @@ Use the Nexios palette: navy `#001E32`, blue `#2563EB` (React), orange `#EA580C`
 - Pushing to `main` deploys the live site within about a minute: https://robin-cortvrindt.github.io/defend-the-codebase/
 - **Freeze at 15:30.** After that, only push fixes.
 - Something that worked broke? Log it in `REGRET.md`.
+
+## Sprints, quarters and the building
+
+- `game.sprint` is the 0-based global sprint index (`game.wave` is an alias). `sprintInfo(n)` from `src/engine/game.js` gives `{ year, quarter, sprint, label }`.
+- Hand-made sprints come from `waves.js`; after those, `getSprintDef(n)` generates harder ones forever.
+- `game.coins`, `game.floors`, `game.heatResistance` (0..1, from air conditioning) and `game.raise` (total yearly-review multiplier) are plain fields on the game.
+
+## Counter-upgrades for events
+
+Every random event has an upgrade that counters it. For a new event, add one with:
+
+```js
+import { counterUpgrade } from '../../engine/upgrades.js';
+registerUpgrade(counterUpgrade({ id: 'my-fix', name: 'My fix', description: 'Counters: my event', counters: 'my-event' }));
+```
+
+In the event, scale the effect with `resistanceTo(game, 'my-event')` (0 = full effect, 1 = none). To show it on the building, add a drawing in `src/engine/building.js`.

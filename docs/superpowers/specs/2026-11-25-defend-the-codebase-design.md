@@ -38,7 +38,7 @@ The judging prizes are: most features (counted live), most fun (audience vote), 
 - ES modules don't load from `file://`, so local testing needs a static server, e.g. `python -m http.server`.
 - `REGRET.md` at the repo root, kept up to date: each time something that worked breaks, log what broke and why.
 - Nothing secret in the repo, since the page is public.
-- Thomas, Jeroen and Bart are real colleagues. The team gets their consent before demoing (this is in the brief).
+- Power-ups are named after roles (Training manager, Business manager, CEO), not real colleagues, so no consent is needed.
 
 ## 4. The game
 
@@ -91,9 +91,9 @@ Power-ups are buttons in a bar below the map. Each shows ready, active (with tim
 
 | Power-up | Effect | Duration | Cooldown |
 |---|---|---|---|
-| **Thomas** | Developers gain ×2 XP | 15 s | 45 s |
-| **Jeroen** | Warrants from kills ×2 | 15 s | 45 s |
-| **Bart** | All developers attack 50% faster | 10 s | 40 s |
+| **Training manager** | Developers gain ×2 XP | 15 s | 45 s |
+| **Business manager** | Warrants from kills ×2 | 15 s | 45 s |
+| **CEO** | All developers attack 50% faster | 10 s | 40 s |
 | **Claude** | Squash every bug on the map right away, for Warrants | instant | none, but the price rises |
 
 **Claude details:** it starts at 150 Warrants and the price is ×1.5 after each use, rounded. There's a fixed **25% chance to backfire**. On a backfire, every bug currently on the map is copied, so the bug count doubles, and the player still pays. On success, every bug on the map dies and pays out normally. The button is disabled when you can't afford it. A banner says what happened ("Claude · backfire — Hallucinated a fix — bug count doubled").
@@ -140,7 +140,7 @@ src/
   engine/events.js    tiny event bus: on(name, fn), emit(name, data)
   content/developers/ react.js, java.js, dotnet.js
   content/bugs/       typo.js, nullpointer.js, legacy.js
-  content/powerups/   thomas.js, jeroen.js, bart.js, claude.js
+  content/powerups/   training-manager.js, business-manager.js, ceo.js, claude.js
   content/waves.js
   content/features/   empty at first; teammates' add-ons (e.g. Nexios references) go here
 ```
@@ -166,7 +166,7 @@ src/
 1. **Contract first:** the registry, event bus, modifiers, guarded loader and one stub file of each kind. Push it, so teammates can start right away.
 2. Core loop: map, path, spawner, the three bugs, the three developers, placing developers, combat, Warrants, lives.
 3. The bell, the 10 waves, and the win and lose screens.
-4. Levelling, selling, and the power-ups (Thomas, Jeroen, Bart, then Claude).
+4. Levelling, selling, and the power-ups (Training manager, Business manager, CEO, then Claude).
 5. Start screen, placeholder sounds, polish.
 
 If time runs short, cut from the bottom of this list. Steps 1–3 alone are a playable demo.
@@ -179,3 +179,59 @@ If time runs short, cut from the bottom of this list. Steps 1–3 alone are a pl
 - How the canvas scales to the window and handles high-DPI screens.
 - Placeholder sound sources (generated or free, e.g. kenney.nl).
 - Internal engine module boundaries, as long as the registry, events and modifiers contract in §6 holds.
+
+---
+
+## 9. Update (approved 2026-11-25): sprints, quarters, the Nexios building, reviews
+
+This section replaces the parts of §4 it contradicts. Waves become **sprints**, the game becomes **endless**, and the PROD box becomes the **Nexios building**.
+
+### Sprints and quarters
+- A wave is now called a **sprint**. Every **quarter** has **7 sprints** and every **year** has **4 quarters**. There's no last sprint: you play until production goes down.
+- The HUD shows `Year Y · QN · Sprint S / 7`. Sprints are numbered globally inside the engine (`game.sprint`, starting at 0) and turned into year, quarter and sprint for display.
+- Difficulty never caps. The first 10 hand-made sprints come from `waves.js`. After that, sprints are generated from the last hand-made one, with more bugs and more health each sprint.
+- **The run ends** on the lost screen, which shows how far you got ("Fell in Year 1 · Q3 · Sprint 5") and your best run, saved in `localStorage` with a try/catch around it.
+- The old win screen is no longer reachable. The `game:won` event stays in the event list for compatibility but is never emitted.
+
+### Nexios Coins
+- This is a second currency, `game.coins`, which starts at 0.
+- Finishing a sprint pays **1 coin**. Finishing a quarter pays **3 more**.
+
+### Quarter review (after sprint 7 of every quarter)
+- It replaces the plain bell screen for that sprint. It shows the quarter's stats (bugs squashed and lives lost this quarter) and the **building shop**, then the bell to start the next quarter.
+- **Building upgrades** are registered content, using the same pattern as power-ups:
+  - **Add a floor:** +5 maximum production and heals 5. Costs `3 + floors bought` coins (3, 4, 5…). The building is drawn one storey taller for each floor.
+  - **Air conditioning:** levels 1 to 3, costing 3, 5 and 7 coins. Each level takes away a third of the heat-wave slowdown. A roof unit is drawn, getting bigger with the level.
+
+### Heat waves (designed by the random-events work, not here)
+- The heat wave is one of the random events, designed and built in a separate piece of work (`docs/superpowers/specs/2026-11-25-random-events-design.md`).
+- **The only interface:** air conditioning sets `game.heatResistance` (0, 1/3, 2/3, 1 for levels 0–3), and the heat wave scales its effect by `1 - heatResistance`.
+
+### Yearly review (after every Q4)
+- It comes straight after that year's quarter review, as a choice between two cards:
+  - **Accept the review:** a permanent +10% on Warrant income (`warrantMultiplier ×1.1`).
+  - **Ask for a raise:** a 50% chance of +20% (`×1.2`). If it fails, nothing changes.
+- The result appears as a banner ("Raise approved" or "Raise denied — maybe next year"). The total bonus is shown in the HUD.
+
+### The Nexios building
+- It replaces the PROD box at the end of the path, in the same place. It's drawn as a small office with a "NEXIOS" sign, its floors stack upward, and the air-conditioning unit sits on the roof. Its health bar shows production (`game.lives / game.maxLives`).
+
+### Extension points (added)
+- `registerUpgrade({ id, name, description, maxLevel?, getCost(game), apply(game), draw? })`. Upgrades appear in the quarter-review shop.
+- New events: `sprint:start`, `sprint:cleared`, `quarter:review`, `year:review`, `upgrade:bought`.
+- `wave:start` and `wave:cleared` are still emitted as aliases, so existing features keep working.
+
+## 10. Update (approved 2026-11-25): one counter-upgrade per random event
+
+| Event | Counter-upgrade (id) | Effect | On the building |
+|---|---|---|---|
+| Heat wave | Air conditioning (`aircon`) | speed-up −⅓ per level | white roof unit, one fan per level, cool-air wisps |
+| The heating is out (developers only) | Server heat recovery (`heating`) | developer slowdown 50% → 33% → 17% → 0% | orange radiator strips under the windows (more floors per level), blinking server-room lights |
+| Out of coffee | Coffee bar (`coffee`) | Java slowdown shrinks the same way | round café sign with a steaming cup on the left wall, bigger per level, glow at level 3 |
+| Out of Red Bull | Energy drink fridge (`fridge`) | .NET slowdown shrinks the same way | glowing fuchsia fridge window, one per level |
+| PROD is down | Backup generator (`generator`) | flashlight radius +40% per level; level 3 keeps the lights on | generator box at the foot (bigger per level) and one roof light per level |
+
+- Each counter-upgrade has 3 levels for 3, 5 and 7 coins. It sets `game.resistance['<event id>'] = level / 3`. Events read it with `resistanceTo(game, id)` from `src/engine/upgrades.js` and scale their effect by it. Air conditioning also keeps `game.heatResistance`.
+- New counter-upgrades: `counterUpgrade({ id, name, description, counters })` from `src/engine/upgrades.js`.
+- The building drawing lives in `src/engine/building.js` (`drawBuilding(ctx, { floors, lives, maxLives, time, levels })`).
+- There's no chimney, because Nexios is an IT company.
