@@ -1,6 +1,6 @@
 // The Nexios building: your base at the end of the path. Pure canvas drawing, no game logic.
 // Every building upgrade shows up here. `b` describes what to draw:
-// { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator, water } }
+// { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator, water, trap } }
 
 const C = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', glass: '#1E4A6A',
@@ -126,6 +126,8 @@ export function drawBuilding(ctx, b) {
   if (L.generator) drawGenerator(ctx, x + w - 2, ground, L.generator, t);
   // water cooler against the wall below the door
   if (L.water) drawWaterCooler(ctx, x + 1, ground - 6, L.water, t);
+  // goblin trap on the ground in front of the building, between the cooler and the generator
+  if (L.trap) drawTrap(ctx, x + w / 2 - 2, ground - 6, L.trap, t);
 
   // outline
   ctx.strokeStyle = C.s200; ctx.lineWidth = 1;
@@ -259,6 +261,29 @@ function drawGenerator(ctx, rightX, groundY, level, t) {
   for (let k = 0; k < level; k++) {
     ctx.fillStyle = Math.sin(t * 5 + k) > -0.6 ? C.greenL : C.green;
     ctx.fillRect(gx + gw - 4, gy + 4 + k * 3, 2, 2);
+  }
+}
+
+// A spring trap baited with a coffee: wider with more teeth per level, a swinging cage over it at level 3.
+function drawTrap(ctx, cx, floorY, level, t) {
+  const w = 6 + level * 2;
+  ctx.fillStyle = C.s500; ctx.fillRect(cx - w / 2, floorY - 1.2, w, 1.2);                   // base plate
+  ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.arc(cx, floorY - 1.2, w / 2, Math.PI, 2 * Math.PI); ctx.stroke();    // open jaws
+  ctx.fillStyle = C.s200;
+  const teeth = 2 + level;
+  for (let k = 0; k < teeth; k++) {
+    const tx = cx - w / 2 + ((k + 0.5) * w) / teeth;
+    ctx.beginPath(); ctx.moveTo(tx - 0.6, floorY - 1.2); ctx.lineTo(tx, floorY - 2.6); ctx.lineTo(tx + 0.6, floorY - 1.2); ctx.fill();
+  }
+  ctx.fillStyle = '#7C4A1E'; ctx.beginPath(); ctx.arc(cx, floorY - 2.4, 1.3, 0, Math.PI * 2); ctx.fill();   // bait
+  if (level >= 3) {
+    const sway = Math.sin(t * 2) * 0.4, top = floorY - 13;
+    ctx.strokeStyle = C.s400; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + sway, top - 3); ctx.lineTo(cx + sway, top); ctx.stroke();
+    ctx.strokeStyle = '#CBD5E1';
+    ctx.strokeRect(cx - 4 + sway, top, 8, 6);
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(cx - 4 + k * 2 + sway, top); ctx.lineTo(cx - 4 + k * 2 + sway, top + 6); ctx.stroke(); }
   }
 }
 
