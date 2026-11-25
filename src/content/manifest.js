@@ -16,6 +16,7 @@ export const CONTENT = [
   './bugs/merge-conflict.js', // splits in two when squashed
   './bugs/memory-leak.js',    // grows the longer it lives
   './bugs/security-risk.js', // boss at the end of every sprint
+  './bugs/trojan-horse.js',  // summoned at the bell; explodes into loot
   // Waves
   './waves.js',
   // Power-ups

@@ -29,12 +29,17 @@ export function dropDrinks(game, bug, def) {
   for (const p of picks) {
     const x = bug.x + (game.random() * 2 - 1) * JITTER;
     const y = bug.y + (game.random() * 2 - 1) * JITTER;
-    const drop = { id: game.nextId++, x, y, drink: p.drink, amount: p.amount, ttl: DROP_TTL };
-    game.drops.push(drop);
-    drops.push(drop);
-    emit('drop:spawned', { game, drop });
+    drops.push(placeDrop(game, { x, y, drink: p.drink, amount: p.amount }));
   }
   return drops;
+}
+
+// Puts one drop on the board at an exact spot (content uses this for loot it scatters itself).
+export function placeDrop(game, { x, y, drink, amount, ttl = DROP_TTL }) {
+  const drop = { id: game.nextId++, x, y, drink, amount, ttl };
+  game.drops.push(drop);
+  emit('drop:spawned', { game, drop });
+  return drop;
 }
 
 export function tickDrops(game, dt) {
