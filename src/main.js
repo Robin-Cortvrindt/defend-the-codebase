@@ -29,12 +29,18 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 const app = {
   game: createGame(),
   view: { hire: null, selected: null, hover: null, cursor: null, paused: false, speed: 1 },
+  lastRun: null, // { sprint, capital, quit } for the main menu's "Last run" tile
   restart() {
+    this.toMenu();
+    startGame(this.game);
+  },
+  // A fresh game waiting on the main menu.
+  toMenu(lastRun = null) {
     this.game = createGame();
+    this.lastRun = lastRun;
     Object.assign(this.view, { hire: null, selected: null, paused: false });
     initFeatures();
     resetUI();
-    startGame(this.game);
   },
 };
 window.game = app; // handy in the browser console while developing

@@ -3,7 +3,7 @@ import { getDevelopers } from './registry.js';
 import { WIDTH, HEIGHT, cellAt } from './map.js';
 import { placeDev, devAt } from './devs.js';
 import { playSound } from './sound.js';
-import { selectHire, uiActions } from './ui.js';
+import { selectHire, uiActions, isQuitOpen, closeQuit } from './ui.js';
 
 export function initInput(canvas, app) {
   const toLogical = ev => {
@@ -44,6 +44,8 @@ export function initInput(canvas, app) {
 
   window.addEventListener('keydown', ev => {
     if (ev.target instanceof HTMLInputElement) return;
+    // While the quit box is open only Esc counts (it closes the box); buttons inside it still get Space/Enter.
+    if (isQuitOpen()) { if (ev.key === 'Escape') closeQuit(); return; }
     const devs = getDevelopers();
     const n = Number(ev.key);
     if (n >= 1 && n <= devs.length) selectHire(devs[n - 1].id);
