@@ -27,16 +27,22 @@ export function spendDrink(game, id, amount) {
   return true;
 }
 
+// The one place the ceil-split lives: what each drink gets (or loses) of a total.
+export function eachShare(total) {
+  const n = getDrinks().length;
+  return n ? Math.ceil(total / n) : 0;
+}
+
 export function addEachDrink(game, total) {
   const all = ids();
-  const each = Math.ceil(total / all.length);
+  const each = eachShare(total);
   for (const id of all) addDrink(game, id, each);
   return each;
 }
 
 export function takeEachDrink(game, total) {
   const all = ids();
-  const each = Math.ceil(total / all.length);
+  const each = eachShare(total);
   for (const id of all) game.drinks[id] = Math.max(0, (game.drinks[id] ?? 0) - each);
   return each;
 }

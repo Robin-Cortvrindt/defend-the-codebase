@@ -1,11 +1,12 @@
 // Mailbox: new mail pops up as an offer for a few seconds; click it to accept the task into the
-// Tasks section of the side panel. Finish a task and press Claim for Warrants or, rarely, a free
+// Tasks section of the side panel. Finish a task and press Claim for drinks or, rarely, a free
 // Claude. About 1 in 6 mails is phishing: it looks exactly like a real one until you claim it.
 // Specs: docs/superpowers/specs/2026-11-25-mailbox-design.md and 2026-11-25-side-panel-design.md
 //
 // To add a task: add one line to TEMPLATES below.
 import { registerFeature, getPowerup, getBugs, getDeveloper } from '../../engine/registry.js';
-import { addWarrants, addEffect, spawnBug } from '../../engine/game.js';
+import { addEffect, spawnBug } from '../../engine/game.js';
+import { addEachDrink, takeEachDrink, eachShare } from '../../engine/drinks.js';
 import { on, emit } from '../../engine/events.js';
 import { WIDTH, HEIGHT } from '../../engine/map.js';
 import { registerSound, playSound } from '../../engine/sound.js';
@@ -15,7 +16,7 @@ export const FIRST_MAIL_DELAY = 5;     // seconds after the game starts
 export const MAIL_INTERVAL = 30;       // seconds of (scaled) game time between mails
 export const PHISH_CHANCE = 1 / 6;
 export const CLAUDE_REWARD_CHANCE = 1 / 8;
-export const CLAUDE_STEAL = 100;       // Warrants a phished "free Claude" mail takes
+export const CLAUDE_STEAL = 100;       // total drinks a phished "free Claude" mail takes
 export const LOCK_SECONDS = 10;        // how long a compromised developer is locked out
 const FLASH_SECONDS = 0.4;
 const RED = '#DC2626';
@@ -127,8 +128,8 @@ export function trackMail(game, eventName, data) {
 
 function payReward(game, mail) {
   if (mail.reward.kind === 'claude') game.mailbox.vouchers++;
-  else addWarrants(game, mail.reward.amount);
-  const what = mail.reward.kind === 'claude' ? 'free Claude' : `+${mail.reward.amount} Warrants`;
+  else addEachDrink(game, mail.reward.amount);
+  const what = mail.reward.kind === 'claude' ? 'free Claude' : `+${eachShare(mail.reward.amount)} of each drink`;
   addEffect(game, { kind: 'banner', title: 'Reward claimed', text: `${mail.from}: ${what}`, accent: '#16A34A', ttl: 2.5 });
 }
 
@@ -157,9 +158,8 @@ function spawnMalware(game, count) {
 }
 
 function steal(game, mail) {
-  const n = stealAmount(mail);
-  game.warrants = Math.max(0, game.warrants - n);
-  phished(game, `That wasn't ${mail.from}. ${n} Warrants gone.`);
+  const each = takeEachDrink(game, stealAmount(mail));
+  phished(game, `That wasn't ${mail.from}. ${each} of each drink gone.`);
   return 'stolen';
 }
 
@@ -278,7 +278,7 @@ function el(tag, cls, text) {
   if (text != null) e.textContent = text;
   return e;
 }
-const rewardText = mail => (mail.reward.kind === 'claude' ? 'Free Claude' : `+${mail.reward.amount} W`);
+const rewardText = mail => (mail.reward.kind === 'claude' ? 'Free Claude' : `+${eachShare(mail.reward.amount)} each`);
 const blurFocus = () => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
 
 function setupTasks(game) {

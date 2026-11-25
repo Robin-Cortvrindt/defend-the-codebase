@@ -1,12 +1,12 @@
 // Game state and the simulation step. No DOM in here, so it can be tested in Node.
-import { getBug, getWaves, getFeatures, getDrinks } from './registry.js';
+import { getBug, getWaves, getFeatures } from './registry.js';
 import { emit } from './events.js';
 import { pointAt, PATH_LENGTH } from './map.js';
 import { tickDevs } from './devs.js';
 import { tickPowerups } from './powerups.js';
 import { rollEvent, endEvent } from './random-events.js';
 import { applyInvestments } from './investments.js';
-import { startingDrinks, addEachDrink } from './drinks.js';
+import { startingDrinks, addEachDrink, eachShare } from './drinks.js';
 import { payKill } from './drops.js';
 
 export const START_WARRANTS = 100;
@@ -136,13 +136,9 @@ export function spawnBug(game, bugId, distance = 0, hp) {
   return bug;
 }
 
-export function addWarrants(game, amount) {
-  game.warrants += amount;
-}
-
 // Sprint bonus for the sprint with this 0-based index, and the share each drink gets.
 export const sprintBonus = sprint => 20 + 5 * (sprint + 1);
-export const sprintBonusEach = sprint => Math.ceil(sprintBonus(sprint) / (getDrinks().length || 1));
+export const sprintBonusEach = sprint => eachShare(sprintBonus(sprint));
 
 export function killBug(game, bug, dev = null) {
   if (bug.dead) return;

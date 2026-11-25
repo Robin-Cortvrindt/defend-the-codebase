@@ -2,6 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
+import { registerTestDrinks } from './helpers/drinks.js';
 import { createGame, startGame } from '../src/engine/game.js';
 import mailbox, {
   createMailbox, makeOffer, acceptOffer, tickOffer, missOffer, canClaim, tickMailbox, attachListeners,
@@ -11,7 +12,7 @@ import mailbox, {
 let g;
 
 beforeEach(() => {
-  R.resetRegistry(); clearAll(); attachListeners();
+  R.resetRegistry(); clearAll(); registerTestDrinks(); attachListeners();
   R.registerBug({ id: 'typo', hp: 10, speed: 100, livesLost: 1, reward: 1, radius: 5 });
   R.registerWaves([
     { groups: [{ bug: 'typo', count: 1, interval: 1, delay: 0 }] },
@@ -262,12 +263,14 @@ test('claim before done returns null', () => {
   assert.equal(g.mailbox.mails.length, 1);
 });
 
-test('claim pays Warrants and removes the mail', () => {
+test('claim pays each drink and removes the mail', () => {
   const m = give('hire-dotnet');
   m.progress = m.target;
   const w = g.warrants;
   assert.equal(claimMail(g, m.id), 'reward');
-  assert.equal(g.warrants, w + 60);
+  assert.deepEqual(g.drinks, { coffee: 70, monster: 70, redbull: 70 });
+  assert.equal(g.warrants, w);
+  assert.ok(g.effects.some(e => e.kind === 'banner' && e.text.includes('+20 of each drink')));
   assert.equal(g.mailbox.mails.length, 0);
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.title === 'Reward claimed'));
 });
@@ -276,9 +279,9 @@ test('second claim of the same mail returns null', () => {
   const m = give('hire-dotnet');
   m.progress = m.target;
   claimMail(g, m.id);
-  const w = g.warrants;
+  const before = { ...g.drinks };
   assert.equal(claimMail(g, m.id), null);
-  assert.equal(g.warrants, w);
+  assert.deepEqual(g.drinks, before);
 });
 
 test('survive-sprints completes after 2 sprint:cleared, including one that leads into a quarter review', () => {
@@ -361,24 +364,20 @@ test('constants for penalties match the spec', () => {
   assert.equal(CLAUDE_STEAL, 100);
 });
 
-test('stolen subtracts the reward and floors at 0', () => {
-  let m = phish('stolen');
-  g.warrants = 100;
+test('stolen takes the reward split across drinks and floors each at 0', () => {
+  const m = phish('stolen');
+  g.drinks = { coffee: 50, monster: 50, redbull: 5 };
   assert.equal(claimMail(g, m.id), 'stolen');
-  assert.equal(g.warrants, 40);
-  m = phish('stolen');
-  g.warrants = 10;
-  claimMail(g, m.id);
-  assert.equal(g.warrants, 0);
+  assert.deepEqual(g.drinks, { coffee: 30, monster: 30, redbull: 0 });
+  assert.ok(banners().some(b => b.text.includes('20 of each drink gone')));
 });
 
-test('stolen claude mail costs 100', () => {
+test('stolen claude mail takes 34 of each drink', () => {
   stubClaude(); mailbox.init(g);
   const m = phish('stolen', { claude: true });
   assert.equal(stealAmount(m), 100);
-  g.warrants = 250;
   claimMail(g, m.id);
-  assert.equal(g.warrants, 150);
+  assert.deepEqual(g.drinks, { coffee: 16, monster: 16, redbull: 16 });
 });
 
 test('malware spawns min(8, 3 + floor(sprint/3)) non-boss bugs during a sprint', () => {
@@ -419,9 +418,8 @@ test('compromised locks one developer for 10 s', () => {
 
 test('compromised falls back to stolen with no developers', () => {
   const m = phish('compromised');
-  g.warrants = 100;
   assert.equal(claimMail(g, m.id), 'stolen');
-  assert.equal(g.warrants, 40);
+  assert.deepEqual(g.drinks, { coffee: 30, monster: 30, redbull: 30 });
 });
 
 test('phishing claim shows a Phished banner, a red flash and no reward', () => {
@@ -518,14 +516,13 @@ test('queued malware is capped by lives when it spawns', () => {
 
 // ---------- Side panel: offers, phishing and when Claim works ----------
 test('a phishing offer can be accepted and penalises only on Claim', () => {
-  g.warrants = 100;
   const m = give('hire-dotnet', { phishing: true });
   assert.equal(m.phishing, true);
-  assert.equal(g.warrants, 100);
+  assert.deepEqual(g.drinks, { coffee: 50, monster: 50, redbull: 50 });
   m.progress = m.target;
   g.random = rolls(0.1);
   assert.equal(claimMail(g, m.id), 'stolen');
-  assert.equal(g.warrants, 40);
+  assert.deepEqual(g.drinks, { coffee: 30, monster: 30, redbull: 30 });
 });
 
 test('claim is refused on the start and game-over screens', () => {
