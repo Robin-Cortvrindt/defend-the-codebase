@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
-import { createGame, startGame, ringBell, chooseYearReview } from '../src/engine/game.js';
+import { createGame, startGame, ringBell, chooseYearReview, CAO_COINS } from '../src/engine/game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from '../src/engine/upgrades.js';
 
 beforeEach(async () => {
@@ -99,4 +99,15 @@ test('Review Focus 4: buying at max level is refused and coins stay', () => {
   const coins = g.coins;
   assert.equal(buyUpgrade(g, 'aircon'), false);
   assert.equal(g.coins, coins);
+});
+
+test('Yearly review pays out the CAO in Nexios Coins, whatever the choice', () => {
+  for (const [choice, roll] of [['accept', 0.9], ['raise', 0.2], ['raise', 0.8]]) {
+    const g = reviewGame(5); g.pendingYearReview = true; g.random = () => roll;
+    chooseYearReview(g, choice);
+    assert.equal(g.coins, 5 + CAO_COINS);
+  }
+  const g = reviewGame(5); g.pendingYearReview = true;
+  chooseYearReview(g, 'accept'); chooseYearReview(g, 'accept');
+  assert.equal(g.coins, 5 + CAO_COINS, 'paid once per review');
 });

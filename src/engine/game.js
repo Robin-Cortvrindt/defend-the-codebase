@@ -217,6 +217,7 @@ function tickEffects(game, dt) {
 export const REVIEW_ACCEPT = 1.1;
 export const REVIEW_RAISE = 1.2;
 export const RAISE_CHANCE = 0.5;
+export const CAO_COINS = 10;   // CAO: collective labour agreement bonus, paid in Nexios Coins with every yearly review
 
 export function chooseYearReview(game, choice) {
   if (!game.pendingYearReview || (choice !== 'accept' && choice !== 'raise')) return null;
@@ -228,10 +229,11 @@ export function chooseYearReview(game, choice) {
   game.mods.warrantMultiplier *= factor;
   game.raise *= factor;
   game.lastYearReview = result;
+  game.coins += CAO_COINS;
   const banners = {
-    accepted: ['Yearly review', 'Review accepted — Warrants +10%', '#2563EB'],
-    approved: ['Yearly review', 'Raise approved — Warrants +20%', '#16A34A'],
-    denied: ['Yearly review', 'Raise denied — maybe next year', '#EA580C'],
+    accepted: ['Yearly review', `Review accepted — Warrants +10% · CAO +${CAO_COINS} coins`, '#2563EB'],
+    approved: ['Yearly review', `Raise approved — Warrants +20% · CAO +${CAO_COINS} coins`, '#16A34A'],
+    denied: ['Yearly review', `Raise denied — but CAO +${CAO_COINS} coins`, '#EA580C'],
   };
   const [title, text, accent] = banners[result];
   addEffect(game, { kind: 'banner', title, text, accent, ttl: 3 });

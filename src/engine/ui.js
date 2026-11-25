@@ -1,6 +1,6 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, SPRINTS_PER_QUARTER } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { LEVELS, sellDev } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
@@ -299,13 +299,14 @@ function renderReview(ov, g) {
     card.append(h('div', { class: `year-review result ${msg[2]}` },
       h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year}`),
       h('b', { class: 'result-title' }, msg[0]), h('small', {}, ` — ${msg[1]}`),
+      h('div', { class: 'cao' }, h('b', { class: 'coins' }, `+${CAO_COINS} Nexios Coins`), h('small', {}, ' — CAO paid out, spend it on the building below')),
     ));
   }
 
   if (g.pendingYearReview) {
     const choose = choice => { chooseYearReview(g, choice); playSound(choice === 'raise' ? 'claude' : 'powerup'); rerender(); };
     card.append(h('div', { class: 'year-review' },
-      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year}`),
+      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year} · CAO +${CAO_COINS} Nexios Coins either way`),
       h('div', { class: 'choices' },
         h('button', { class: 'choice', onclick: () => choose('accept') }, h('b', {}, 'Accept the review'), h('small', {}, '+10% Warrants, guaranteed')),
         h('button', { class: 'choice gamble', onclick: () => choose('raise') }, h('b', {}, 'Ask for a raise'), h('small', {}, '50% chance of +20%, otherwise nothing')),

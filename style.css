@@ -129,6 +129,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .year-review.result.approved { border-left-color: var(--green); }
 .year-review.result.accepted { border-left-color: var(--blue); }
 .year-review.result.denied { border-left-color: var(--orange); }
+.year-review .cao { margin-top: 4px; }
 .review-card .stats { margin: 0; }
 .review-card .coins { color: #FACC15; }
 .year-review { border: 1px solid var(--navy3); border-left: 3px solid var(--green); border-radius: 10px; padding: 10px 12px; background: var(--navy2); }
