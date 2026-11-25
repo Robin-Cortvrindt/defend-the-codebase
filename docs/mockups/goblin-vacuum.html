@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goblin and Vacuum Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#001E32;--navy2:#0A2A40;--navy3:#123650;--goblin:#65A30D;--s600:#475569;--s500:#64748B;--s400:#94A3B8;--s200:#E2E8F0;--tint:#EEF1F5}
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 16px 64px;background:var(--tint);color:var(--navy);font-family:Lato,system-ui,sans-serif}
+  main{max-width:1240px;margin:0 auto}
+  h1{margin:0 0 4px;font-size:26px;font-weight:900}
+  h2{margin:40px 0 4px;font-size:20px;font-weight:900}
+  p.sub{margin:0 0 20px;color:var(--s600);max-width:820px;line-height:1.5}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;position:sticky;top:0;padding:8px 0;background:var(--tint);z-index:1}
+  .controls span{font-size:13px;font-weight:700;color:var(--s600);margin-left:8px}
+  button{font:inherit;font-weight:700;font-size:13px;border:1px solid var(--s200);background:#fff;color:var(--navy);border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  button.gob.on{background:var(--goblin);border-color:var(--goblin)}
+  .card{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+  .cap{padding:12px 16px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .cap h3{margin:2px 0 0;font-size:17px}
+  canvas.board{display:block;width:100%;aspect-ratio:2/1;background:var(--navy);cursor:pointer}
+  .stats{display:flex;gap:20px;flex-wrap:wrap;padding:10px 16px;font-size:13px;color:var(--s600)}
+  .stats b{color:var(--navy)}
+  .note{font-size:13px;line-height:1.5;color:var(--s600);padding:10px 16px 14px}
+  .note b{color:var(--navy)}
+  .bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+  canvas.zoom{display:block;width:100%;aspect-ratio:1/1;background:var(--navy)}
+  .banner{background:var(--navy);border-radius:12px;padding:28px 16px;display:flex;justify-content:center}
+  .bn{background:rgba(0,30,50,.94);border:2px solid var(--goblin);border-radius:12px;padding:12px 26px;text-align:center;color:#fff}
+  .bn b{display:block;font-size:20px;font-weight:900;color:#BEF264}
+  .bn small{color:var(--s200);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
+  .panel{background:var(--navy);border-radius:12px;padding:16px;color:#fff}
+  .sp-title{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400);margin-bottom:8px}
+  .sp-upgs{display:flex;flex-wrap:wrap;gap:6px}
+  .sp-upg{display:inline-flex;flex-direction:column;align-items:center;gap:3px;background:var(--navy2);border:1px solid var(--navy3);border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700}
+  .sp-upg.new{border-color:#38BDF8}
+  .sp-pips{display:flex;gap:2px}.sp-pips i{width:6px;height:6px;border-radius:50%;background:var(--navy3)}.sp-pips i.on{background:#4ADE80}
+  .sc{background:var(--navy);color:#fff;border:1px solid var(--navy3);border-radius:12px;padding:14px 16px}
+  .sc h4{margin:0 0 2px;font-size:16px}.sc p{margin:0 0 10px;color:var(--s400);font-size:13px;line-height:1.4}
+  .sc .row{display:flex;justify-content:space-between;align-items:center;font-size:13px;gap:8px}
+  .sc .buy{background:#16A34A;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:900}
+  .sc .eff{color:#4ADE80;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>Scattered loot · Greedy goblin · Robot vacuum</h1>
+<p class="sub">Loot no longer drops where the bug dies: it <b>flies to a random empty floor cell</b>. The <b>greedy goblin</b> (a random event) runs in from the right and steals it; the <b>Goblin trap</b> slows it. The <b>Robot vacuum</b> (investment) drives to the nearest loot and collects it for you. <b>Clicking still works</b>: click any drink on the board below.</p>
+
+<h2>1 · The banner when the goblin arrives</h2>
+<div class="banner"><div class="bn"><b>A greedy goblin</b><small>It steals your dropped drinks</small></div></div>
+
+<h2>2 · On the board</h2>
+<p class="sub">Bugs die at random spots on the lane (here simulated); their drink arcs to an empty cell. The goblin comes in from the right edge and heads for the nearest landed drink. The vacuum leaves its dock (bottom-left) for the nearest drink and parks again when the floor is clean. Click drinks yourself to see the three of you compete.</p>
+<div class="controls">
+  <button id="gob" class="gob on">Goblin: on</button>
+  <span>Goblin trap:</span>
+  <button data-trap="0" class="on">None</button><button data-trap="1">1</button><button data-trap="2">2</button><button data-trap="3">3</button>
+  <span>Vacuum:</span>
+  <button data-vac="0">None</button><button data-vac="1" class="on">Lvl 1</button><button data-vac="2">Lvl 2</button><button data-vac="3">Lvl 3</button>
+  <button id="slow">Slow motion (¼×)</button>
+</div>
+<div class="card">
+  <canvas class="board" id="board" width="640" height="320"></canvas>
+  <div class="stats"><span>You clicked: <b id="sYou">0</b></span><span>Vacuum: <b id="sVac">0</b></span><span>Goblin stole: <b id="sGob">0</b></span><span>Timed out: <b id="sOut">0</b></span>
+    <span>Goblin speed: <b id="sGs">160</b> px/s</span><span>Vacuum speed: <b id="sVs">70</b> px/s</span></div>
+</div>
+
+<h2>3 · Close-ups (3×)</h2>
+<div class="bgrid">
+  <div class="card"><div class="cap"><div class="eyebrow">Goblin</div><h3>Empty sack</h3></div><canvas class="zoom" data-z="g0" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Goblin</div><h3>After 3 drinks</h3></div><canvas class="zoom" data-z="g3" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Goblin</div><h3>After 8 drinks</h3></div><canvas class="zoom" data-z="g8" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Vacuum</div><h3>Driving</h3></div><canvas class="zoom" data-z="v1" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Vacuum</div><h3>Parked at dock</h3></div><canvas class="zoom" data-z="v0" width="240" height="240"></canvas></div>
+</div>
+
+<h2>4 · The Goblin trap on the building</h2>
+<p class="sub">A spring trap with a drink as bait on the ground in front of the building, between the water cooler and the generator. It grows a tooth row per level; at level 3 a little cage hangs over it. Shown at 3× zoom.</p>
+<div class="bgrid">
+  <div class="card"><div class="cap"><div class="eyebrow">Level 0</div><h3>Today</h3></div><canvas class="zoom" data-trap="0" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 1</div><h3>Small trap</h3></div><canvas class="zoom" data-trap="1" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 2</div><h3>Bigger jaws</h3></div><canvas class="zoom" data-trap="2" width="240" height="240"></canvas></div>
+  <div class="card"><div class="cap"><div class="eyebrow">Level 3</div><h3>Jaws + cage</h3></div><canvas class="zoom" data-trap="3" width="240" height="240"></canvas></div>
+</div>
+
+<h2>5 · Side panel, quarter review, investments</h2>
+<p class="sub">No new layout: one more side-panel tile ("Trap"), one more shop card, one more investment card in the Unlocks group.</p>
+<div class="grid">
+  <div class="panel"><div class="sp-title">Nexios building</div>
+    <div class="sp-upgs">
+      <span class="sp-upg">Aircon<span class="sp-pips"><i class="on"></i><i></i><i></i></span></span>
+      <span class="sp-upg">Heating<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg">Coffee<span class="sp-pips"><i class="on"></i><i class="on"></i><i></i></span></span>
+      <span class="sp-upg">Fridge<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg">Power<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg">Water<span class="sp-pips"><i></i><i></i><i></i></span></span>
+      <span class="sp-upg new">Trap<span class="sp-pips"><i class="on"></i><i></i><i></i></span></span>
+    </div></div>
+  <div class="sc"><h4>Goblin trap</h4><p>Counters: greedy goblin</p><div class="row"><span>Level 1 → 2</span><button class="buy">5 Warrants</button></div></div>
+  <div class="sc"><div class="eyebrow" style="color:var(--s400)">Unlocks</div><h4>Robot vacuum</h4><p>A robot vacuum collects dropped drinks for you. Each level makes it faster.</p>
+    <div class="row"><span class="eff">Robot vacuum: 70 px/s</span><button class="buy">Level 2 · 30 capital</button></div></div>
+</div>
+</main>
+
+<script>
+const NAVY = '#001E32', NAVY2 = '#0A2A40', NAVY3 = '#123650', S200 = '#E2E8F0', S400 = '#94A3B8', S500 = '#64748B';
+const DRINKS = [{ c: '#7C4A1E', lid: '#F5E6D3' }, { c: '#E2E8F0', lid: '#94A3B8' }, { c: '#1D4ED8', lid: '#FACC15' }];
+const W = 640, H = 320, CELL = 40, COLS = 16, ROWS = 8;
+const WAY = [{ x: 0, y: 60 }, { x: 180, y: 60 }, { x: 180, y: 260 }, { x: 420, y: 260 }, { x: 420, y: 140 }, { x: 576, y: 140 }];
+const GOB_BASE = 160, VAC = [0, 70, 100, 130], TTL = 10, FLIGHT = 0.5;
+let speed = 1, gobOn = true, trap = 0, vac = 1;
+const stat = { you: 0, vac: 0, gob: 0, out: 0 };
+const $ = id => document.getElementById(id);
+$('slow').onclick = e => { speed = speed === 1 ? 0.25 : 1; e.target.classList.toggle('on', speed !== 1); };
+$('gob').onclick = e => { gobOn = !gobOn; e.target.classList.toggle('on', gobOn); e.target.textContent = `Goblin: ${gobOn ? 'on' : 'off'}`; if (!gobOn) goblin = null; else spawnGoblin(); };
+document.querySelectorAll('button[data-trap]').forEach(b => b.onclick = () => { trap = +b.dataset.trap; document.querySelectorAll('button[data-trap]').forEach(x => x.classList.toggle('on', x === b)); });
+document.querySelectorAll('button[data-vac]').forEach(b => b.onclick = () => { vac = +b.dataset.vac; document.querySelectorAll('button[data-vac]').forEach(x => x.classList.toggle('on', x === b)); });
+
+// ---- map helpers ----
+function distSeg(p, a, b) { const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy; const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); }
+const isPath = (c, r) => { const p = { x: c * CELL + 20, y: r * CELL + 20 }; for (let i = 1; i < WAY.length; i++) if (distSeg(p, WAY[i - 1], WAY[i]) < 36) return true; return false; };
+const DEVS = [[3, 3], [6, 5], [8, 4], [11, 2], [12, 5], [2, 0], [9, 7]];
+const isDev = (c, r) => DEVS.some(([dc, dr]) => dc === c && dr === r);
+const isProd = (c, r) => c >= 14 && r <= 4;
+const FREE = []; for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (!isPath(c, r) && !isDev(c, r) && !isProd(c, r)) FREE.push([c, r]);
+const SEGLEN = WAY.slice(1).map((b, i) => Math.hypot(b.x - WAY[i].x, b.y - WAY[i].y)), PLEN = SEGLEN.reduce((a, b) => a + b);
+function pointAt(d) { for (let i = 0; i < SEGLEN.length; i++) { if (d <= SEGLEN[i]) { const a = WAY[i], b = WAY[i + 1], t = d / SEGLEN[i]; return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; } d -= SEGLEN[i]; } return WAY[WAY.length - 1]; }
+
+// ---- state ----
+let drops = [], pops = [], goblin = null, t = 0, nextKill = 0.6;
+const DOCK = { x: 22, y: H - 18 };
+const vacuum = { x: DOCK.x, y: DOCK.y, a: 0 };
+function spawnGoblin() { goblin = { x: W + 16, y: 40 + Math.random() * (H - 80), carried: 0, face: -1 }; }
+spawnGoblin();
+function killBug() {
+  const from = pointAt(Math.random() * PLEN * 0.95);
+  const [c, r] = FREE[Math.floor(Math.random() * FREE.length)];
+  drops.push({ fromX: from.x, fromY: from.y, x: c * CELL + 20 + (Math.random() * 16 - 8), y: r * CELL + 20 + (Math.random() * 16 - 8), flight: FLIGHT, ttl: TTL, d: Math.floor(Math.random() * 3), amt: 1 + Math.floor(Math.random() * 3) });
+  pops.push({ x: from.x, y: from.y, ring: true, ttl: 0.4 });
+}
+const landed = () => drops.filter(d => d.flight <= 0);
+function nearest(x, y) { let best = null, bd = Infinity; for (const d of landed()) { const q = (d.x - x) ** 2 + (d.y - y) ** 2; if (q < bd) { bd = q; best = d; } } return best; }
+function take(d, who) { drops.splice(drops.indexOf(d), 1); stat[who]++; pops.push({ x: d.x, y: d.y - 8, text: who === 'gob' ? `-${d.amt}` : `+${d.amt}`, color: who === 'gob' ? '#F87171' : DRINKS[d.d].lid === '#FACC15' ? '#60A5FA' : '#F5E6D3', ttl: 0.9 }); }
+function moveTo(o, tx, ty, sp, dt) { const dx = tx - o.x, dy = ty - o.y, L = Math.hypot(dx, dy); if (L < 0.5) return 0; const s = Math.min(L, sp * dt); o.x += dx / L * s; o.y += dy / L * s; return L - s; }
+
+$('board').addEventListener('click', ev => {
+  const r = ev.target.getBoundingClientRect(), x = (ev.clientX - r.left) * W / r.width, y = (ev.clientY - r.top) * H / r.height;
+  const d = nearest(x, y); if (d && Math.hypot(d.x - x, d.y - y) <= 20) take(d, 'you');
+});
+
+function update(dt) {
+  t += dt;
+  nextKill -= dt; if (nextKill <= 0) { killBug(); nextKill = 0.7 + Math.random() * 1.2; }
+  for (const d of drops) { if (d.flight > 0) d.flight = Math.max(0, d.flight - dt); else d.ttl -= dt; }
+  for (const d of drops.filter(d => d.ttl <= 0)) { drops.splice(drops.indexOf(d), 1); stat.out++; }
+  // goblin
+  if (goblin) {
+    const gs = GOB_BASE * (1 - 0.6 * trap / 3);
+    const tgt = nearest(goblin.x, goblin.y);
+    const tx = tgt ? tgt.x : W / 2 + Math.sin(t * 0.7) * 30, ty = tgt ? tgt.y : H / 2;
+    if (tx !== goblin.x) goblin.face = tx < goblin.x ? -1 : 1;
+    const left = moveTo(goblin, tx, ty, tgt ? gs : 30, dt);
+    goblin.moving = left > 1;
+    if (tgt && Math.hypot(tgt.x - goblin.x, tgt.y - goblin.y) < 12) { take(tgt, 'gob'); goblin.carried++; }
+  }
+  // vacuum
+  if (vac) {
+    const tgt = nearest(vacuum.x, vacuum.y);
+    const tx = tgt ? tgt.x : DOCK.x, ty = tgt ? tgt.y : DOCK.y;
+    const want = Math.atan2(ty - vacuum.y, tx - vacuum.x);
+    const left = moveTo(vacuum, tx, ty, VAC[vac], dt);
+    vacuum.moving = left > 1;
+    if (vacuum.moving) { const diff = Math.atan2(Math.sin(want - vacuum.a), Math.cos(want - vacuum.a)); vacuum.a += diff * Math.min(1, dt * 8); }
+    if (tgt && Math.hypot(tgt.x - vacuum.x, tgt.y - vacuum.y) < 14) take(tgt, 'vac');
+  }
+  for (const p of pops) p.ttl -= dt; pops = pops.filter(p => p.ttl > 0);
+  $('sYou').textContent = stat.you; $('sVac').textContent = stat.vac; $('sGob').textContent = stat.gob; $('sOut').textContent = stat.out;
+  $('sGs').textContent = Math.round(GOB_BASE * (1 - 0.6 * trap / 3)); $('sVs').textContent = VAC[vac] || '—';
+}
+
+// ---- drawing ----
+function drawDrink(ctx, x, y, d, k = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+  ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(0, 0, 12.5, 0, 7); ctx.fill();
+  ctx.fillStyle = DRINKS[d].c; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill();
+  ctx.fillStyle = DRINKS[d].lid; ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawBoard(ctx) {
+  ctx.fillStyle = NAVY; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = NAVY2; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 1; c < COLS; c++) { ctx.moveTo(c * CELL + .5, 0); ctx.lineTo(c * CELL + .5, H); }
+  for (let r = 1; r < ROWS; r++) { ctx.moveTo(0, r * CELL + .5); ctx.lineTo(W, r * CELL + .5); } ctx.stroke();
+  ctx.strokeStyle = '#1E4A6A'; ctx.lineWidth = 36; ctx.lineJoin = 'round'; ctx.beginPath(); WAY.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
+  ctx.fillStyle = NAVY2; ctx.fillRect(578, 30, 52, 148); ctx.strokeStyle = S200; ctx.lineWidth = 1; ctx.strokeRect(578.5, 30.5, 51, 147);
+  for (const [c, r] of DEVS) { ctx.fillStyle = NAVY3; ctx.beginPath(); ctx.arc(c * CELL + 20, r * CELL + 20, 15, 0, 7); ctx.fill(); ctx.strokeStyle = ['#EA580C', '#C026D3', '#2563EB'][(c + r) % 3]; ctx.lineWidth = 2; ctx.stroke(); }
+  // dock
+  ctx.fillStyle = S500; ctx.fillRect(DOCK.x - 12, H - 6, 24, 5); ctx.fillStyle = '#4ADE80'; ctx.fillRect(DOCK.x - 2, H - 5, 4, 2);
+}
+function drawDrops(ctx) {
+  for (const d of drops) {
+    if (d.flight > 0) {
+      const s = 1 - d.flight / FLIGHT, e = s * (2 - s);
+      const x = d.fromX + (d.x - d.fromX) * e, y = d.fromY + (d.y - d.fromY) * e - Math.sin(Math.PI * s) * 30;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(d.fromX + (d.x - d.fromX) * e, d.fromY + (d.y - d.fromY) * e + 6, 7 * (0.5 + 0.5 * s), 2.5, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(s * 4); drawDrink(ctx, 0, 0, d.d, 0.8); ctx.restore();
+      continue;
+    }
+    if (d.ttl < 3 && Math.floor(d.ttl * 5) % 2 === 0) continue;
+    drawDrink(ctx, d.x, d.y, d.d);
+  }
+}
+function drawGoblin(ctx, x, y, carried, face, moving, time) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(face, 1);
+  const bob = moving ? Math.abs(Math.sin(time * 16)) * 2 : Math.abs(Math.sin(time * 3)) * 1;
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 11, 9, 2.5, 0, 0, 7); ctx.fill();
+  ctx.translate(0, -bob);
+  // legs
+  const step = moving ? Math.sin(time * 16) * 3 : 0;
+  ctx.strokeStyle = '#3F6212'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-2, 4); ctx.lineTo(-2 - step, 10); ctx.moveTo(2, 4); ctx.lineTo(2 + step, 10); ctx.stroke();
+  // sack (behind, over the shoulder)
+  const sr = 4 + Math.min(8, carried) * 0.75;
+  ctx.fillStyle = '#92400E'; ctx.beginPath(); ctx.ellipse(-6 - sr * 0.4, -3 - sr * 0.3, sr, sr * 0.9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#B45309'; ctx.beginPath(); ctx.ellipse(-6 - sr * 0.55, -4 - sr * 0.5, sr * 0.4, sr * 0.3, -0.5, 0, 7); ctx.fill();
+  if (carried) { ctx.fillStyle = '#FACC15'; ctx.beginPath(); ctx.arc(-6 - sr * 0.4, -3 - sr * 1.1, 1.6, 0, 7); ctx.fill(); }
+  // body
+  ctx.fillStyle = '#4D7C0F'; ctx.beginPath(); ctx.ellipse(0, 1, 5.5, 5, 0, 0, 7); ctx.fill();
+  // head + ears
+  ctx.fillStyle = '#65A30D';
+  ctx.beginPath(); ctx.moveTo(2, -7); ctx.lineTo(-7, -12); ctx.lineTo(-1, -5); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(4, -7); ctx.lineTo(11, -13); ctx.lineTo(7, -5); ctx.fill();
+  ctx.beginPath(); ctx.arc(3, -6, 5.2, 0, 7); ctx.fill();
+  // nose, eye, grin
+  ctx.beginPath(); ctx.moveTo(7, -6); ctx.lineTo(11, -4.5); ctx.lineTo(7, -3.8); ctx.fill();
+  ctx.fillStyle = '#FDE047'; ctx.beginPath(); ctx.arc(5, -7.5, 1.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(5.5, -7.5, 0.7, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#1A2E05'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(5, -4, 2, 0.2, 1.4); ctx.stroke();
+  ctx.restore();
+}
+function drawVacuum(ctx, x, y, a, moving, time) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 3, 14, 5, 0, 0, 7); ctx.fill();
+  ctx.rotate(a);
+  if (moving) { // side brushes spinning
+    ctx.strokeStyle = 'rgba(226,232,240,.7)'; ctx.lineWidth = 1;
+    for (const sy of [-9, 9]) for (let k = 0; k < 3; k++) { const an = time * 20 + k * 2.1 + sy; ctx.beginPath(); ctx.moveTo(9, sy); ctx.lineTo(9 + Math.cos(an) * 6, sy + Math.sin(an) * 6); ctx.stroke(); }
+  }
+  ctx.fillStyle = '#CBD5E1'; ctx.beginPath(); ctx.arc(0, 0, 13, 0, 7); ctx.fill();
+  ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(0, 0, 13, -1.1, 1.1); ctx.lineTo(0, 0); ctx.fill();  // front bumper
+  ctx.fillStyle = '#CBD5E1'; ctx.beginPath(); ctx.arc(0, 0, 10.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#E2E8F0'; ctx.beginPath(); ctx.arc(-1, 0, 7, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(-1, 0, 7, 0, 7); ctx.stroke();
+  const on = moving ? Math.sin(time * 8) > 0 : Math.sin(time * 2) > 0.3;
+  ctx.fillStyle = on ? '#4ADE80' : '#166534'; ctx.beginPath(); ctx.arc(5, 0, 1.6, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawPops(ctx) {
+  for (const p of pops) {
+    if (p.ring) { ctx.strokeStyle = `rgba(255,255,255,${p.ttl / 0.4 * 0.6})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 14 - p.ttl * 20, 0, 7); ctx.stroke(); continue; }
+    ctx.globalAlpha = Math.min(1, p.ttl * 2); ctx.fillStyle = p.color; ctx.font = '900 14px Lato, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(p.text, p.x, p.y - (0.9 - p.ttl) * 20); ctx.globalAlpha = 1;
+  }
+}
+
+// building foot with trap
+function drawTrap(ctx, cx, floorY, level, time) {
+  if (!level) return;
+  const w = 6 + level * 2;
+  ctx.fillStyle = '#64748B'; ctx.fillRect(cx - w / 2, floorY - 1.2, w, 1.2);                  // base plate
+  ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.arc(cx, floorY - 1.2, w / 2, Math.PI, 2 * Math.PI); ctx.stroke();       // open jaws
+  ctx.fillStyle = '#E2E8F0';
+  const teeth = 2 + level;
+  for (let k = 0; k < teeth; k++) { const tx = cx - w / 2 + (k + 0.5) * w / teeth; ctx.beginPath(); ctx.moveTo(tx - 0.6, floorY - 1.2); ctx.lineTo(tx, floorY - 2.6); ctx.lineTo(tx + 0.6, floorY - 1.2); ctx.fill(); }
+  ctx.fillStyle = '#7C4A1E'; ctx.beginPath(); ctx.arc(cx, floorY - 2.4, 1.3, 0, 7); ctx.fill();   // bait drink
+  if (level >= 3) {
+    const sway = Math.sin(time * 2) * 0.4, top = floorY - 13;
+    ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(cx + sway, top - 3); ctx.lineTo(cx + sway, top); ctx.stroke();
+    ctx.strokeStyle = '#CBD5E1';
+    ctx.strokeRect(cx - 4 + sway, top, 8, 6);
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(cx - 4 + k * 2 + sway, top); ctx.lineTo(cx - 4 + k * 2 + sway, top + 6); ctx.stroke(); }
+  }
+}
+function drawBuildingFoot(ctx, level, time) {
+  const x = 578, w = 52, ground = 178;
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + w / 2, ground + 1, w / 2 + 6, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = NAVY2; ctx.fillRect(x, 118, w, ground - 118);
+  ctx.fillStyle = '#fff'; ctx.fillRect(x, 118, w, 12); ctx.fillStyle = '#2563EB'; ctx.fillRect(x, 129, w, 1);
+  ctx.fillStyle = NAVY; ctx.font = '900 8px Lato, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('NEXIOS', x + w / 2 + 2, 124.5);
+  ctx.fillStyle = '#1E4A6A'; ctx.fillRect(x + 12, 134, w - 16, 22);
+  ctx.fillStyle = NAVY; ctx.fillRect(x, 128, 10, 24); ctx.fillStyle = '#16A34A'; ctx.fillRect(x, 128, 10, 2);
+  ctx.fillStyle = NAVY3; ctx.fillRect(x, ground - 6, w, 6);
+  // water cooler (left) + generator (right), as they exist today
+  ctx.fillStyle = S200; ctx.fillRect(x + 2, ground - 15, 8, 9); ctx.fillStyle = '#38BDF8'; ctx.fillRect(x + 3, ground - 23, 6, 8);
+  ctx.fillStyle = S500; ctx.fillRect(x + w - 16, ground - 11, 14, 11);
+  ctx.strokeStyle = S200; ctx.lineWidth = 1; ctx.strokeRect(x + .5, 118.5, w - 1, ground - 118 - 1);
+  drawTrap(ctx, x + w / 2 - 2, ground - 6, level, time);
+}
+
+const board = $('board').getContext('2d');
+const zooms = [...document.querySelectorAll('canvas.zoom')];
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * speed; last = now;
+  update(dt);
+  drawBoard(board); drawDrops(board);
+  if (vac) drawVacuum(board, vacuum.x, vacuum.y, vacuum.a, vacuum.moving, t);
+  if (goblin) drawGoblin(board, goblin.x, goblin.y, goblin.carried, goblin.face, goblin.moving, t);
+  drawPops(board);
+  for (const c of zooms) {
+    const ctx = c.getContext('2d'); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = NAVY; ctx.fillRect(0, 0, 240, 240);
+    if (c.dataset.z) {
+      ctx.setTransform(3, 0, 0, 3, 120, 120);
+      const z = c.dataset.z;
+      if (z[0] === 'g') drawGoblin(ctx, 0, 0, +z.slice(1), 1, true, t);
+      else drawVacuum(ctx, 0, 0, -0.3, z === 'v1', t);
+    } else {
+      ctx.setTransform(3, 0, 0, 3, -578 * 3 + 120 - 26 * 3, -150 * 3 + 120);
+      drawBuildingFoot(ctx, +c.dataset.trap, t);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
