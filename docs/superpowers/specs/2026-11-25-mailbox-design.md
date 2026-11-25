@@ -100,7 +100,7 @@ Only Claude costs Warrants. The other power-ups are free and limited only by coo
   - a badge with the unread count
   - the hint text "N new · x/4"
 - **Panel:** a DOM element the file creates inside `#stage`, matching the mockup.
-  - It opens at the **bottom right**, right above the Inbox card, with its right edge in line with the card (team request after playtesting). It can cover the bell card between sprints while open; the player closes it to ring the bell.
+  - It opens at the **bottom right**, right above the Inbox card, with its right edge in line with the card (team request after playtesting). It closes by itself when a sprint is cleared, so it never covers the bell card; the player can open it again during the bell.
   - Mails show unread dots until the panel is opened.
 - **Popup:** a toast right above the Inbox card (bottom of the board, right edge in line with the card, arrow pointing at it) that disappears after 4 s. Clicking it opens the inbox. No popup appears while the inbox is open.
   - It plays a short chime, registered with `registerSound('mail', ...)`.

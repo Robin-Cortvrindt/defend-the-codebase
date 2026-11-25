@@ -435,3 +435,16 @@ test('queued malware is capped by lives when it spawns', () => {
   emit('wave:start', { game: g, wave: 1 });
   assert.equal(g.bugs.length, 1);
 });
+
+test('the inbox closes when a sprint is cleared and the bell shows up', () => {
+  g.mailbox.open = true;
+  emit('sprint:cleared', { game: g, sprint: 1 });
+  assert.equal(g.mailbox.open, false);
+});
+
+test('the inbox can be opened again while the bell shows', () => {
+  emit('sprint:cleared', { game: g, sprint: 1 });
+  g.phase = 'bell';
+  mailbox.hudButtons[0].onClick(g);
+  assert.equal(g.mailbox.open, true);
+});

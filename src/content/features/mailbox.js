@@ -212,6 +212,8 @@ export function attachListeners() {
   on('powerup:activated', ({ game, id }) => {
     if (id === 'claude' && game?.mailbox?.vouchers > 0) game.mailbox.vouchers--;
   });
+  // The bell (or the quarter review) shows up in the bottom-right corner where the inbox opens: close it.
+  on('sprint:cleared', ({ game }) => { if (game?.mailbox) game.mailbox.open = false; });
   on('wave:start', ({ game }) => {
     const box = game?.mailbox;
     if (!box?.pendingMalware) return;
