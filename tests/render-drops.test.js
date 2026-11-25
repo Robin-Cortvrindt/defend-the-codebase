@@ -30,3 +30,19 @@ test('render draws fresh, popping and blinking drops without throwing', () => {
   );
   assert.doesNotThrow(() => render(stubCtx(), game, { selected: null, hover: null, hire: null, paused: false }));
 });
+
+test('drops are drawn under the running event, so PROD-is-down darkness hides them outside the flashlight', async () => {
+  const { recordingCtx } = await import('./stub-ctx.js');
+  R.resetRegistry(); clearAll(); registerTestDrinks();
+  R.registerEvent({ id: 'dark', name: 'Dark', draw(ctx) { ctx.darkOverlay(); } });
+  const game = createGame();
+  game.phase = 'wave';
+  game.activeEvent = 'dark';
+  game.drops.push({ id: 1, x: 123, y: 77, drink: R.getDrinks()[0].id, amount: 2, ttl: DROP_TTL });
+  const ctx = recordingCtx();
+  render(ctx, game, { selected: null, hover: null, hire: null, paused: false });
+  const dropAt = ctx.calls.findIndex(([k, ...a]) => k === 'translate' && a[0] === 123 && a[1] === 77);
+  const darkAt = ctx.calls.findIndex(([k]) => k === 'darkOverlay');
+  assert.ok(dropAt >= 0 && darkAt >= 0, 'both drawn');
+  assert.ok(dropAt < darkAt, 'drop drawn before the event overlay');
+});
