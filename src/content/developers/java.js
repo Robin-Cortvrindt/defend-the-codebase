@@ -24,14 +24,14 @@ registerDeveloper({
     level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
     level3: [
       {
-        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 50,
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
         description: 'Less damage itself, +15% damage to developers nearby',
         tooltip: "I don't code anymore, I enable.",
         modifyStats(game, dev, stats) { stats.damage *= 0.9; },
-        aura: { radius: 7, apply(game, dev, stats) { stats.damage *= 1.15; } },
+        aura: { radius: 5, apply(game, dev, stats) { stats.damage *= 1.15; } },
       },
       {
-        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 75,
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,
         description: 'Stop-the-World, then a pulse',
         update(game, dev, dt, stats) {
           const st = dev.state;
