@@ -30,6 +30,18 @@ export function pointAt(distance) {
   return { x: end.x, y: end.y };
 }
 
+// The direction a bug at `distance` walks, in radians (0 = right, π/2 = down).
+export function headingAt(distance) {
+  let d = Math.max(0, distance);
+  let seg = SEGMENTS[0];
+  for (const s of SEGMENTS) {
+    seg = s;
+    if (d <= s.len) break;
+    d -= s.len;
+  }
+  return Math.atan2(seg.b.y - seg.a.y, seg.b.x - seg.a.x);
+}
+
 function distToSegment(p, a, b) {
   const dx = b.x - a.x, dy = b.y - a.y;
   const l2 = dx * dx + dy * dy;

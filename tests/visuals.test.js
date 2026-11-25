@@ -95,3 +95,21 @@ test('hitFlash: 0 before the attack lands, 1 when it lands, gone 0.3 later', () 
   assert.equal(at(0.97), 0);
   assert.equal(hitFlash(g, { }), 0);
 });
+
+test('render: a bug draw hook gets its radius, the bug and the game time', () => {
+  const seen = [];
+  R.registerBug({ id: 'drawn', ring: '#2563EB', hp: 10, speed: 0, livesLost: 1, reward: 1, radius: 7, draw(ctx, r, bug, time) { seen.push([r, bug, time]); } });
+  const { g } = setup();
+  const bug = spawnBug(g, 'drawn', 50);
+  g.time = 3.5;
+  render(stubCtx(), g, {});
+  assert.deepEqual(seen, [[7, bug, 3.5]]);
+});
+
+test('render: a throwing bug draw hook is logged; a bug without one still draws', () => {
+  R.registerBug({ id: 'bad', ring: '#2563EB', hp: 10, speed: 0, livesLost: 1, reward: 1, radius: 7, draw() { throw new Error('boom'); } });
+  const { g } = setup();
+  spawnBug(g, 'bad', 50);
+  const logged = quietConsole(() => render(stubCtx(), g, {}));
+  assert.equal(logged.length, 1);
+});

@@ -1,6 +1,6 @@
 // Canvas rendering. Reads game state, never changes it.
 import { getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
-import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
+import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
 
@@ -372,13 +372,8 @@ export function hitFlash(game, bug) {
 }
 const attackProgress = e => Math.min(1, Math.max(0, 1 - e.ttl / (e.maxTtl || 1)));
 
-function drawBug(ctx, game, bug) {
-  const def = getBug(bug.type);
-  if (!def) return;
-  const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
-  const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
-  ctx.save();
-  ctx.translate(x, y);
+// The look of a bug that doesn't draw itself: legs, a pale oval in its ring colour, its icon.
+function drawDefaultBug(ctx, def, bug, r) {
   if (def.legs) {
     const wiggle = Math.sin((bug.distance || 0) / 3) * 1.5;
     ctx.strokeStyle = COLORS.s400; ctx.lineWidth = r > 10 ? 2 : 1.5;
@@ -395,6 +390,22 @@ function drawBug(ctx, game, bug) {
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
   if (def.drawIcon) { try { def.drawIcon(ctx, r, bug); } catch (e) { console.error(e); } }
+}
+
+function drawBug(ctx, game, bug) {
+  const def = getBug(bug.type);
+  if (!def) return;
+  const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
+  const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
+  ctx.save();
+  ctx.translate(x, y);
+  if (def.draw) {
+    // The bug draws its own body, facing +x; turn it towards where it walks.
+    ctx.save();
+    ctx.rotate(headingAt(bug.distance || 0));
+    try { def.draw(ctx, r, bug, game.time); } catch (e) { console.error(`[bug ${bug.type}] draw`, e); }
+    ctx.restore();
+  } else drawDefaultBug(ctx, def, bug, r);
   const flash = hitFlash(game, bug);
   if (flash > 0) {
     ctx.globalAlpha = 0.7 * flash; ctx.fillStyle = '#fff';
