@@ -19,6 +19,7 @@ const investment = {
   maxLevel: 1,
   getCost() { return 40; },
   apply(game) { game.unlocks.firewall = true; },
+  describeEffect(game, dev) { return findFirewalls(game).some(w => w.devs.includes(dev)) ? { group: 'team', text: 'part of a firewall' } : null; },
   effectText() { return 'Opposite .NET pairs build a firewall'; },
 };
 
