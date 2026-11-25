@@ -236,7 +236,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu-main { padding: 32px 6%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
 .menu-main .wordmark { height: 22px; max-height: 22px; align-self: flex-start; }
 .menu-main .dash { margin: 16px 0 6px; }
-.menu-main h1 { margin: 4px 0 10px; }
+.menu-main .menu-title { display: flex; align-items: center; gap: 14px; margin: 4px 0 10px; }
+.menu-main .menu-title h1 { margin: 0; }
+.menu-main .menu-icon { width: clamp(44px, 5.5vw, 64px); height: auto; flex: none; }
 .menu-list { display: flex; flex-direction: column; gap: 8px; width: min(320px, 100%); margin-top: 6px; }
 .mi { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--navy3); background: var(--navy2); font-size: 15px; font-weight: 700; text-align: left; }
 .mi:hover { border-color: var(--s500); background: var(--navy3); }

@@ -1,5 +1,5 @@
 {
-  "name": "defend-the-codebase",
+  "name": "bug-farm",
   "private": true,
   "type": "module",
   "scripts": { "test": "node --test" }

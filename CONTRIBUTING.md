@@ -1,4 +1,4 @@
-# Adding to Defend the Codebase
+# Adding to Bug-Farm
 
 **The rule: one new file plus one line in `src/content/manifest.js`.** To add an upgrade, edit your developer's own file. Don't edit `src/engine/` to add content. A file that fails to load is skipped and logged in the browser console, so it can't take the game down. Your feature just won't show up.
 
