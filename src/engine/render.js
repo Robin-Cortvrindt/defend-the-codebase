@@ -15,7 +15,7 @@ export function render(ctx, game, view) {
   ctx.save();
   drawMap(ctx, game);
   drawRanges(ctx, game, view);
-  for (const dev of game.devs) drawDev(ctx, dev, view.selected === dev);
+  for (const dev of game.devs) drawDev(ctx, game, dev, view.selected === dev);
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, bug);
   drawActiveEvent(ctx, game, view);
@@ -295,33 +295,47 @@ export function drawDevTile(ctx, def, x, y, size = 36) {
   ctx.restore();
 }
 
-function drawDev(ctx, dev, selected) {
+export const MAP_TILE = 32;
+
+// Marker boxes relative to the tower centre; all inside the 40 px cell.
+export function devLayout() {
+  return {
+    tile: { x: -16, y: -16, w: 32, h: 32 },
+    badge: { x: 5, y: -19, w: 14, h: 14 },
+    ready: { x: -19, y: -19, w: 38, h: 38 },
+    xp: { x: -16, y: 16, w: 32, h: 3 },
+  };
+}
+
+function drawDev(ctx, game, dev, selected) {
   const def = getDeveloper(dev.type);
   if (!def) return;
-  drawDevTile(ctx, def, dev.x, dev.y);
-  // level badge at top-right corner
+  const L = devLayout();
+  drawDevTile(ctx, def, dev.x, dev.y, MAP_TILE);
+  // ready marker: pulsing green outline inside the cell while an upgrade is unlocked
+  if (upgradeUnlocked(dev)) {
+    ctx.save();
+    ctx.globalAlpha = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(game.time * 2 * Math.PI));
+    roundRect(ctx, dev.x + L.ready.x + 1, dev.y + L.ready.y + 1, L.ready.w - 2, L.ready.h - 2, 8);
+    ctx.strokeStyle = COLORS.green; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+  // level badge in the top-right corner
   const maxed = dev.level >= XP_GATES.length - 1;
-  const bx = dev.x + 19, by = dev.y - 19;
-  roundRect(ctx, bx - 8, by - 7, 16, 14, 3);
+  const b = L.badge;
+  roundRect(ctx, dev.x + b.x, dev.y + b.y, b.w, b.h, 3);
   ctx.fillStyle = maxed ? COLORS.green : '#fff';
   ctx.fill();
   ctx.fillStyle = maxed ? '#fff' : COLORS.navy;
   ctx.font = `900 10px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(String(dev.level + 1), bx, by + 0.5);
-  // ready marker: an upgrade is unlocked
-  if (upgradeUnlocked(dev)) {
-    const tx = dev.x - 19, ty = dev.y - 19;
-    ctx.fillStyle = COLORS.green;
-    ctx.beginPath();
-    ctx.moveTo(tx, ty - 6); ctx.lineTo(tx + 6, ty + 5); ctx.lineTo(tx - 6, ty + 5);
-    ctx.closePath(); ctx.fill();
-  }
+  ctx.fillText(String(dev.level + 1), dev.x + b.x + b.w / 2, dev.y + b.y + b.h / 2 + 0.5);
   if (selected) {
     const gate = XP_GATES[dev.level + 1];
     const pct = gate ? Math.min(1, dev.xp / gate) : 1;
-    ctx.fillStyle = COLORS.navy3; ctx.fillRect(dev.x - 20, dev.y + 22, 40, 4);
-    ctx.fillStyle = COLORS.green; ctx.fillRect(dev.x - 20, dev.y + 22, 40 * pct, 4);
+    const x = L.xp;
+    ctx.fillStyle = COLORS.navy3; ctx.fillRect(dev.x + x.x, dev.y + x.y, x.w, x.h);
+    ctx.fillStyle = COLORS.green; ctx.fillRect(dev.x + x.x, dev.y + x.y, x.w * pct, x.h);
   }
 }
 
@@ -334,7 +348,7 @@ function drawHover(ctx, game, view) {
   if (canPlace(game, view.hire, col, row)) {
     circleRange(ctx, x, y, def.range * CELL * game.mods.rangeMultiplier, def.accent);
     ctx.globalAlpha = 0.6;
-    drawDevTile(ctx, def, x, y);
+    drawDevTile(ctx, def, x, y, MAP_TILE);
     ctx.globalAlpha = 1;
   } else if (col >= 0 && row >= 0 && col < COLS && row < ROWS) {
     ctx.strokeStyle = COLORS.s500; ctx.lineWidth = 2;
