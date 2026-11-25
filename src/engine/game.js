@@ -223,7 +223,8 @@ export function step(game, dt) {
     moveBugs(game, dt);
     tickDevs(game, dt);
   }
-  tickPowerups(game, dt);
+  // Power-up timers (active time and cooldown) only run during a sprint; between sprints they pause.
+  if (game.phase === 'wave') tickPowerups(game, dt);
   tickEffects(game, dt);
   for (const f of getFeatures()) {
     try { f.update?.(game, dt); } catch (e) { console.error(`[feature ${f.id}]`, e); }
