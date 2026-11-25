@@ -290,6 +290,18 @@ function renderReview(ov, g) {
     ),
   );
 
+  if (!g.pendingYearReview && g.lastYearReview && done.quarter === 4) {
+    const msg = {
+      accepted: ['Review accepted', 'Warrants +10% from now on', 'accepted'],
+      approved: ['Raise approved', 'Warrants +20% from now on', 'approved'],
+      denied: ['Raise denied', 'Maybe next year', 'denied'],
+    }[g.lastYearReview];
+    card.append(h('div', { class: `year-review result ${msg[2]}` },
+      h('div', { class: 'eyebrow' }, `Yearly review · Year ${done.year}`),
+      h('b', { class: 'result-title' }, msg[0]), h('small', {}, ` — ${msg[1]}`),
+    ));
+  }
+
   if (g.pendingYearReview) {
     const choose = choice => { chooseYearReview(g, choice); playSound(choice === 'raise' ? 'claude' : 'powerup'); rerender(); };
     card.append(h('div', { class: 'year-review' },

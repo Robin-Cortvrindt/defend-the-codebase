@@ -18,6 +18,7 @@ export function createGame() {
     set wave(v) { this.sprint = v; },
     coins: 0,                 // Nexios Coins, earned per sprint, spent in the quarter review
     pendingYearReview: false,
+    lastYearReview: null,     // 'accepted' | 'approved' | 'denied' after the latest yearly review
     floors: 1,                // Nexios building floors (upgrade)
     heatResistance: 0,        // 0..1, set by the air-conditioning upgrade; read by the heat wave event
     raise: 1,                 // total yearly-review Warrant multiplier
@@ -176,6 +177,7 @@ function checkEnd(game) {
   if (info.sprint === SPRINTS_PER_QUARTER) {
     game.coins += 3;
     game.pendingYearReview = info.quarter === QUARTERS_PER_YEAR;
+    if (game.pendingYearReview) game.lastYearReview = null;
     game.phase = 'review';
     emit('quarter:review', { game, info, yearReview: game.pendingYearReview });
   } else {
@@ -225,6 +227,7 @@ export function chooseYearReview(game, choice) {
   else result = 'denied';
   game.mods.warrantMultiplier *= factor;
   game.raise *= factor;
+  game.lastYearReview = result;
   const banners = {
     accepted: ['Yearly review', 'Review accepted — Warrants +10%', '#2563EB'],
     approved: ['Yearly review', 'Raise approved — Warrants +20%', '#16A34A'],

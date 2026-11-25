@@ -85,3 +85,18 @@ test('Review Focus 1: bell refused while year review pending; second choice retu
   assert.equal(ringBell(g), true);
   assert.equal(g.phase, 'wave');
 });
+
+test('yearly review result is stored so the review screen can show it', () => {
+  const g = reviewGame(); g.pendingYearReview = true; g.random = () => 0.8;
+  assert.equal(g.lastYearReview, null);
+  chooseYearReview(g, 'raise');
+  assert.equal(g.lastYearReview, 'denied');
+});
+
+test('Review Focus 4: buying at max level is refused and coins stay', () => {
+  const g = reviewGame(100);
+  buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon'); buyUpgrade(g, 'aircon');
+  const coins = g.coins;
+  assert.equal(buyUpgrade(g, 'aircon'), false);
+  assert.equal(g.coins, coins);
+});

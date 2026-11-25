@@ -51,6 +51,11 @@ export function initInput(canvas, app) {
     else if (ev.key === 'p' || ev.key === 'P') uiActions.togglePause();
     else if (ev.key === 'f' || ev.key === 'F') uiActions.toggleSpeed();
     else if (ev.key === 'm' || ev.key === 'M') uiActions.toggleMute();
-    else if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); uiActions.onWaveButton(); }
+    else if (ev.key === ' ' || ev.key === 'Enter') {
+      if (ev.repeat || ev.target instanceof HTMLButtonElement) return; // let focused buttons activate normally
+      if (app.game.phase === 'review') return;                        // the quarter shop is only left by ringing the bell
+      ev.preventDefault();
+      uiActions.onWaveButton();
+    }
   });
 }
