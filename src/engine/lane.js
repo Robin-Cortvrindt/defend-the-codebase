@@ -105,7 +105,7 @@ function drawCode(ctx, time) {
           const x = t.x + wrap - start;
           if (x < from - 60 || x > to) continue;
           ctx.fillStyle = t.color || '#94A3B8';
-          ctx.globalAlpha = t.color ? 0.55 : 0.28;
+          ctx.globalAlpha = t.color ? 0.42 : 0.2;
           ctx.fillText(t.text, x, row * ROW_GAP);
         }
       }

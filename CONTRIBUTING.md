@@ -19,8 +19,8 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 
 | Call | Shape |
 |---|---|
-| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size), levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades) |
-| `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?(bug, game, dt), drawIcon?(ctx, radius, bug) }`. Set `bug.radius` in `update` to draw one bug bigger or smaller than `radius` |
+| `registerDeveloper` | `{ id, name, accent, blurb, cost, damage, fireRate, range /*cells*/, counters /*bug id*/, drawIcon(ctx, size, dev?, time?), drawAttack?(ctx, { from, to, progress /*0→1*/, time, seed, shot, accent }), attackDuration? /*s, default 0.12*/, attackHitAt? /*0..1, when it lands, default 0*/, levelName?, modifyStats?(game, dev, stats), upgrades? }` (see Developer upgrades). `dev`/`time` are only given on the board. Damage lands at once; `drawAttack` is only the animation, and `to` follows the bug. Without `drawAttack` you get a straight beam (see `src/content/developers/java.js`) |
+| `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, boss?, onHit?, onDeath?, update?(bug, game, dt), drawIcon?(ctx, radius, bug), draw?(ctx, radius, bug, time) }`. Set `bug.radius` in `update` to draw one bug bigger or smaller than `radius`. `draw` replaces the default oval: draw at the origin facing right (+x), the game turns it the way the bug walks; keep the `ring` colour the main colour so players can see who counters it. `drawBugLegs` in `render.js` gives you walking legs (see `src/content/bugs/nullpointer.js`) |
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), describe?(game) /*button text, overrides description*/, activate(game, st), deactivate?(game, st) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
 | `registerEvent` | `{ id, name, description, accent?, weight? /*default 1*/, minWave? /*default 2*/, start(game), end(game), draw?(ctx, game, view) }`: a random event. Each wave from wave 2 has a 25% chance to start one; it lasts until the wave ends. `view.cursor` is the mouse position or `null` (`src/content/events/`) |
@@ -52,7 +52,7 @@ Hooks on an upgrade, all optional and all guarded (a hook that throws is logged 
 | `fire(game, dev, target, stats)` | Replaces the normal shot. |
 | `panelButtons(game, dev)` | Returns `[{ label, onClick(game, dev) }]`, extra buttons in the selection panel. |
 
-For `fire` and `update`, use the helpers in `src/engine/devs.js`: `bugsInRange(game, dev, range)` (furthest along first), `hitBug(game, dev, bug, damage)` (counter damage, reward, XP and kill in one call) and `shotBeam(game, dev, bug)`.
+For `fire` and `update`, use the helpers in `src/engine/devs.js`: `bugsInRange(game, dev, range)` (furthest along first), `hitBug(game, dev, bug, damage)` (counter damage, reward, XP and kill in one call) and `shotBeam(game, dev, bug)` (shows the developer's own attack animation, or a beam if it has none).
 
 A short example, trimmed from `src/content/developers/java.js`:
 

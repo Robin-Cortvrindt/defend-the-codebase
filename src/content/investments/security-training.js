@@ -93,7 +93,7 @@ export const firewallFeature = {
 };
 
 // ---- the fire ----
-export const FIRE_PARTICLES = 110;
+export const FIRE_PARTICLES = 80;
 const fract = n => n - Math.floor(n);
 const hash = n => fract(Math.sin(n * 12.9898 + 78.233) * 43758.5453);
 
@@ -108,7 +108,7 @@ export function fireParticles(time, x, y, size, count) {
     const u = time + hash(i + 0.25) * life, cycle = Math.floor(u / life), t = u - cycle * life;
     const seed = i * 7.13 + cycle * 1.37;
     const x0 = x - size / 2 + 3 + hash(seed) * (size - 6), y0 = y - size / 2 + 4 + hash(seed + 0.3) * (size - 4);
-    const rise = (ember ? 60 : 32) * (0.6 + 0.6 * hash(seed + 0.6));
+    const rise = (ember ? 50 : 26) * (0.6 + 0.6 * hash(seed + 0.6));
     parts.push({
       x: x0 + (hash(seed + 0.9) - 0.5) * 12 * t + Math.sin(time * 7 + y0 * 0.2) * 2,
       y: y0 - rise * t - 10 * t * t,
@@ -135,7 +135,7 @@ function drawFire(ctx, parts, scale) {
       ctx.fillRect(p.x, p.y, 1.6, 1.6);
       continue;
     }
-    ctx.globalAlpha = (1 - p.age) * 0.55;
+    ctx.globalAlpha = (1 - p.age) * 0.38;
     ctx.fillStyle = fireColor(p.age);
     ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, p.r * scale * (1 - p.age * 0.65)), 0, Math.PI * 2); ctx.fill();
   }
