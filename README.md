@@ -29,7 +29,7 @@ Controls:
 | Right-click or `Esc` | Cancel |
 | `Space` | Start the wave or ring the bell |
 | `P` | Pause |
-| `F` | 2× speed |
+| `F` / `Shift+F` | Game speed up / down (1×, 2×, 3×, 5×, 10×) |
 | `M` | Sound on or off |
 
 ## Run locally

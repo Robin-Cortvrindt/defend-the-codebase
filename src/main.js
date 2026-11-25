@@ -102,7 +102,9 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (!app.view.paused) {
-    guarded('step', () => { for (let i = 0; i < app.view.speed; i++) step(app.game, dt); });
+    // the game-over collapse always plays at normal speed
+    const steps = app.game.phase === 'lost' ? 1 : app.view.speed;
+    guarded('step', () => { for (let i = 0; i < steps; i++) step(app.game, dt); });
   }
   guarded('render', () => {
     ctx.save();

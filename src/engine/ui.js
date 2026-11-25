@@ -46,7 +46,7 @@ function buildHud() {
     stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
     stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
     h('div', { class: 'hud-spacer' }),
-    refs.speed = h('button', { class: 'btn ghost', title: 'Game speed (F)', onclick: toggleSpeed }, '1×'),
+    refs.speed = h('button', { class: 'btn ghost', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
     refs.pause = h('button', { class: 'btn ghost', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
     refs.mute = h('button', { class: 'btn ghost', title: 'Sound (M)', onclick: toggleMute }, 'Sound on'),
     refs.waveBtn = h('button', { class: 'btn primary', onclick: onWaveButton }, 'Start wave 1'),
@@ -109,7 +109,13 @@ function onWaveButton() {
   else if (g.phase === 'bell' || (g.phase === 'review' && !g.pendingYearReview)) swingBell();
 }
 
-function toggleSpeed() { app.view.speed = app.view.speed === 1 ? 2 : 1; }
+// Game speeds, cycled with the speed button or F (Shift+F or right-click goes back down).
+export const SPEEDS = [1, 2, 3, 5, 10];
+function toggleSpeed(back = false) {
+  const i = SPEEDS.indexOf(app.view.speed);
+  const n = SPEEDS.length;
+  app.view.speed = SPEEDS[((i < 0 ? 0 : i) + (back ? n - 1 : 1)) % n];
+}
 export function togglePause() { if (['wave', 'building', 'bell', 'review'].includes(app.game.phase)) app.view.paused = !app.view.paused; }
 function toggleMute() { setMuted(!isMuted()); }
 export const uiActions = { toggleSpeed, togglePause, toggleMute, onWaveButton };
