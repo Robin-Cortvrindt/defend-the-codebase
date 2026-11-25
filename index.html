@@ -12,10 +12,19 @@
 <body>
   <div id="app">
     <header id="hud"></header>
-    <div id="stage">
-      <canvas id="game" aria-label="Game board"></canvas>
-      <div id="overlay"></div>
-      <div class="pause-veil">Paused · press P to resume</div>
+    <div id="play">
+      <div id="stage">
+        <canvas id="game" aria-label="Game board"></canvas>
+        <div id="overlay"></div>
+        <div class="pause-veil">Paused · press P to resume</div>
+      </div>
+      <aside id="side-panel" aria-label="Your run">
+        <div class="sp-inner">
+          <section id="panel-building" class="sp-sec"></section>
+          <section id="panel-devs" class="sp-sec"></section>
+          <section id="panel-tasks" class="sp-sec sp-tasks"></section>
+        </div>
+      </aside>
     </div>
     <section id="powerups" aria-label="Power-ups"></section>
     <section id="hire" aria-label="Hire developers"></section>
