@@ -4,7 +4,7 @@ import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step } from '../src/engine/game.js';
 import { placeDev, nextUpgrades, upgradeStatus, buyUpgrade } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
-import { isBuildable, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
+import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL } from '../src/engine/map.js';
 import { getDeveloper } from '../src/engine/registry.js';
 
 await loadModules(CONTENT_URLS);
@@ -34,23 +34,35 @@ for (let c = 0; c < 16; c++) for (let r = 0; r < 8; r++) if (isBuildable(c, r)) 
 cells.sort((a, b) => b.cov - a.cov);
 
 // Which upgrades this dev may take: at level 1 the bot sticks to one branch.
-// `branch` is 'A', 'B' or 'alt' (by dev.id % 2), or per type, like { dotnet: 'A' } (others 'alt').
-function choices(dev, branch) {
+// `branch` is 'A', 'B' or 'alt' (every other developer of the same type),
+// or per type, like { dotnet: 'A' } (other types 'alt').
+// An aura upgrade is only taken when it would reach a developer that no copy of it reaches yet.
+function auraHelps(g, dev, up) {
+  const reach = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) <= up.aura.radius * CELL;
+  const owners = g.devs.filter(o => o.upgrade?.id === up.id);
+  return g.devs.some(o => o !== dev && reach(o, dev) && !owners.some(w => w !== o && reach(w, o)));
+}
+
+function choices(g, dev, branch) {
   const ups = nextUpgrades(dev);
   if (dev.level !== 1) return ups;
   const b = typeof branch === 'object' ? branch[dev.type] ?? 'alt' : branch;
-  const pick = b === 'A' ? 0 : b === 'B' ? 1 : dev.id % 2;
-  return ups[pick] ? [ups[pick]] : [];
+  const pick = b === 'A' ? 0 : b === 'B' ? 1 : g.devs.filter(d => d.type === dev.type).indexOf(dev) % 2;
+  const up = ups[pick];
+  if (!up) return [];
+  if (up.aura && !auraHelps(g, dev, up)) return [];
+  return [up];
 }
 
-function play(order, usePowers, branch, seed) {
+// bell: 'up' buys upgrades before hiring, 'hire' hires before upgrading.
+function play({ order, powers, branch, bell }, seed) {
   const g = createGame(); g.random = mulberry32(seed); startGame(g);
   const bought = {};
   let i = 0;
   const upgrade = () => {
     while (true) {
       let best = null;
-      for (const dev of g.devs) for (const up of choices(dev, branch)) {
+      for (const dev of g.devs) for (const up of choices(g, dev, branch)) {
         if (upgradeStatus(g, dev, up).ok && (!best || up.cost < best.up.cost)) best = { dev, up };
       }
       if (!best || !buyUpgrade(g, best.dev, best.up.id)) return;
@@ -61,8 +73,10 @@ function play(order, usePowers, branch, seed) {
     while (true) {
       const type = order[i % order.length];
       if (g.warrants < getDeveloper(type).cost) return;
-      const cell = cells.find(x => !g.devs.some(d => d.col === x.c && d.row === x.r));
-      if (!cell) return;
+      // Seeded jitter: one of the three best free cells.
+      const free = cells.filter(x => !g.devs.some(d => d.col === x.c && d.row === x.r)).slice(0, 3);
+      if (!free.length) return;
+      const cell = free[Math.floor(g.random() * free.length)];
       placeDev(g, type, cell.c, cell.r); i++;
     }
   };
@@ -70,8 +84,11 @@ function play(order, usePowers, branch, seed) {
   let t = 0;
   while (!['won', 'lost'].includes(g.phase) && t < 3600) {
     step(g, 0.05); t += 0.05;
-    if (usePowers && g.phase === 'wave') { for (const p of ['bart', 'jeroen', 'thomas']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
-    if (g.phase === 'bell') { upgrade(); hire(); ringBell(g); }
+    if (powers && g.phase === 'wave') { for (const p of ['bart', 'jeroen', 'thomas']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
+    if (g.phase === 'bell') {
+      if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); }
+      ringBell(g);
+    }
   }
   return { won: g.phase === 'won', wave: g.wave + 1, lives: g.lives, bought };
 }
@@ -79,24 +96,27 @@ function play(order, usePowers, branch, seed) {
 // Level-3 upgrade ids for the types in an order, in content order.
 const level3Ids = order => [...new Set(order)].flatMap(type => (getDeveloper(type).upgrades?.level3 ?? []).map(u => u.id));
 
-function run(name, order, usePowers, branch) {
+function run(name, strategy) {
   const runs = [];
-  for (let seed = 1; seed <= SEEDS; seed++) runs.push(play(order, usePowers, branch, seed));
+  for (let seed = 1; seed <= SEEDS; seed++) runs.push(play(strategy, seed));
   const avg = f => (runs.reduce((n, r) => n + f(r), 0) / runs.length).toFixed(1);
   const wins = runs.filter(r => r.won).length;
-  const ups = level3Ids(order).map(id => `${id} ${runs.reduce((n, r) => n + (r.bought[id] ?? 0), 0)}`).join(' ');
-  console.log(`${name.padEnd(24)} wins ${`${wins}/${SEEDS}`.padEnd(5)} wave ${avg(r => r.wave).padStart(4)}  lives ${avg(r => r.lives).padStart(4)}  ${ups}`);
+  const ups = level3Ids(strategy.order).map(id => `${id} ${runs.reduce((n, r) => n + (r.bought[id] ?? 0), 0)}`).join(' ');
+  const label = `${name} ${strategy.powers ? 'powers' : 'no powers'} ${strategy.bell === 'up' ? 'up-first' : 'hire-first'}`;
+  console.log(`${label.padEnd(36)} wins ${`${wins}/${SEEDS}`.padEnd(5)} wave ${avg(r => r.wave).padStart(4)}  lives ${avg(r => r.lives).padStart(4)}  ${ups}`);
+}
+
+// Each strategy runs with and without powers, and with both bell orders.
+function runAll(name, order, branch) {
+  for (const powers of [false, true]) for (const bell of ['up', 'hire']) run(name, { order, powers, branch, bell });
 }
 
 const ORDERS = [['react only', ['react']], ['java only', ['java']], ['mixed', ['react', 'java', 'react', 'dotnet']], ['dotnet only', ['dotnet']]];
-for (const [name, order] of ORDERS) {
-  run(`${name} no powers`, order, false, 'alt');
-  run(`${name} powers`, order, true, 'alt');
-}
+for (const [name, order] of ORDERS) runAll(name, order, 'alt');
 for (const type of ['java', 'react', 'dotnet']) {
-  run(`${type} A`, [type], true, 'A');
-  run(`${type} B`, [type], true, 'B');
+  runAll(`${type} A`, [type], 'A');
+  runAll(`${type} B`, [type], 'B');
 }
 // .NET only can't hire before wave 1, so its branches also run behind a React opener.
-run('react+dotnet A', ['react', 'dotnet'], true, { dotnet: 'A' });
-run('react+dotnet B', ['react', 'dotnet'], true, { dotnet: 'B' });
+runAll('react+dotnet A', ['react', 'dotnet'], { dotnet: 'A' });
+runAll('react+dotnet B', ['react', 'dotnet'], { dotnet: 'B' });
