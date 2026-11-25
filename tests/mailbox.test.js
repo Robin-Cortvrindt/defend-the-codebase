@@ -21,6 +21,7 @@ beforeEach(() => {
   ]);
   g = createGame(); startGame(g);
   mailbox.init(g);
+  g.phase = 'wave';            // mail only arrives during a sprint; tests that need another phase set it
   g.random = () => 0.5;
 });
 
@@ -126,8 +127,8 @@ test('no offers while 4 tasks are accepted', () => {
   assert.equal(g.mailbox.timer, timer);
 });
 
-test('timer does not run in menu, review or lost', () => {
-  for (const phase of ['menu', 'review', 'lost']) {
+test('timer does not run outside a sprint: build time, bell, review, menu, lost', () => {
+  for (const phase of ['building', 'bell', 'menu', 'review', 'lost']) {
     g.phase = phase;
     tickMailbox(g, 100);
     assert.equal(g.mailbox.offer, null, phase);
@@ -135,13 +136,28 @@ test('timer does not run in menu, review or lost', () => {
   }
 });
 
-test('timer runs in building, wave and bell', () => {
-  for (const phase of ['building', 'wave', 'bell']) {
-    mailbox.init(g);
-    g.phase = phase;
-    tickMailbox(g, 5);
-    assert.ok(g.mailbox.offer, phase);
-  }
+test('timer runs during a sprint', () => {
+  mailbox.init(g);
+  g.phase = 'wave';
+  tickMailbox(g, 5);
+  assert.ok(g.mailbox.offer);
+});
+
+test('an offer still showing when the sprint ends can be accepted during the bell', () => {
+  makeOffer(g);
+  g.phase = 'bell';
+  tickMailbox(g, 0.016);
+  tickOffer(g, 1);
+  assert.ok(g.mailbox.offer);
+  assert.ok(acceptOffer(g));
+});
+
+test('an offer still showing at the bell runs out after its 6 seconds', () => {
+  makeOffer(g);
+  g.phase = 'bell';
+  tickOffer(g, 6.1);
+  assert.equal(g.mailbox.offer, null);
+  assert.equal(g.mailbox.mails.length, 0);
 });
 
 test('no template offered twice: accepted tasks and the pending offer are excluded', () => {

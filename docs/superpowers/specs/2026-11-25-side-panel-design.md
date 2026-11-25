@@ -115,7 +115,7 @@ Option 1 won because a permanent panel is layout, not an add-on.
 
 **Offers replace mail delivery:**
 
-- **Arrival.** The arrival timer works as today: first after 5 s, then every 30 s of scaled game time, in the `building`, `wave` and `bell` phases. When it fires, it creates an **offer** instead of adding a mail straight to the list.
+- **Arrival.** The arrival timer runs **only during a sprint** (`wave` phase; changed after playtesting): first after 5 s of sprint time, then every 30 s of scaled game time. It pauses during build time, the bell and the review. When it fires, it creates an **offer** instead of adding a mail straight to the list. An offer still showing when a sprint ends stays clickable during the bell until its 6 s run out.
 - **One at a time.** There's at most one pending offer. The timer doesn't run while an offer is pending, or while 4 tasks are accepted.
 - **The roll.** Template, phishing roll and reward kind are rolled when the offer is made, as in `deliverMail` today.
 - **Expiry.** The offer lasts `OFFER_SECONDS = 6` seconds (my call). The spec says "a few seconds", and missing one now costs the task, so 6 s gives a fair chance.

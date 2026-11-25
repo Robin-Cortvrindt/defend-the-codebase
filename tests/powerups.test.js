@@ -197,3 +197,35 @@ test('investment files apply to powerupMods via startGame', async () => {
   assert.ok(Math.abs(powerupMod(g, 'ceo').cooldown - 0.8) < 1e-9);
   assert.ok(Math.abs(powerupMod(g, 'claude').cooldown - 0.7) < 1e-9);
 });
+
+// ---------- cooldowns only run during a sprint ----------
+// A sprint-like game: phase 'wave' with a bug on the map so the sprint does not end by itself.
+function heldWave() { const g = waveGame(); spawnBug(g, 'b', 10); return g; }
+
+test('a cooldown pauses between sprints and resumes in the next sprint', () => {
+  const g = heldWave();
+  usePowerup(g, 'training');
+  tickPowerups(g, 15.01);                 // the effect ends during the sprint: cooldown starts
+  const left = powerupState(g, 'training').cooldownLeft;
+  assert.ok(left > 0);
+  for (const phase of ['bell', 'building', 'review']) {
+    g.phase = phase;
+    step(g, 5);
+    assert.equal(powerupState(g, 'training').cooldownLeft, left, phase);
+  }
+  g.phase = 'wave';
+  step(g, 5);
+  assert.ok(Math.abs(powerupState(g, 'training').cooldownLeft - (left - 5)) < 1e-9);
+});
+
+test('an active power-up keeps its remaining time until the next sprint', () => {
+  const g = heldWave();
+  usePowerup(g, 'training');
+  step(g, 3);
+  const remaining = powerupState(g, 'training').remaining;
+  g.phase = 'bell';
+  step(g, 30);
+  assert.equal(powerupState(g, 'training').active, true);
+  assert.equal(powerupState(g, 'training').remaining, remaining);
+  assert.equal(g.mods.xpMultiplier, 2);
+});

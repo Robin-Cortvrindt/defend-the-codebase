@@ -20,13 +20,13 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
   | .NET | .NET Framework 4.8 | .NET Core: faster fire | Visual Studio Enterprise: one huge hit | Azure Function: area damage, billed 1 White Monster every 0.5 s while it fires. Toggle it in the panel. |
 
   React developers fire 10% faster for each other React developer on the map, up to +50%.
-- **Power-ups** are free. Each one has a cooldown instead of a price:
+- **Power-ups** are free. Each one has a cooldown instead of a price, and cooldowns only count down during a sprint:
   - **Training manager:** double XP.
   - **Business manager:** double drinks.
   - **CEO:** attack speed +50%.
   - **Claude:** squashes every bug on the map. Cooldown 90 s, and there's a 25% chance it backfires and doubles the bugs. The free Claude from a task reward lets you fire it even during the cooldown, and resets the cooldown. The Enterprise plan investment shortens it.
 - **Side panel:** always on the right of the board. It shows your Nexios building (floors, production, Warrants and every upgrade level), how many developers of each kind you have, and your tasks.
-- **Tasks:** new mail pops up at the top of the Tasks section for 6 seconds, such as "Hire 3 .NET developers" or "Survive 2 more sprints". Click it to accept the task; miss it and it's gone. You can hold up to 4 tasks. Finish one and press Claim for drinks (split evenly over the three), or now and then a free Claude. Watch out: about 1 in 6 mails is phishing, and you only find out when you claim it, and then it steals drinks, split evenly too.
+- **Tasks:** during a sprint, new mail pops up at the top of the Tasks section for 6 seconds, such as "Hire 3 .NET developers" or "Survive 2 more sprints". Click it to accept the task; miss it and it's gone. You can hold up to 4 tasks. Finish one and press Claim for drinks (split evenly over the three), or now and then a free Claude. Watch out: about 1 in 6 mails is phishing, and you only find out when you claim it, and then it steals drinks, split evenly too.
 - **Sprints and quarters:** waves are sprints, 7 sprints make a quarter, 4 quarters make a year, and it never ends. Between sprints you ring the Nexios victory bell.
 - **Warrants:** the building's currency (it used to be called Nexios Coins). You get 1 per sprint and 3 more per quarter. The **quarter review** opens once the last bug is gone and every drop is collected or has expired. There you spend them on the Nexios building: **add a floor** (+5 production, heals 5; the building grows) or a counter-upgrade for each random event, 3 levels each: **air conditioning** (heat wave), **server heat recovery** (heating out), **coffee bar** (out of coffee), **energy drink fridge** (out of Red Bull) and **backup generator** (PROD is down). Every upgrade shows on the building.
 - **Yearly review** after every Q4: accept a guaranteed +10% on drinks from bugs, or ask for a raise (50% chance of +20%, otherwise nothing). The sprint-end bonus is paid in drinks too.

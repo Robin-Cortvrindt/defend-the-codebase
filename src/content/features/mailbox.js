@@ -21,7 +21,8 @@ export const LOCK_SECONDS = 10;        // how long a compromised developer is lo
 const FLASH_SECONDS = 0.4;
 const RED = '#DC2626';
 export const OFFER_SECONDS = 6;        // real seconds a new-mail offer stays up before it is missed
-const ACTIVE_PHASES = ['building', 'wave', 'bell'];
+const ACTIVE_PHASES = ['building', 'wave', 'bell'];   // an offer that is showing stays clickable here
+const MAIL_PHASES = ['wave'];                          // new mail only arrives during a sprint
 const CLAIM_PHASES = ['building', 'wave', 'bell', 'review'];
 
 const hire = type => ({ 'dev:placed': (m, d) => (d.dev?.type === type ? 1 : 0) });
@@ -105,7 +106,7 @@ export function tickMailbox(game, dt) {
   const box = game.mailbox;
   if (!box) return;
   if (box.offer && !ACTIVE_PHASES.includes(game.phase)) missOffer(game);
-  if (box.offer || !ACTIVE_PHASES.includes(game.phase) || box.mails.length >= MAX_MAILS) return;
+  if (box.offer || !MAIL_PHASES.includes(game.phase) || box.mails.length >= MAX_MAILS) return;
   box.timer -= dt;
   if (box.timer <= 0) {
     makeOffer(game);
