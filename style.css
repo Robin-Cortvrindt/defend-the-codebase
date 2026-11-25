@@ -43,7 +43,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
 
 /* stage */
-#stage { position: relative; line-height: 0; }
+#stage { position: relative; line-height: 0; justify-self: center; align-self: start; max-width: 100%; }
 #game { display: block; width: 100%; cursor: crosshair; }
 #overlay { position: absolute; inset: 0; z-index: 9; line-height: 1.4; }
 #overlay:empty { pointer-events: none; }
@@ -274,7 +274,7 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
 .quit-box .lede b { color: #fff; }
 #stage:has(.quit-modal) .pause-veil { display: none; }
 /* side panel: permanent, right of the board; the board sets the row height */
-#play { display: grid; grid-template-columns: minmax(0, 1fr) 280px; }
+#play { display: grid; grid-template-columns: minmax(0, 1fr) 280px; background: #001725; }
 #side-panel { position: relative; border-left: 1px solid var(--navy3); background: #001A2B; line-height: 1.3; }
 .sp-inner { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; }
 .sp-sec { padding: 10px 14px; border-bottom: 1px solid var(--navy3); }
