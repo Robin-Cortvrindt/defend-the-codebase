@@ -59,8 +59,8 @@ test('java: Garbage Collector holds fire 1 s every 8 s, then pulses 3x to all in
   }
   const pulse = log.find(e => e.t > 8.5 && e.dNear > 0); // first tick at or past 9 s (float drift may land it on the 9.05 tick)
   assert.ok(pulse.t >= 9.0 - 1e-6 && pulse.t <= 9.05 + 1e-6);
-  assert.equal(pulse.dNear, 78);
-  assert.ok(pulse.dFar >= 78);
+  assert.equal(pulse.dFar, 78); // bug at 260 is the less advanced one, not the regular shot's target
+  assert.ok(pulse.dNear >= 78); // furthest-along (300) may also take the regular shot
   assert.ok(g.effects.some(e => e.kind === 'pop' && e.text === 'Stop-the-World'));
 });
 
