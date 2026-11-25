@@ -1,4 +1,4 @@
-import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -74,6 +74,7 @@ test('kill pays drinks and gives XP + a kill to both developers', () => {
   const before = totalDrinks(g);
   tickFirewalls(g, 1);
   assert.equal(g.bugs.includes(bug), false);
+  collectAll(g);
   assert.equal(totalDrinks(g), before + 3);
   assert.deepEqual([a.xp, b.xp, a.kills, b.kills], [1, 1, 1, 1]);
 });

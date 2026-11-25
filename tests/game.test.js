@@ -1,6 +1,6 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, chooseYearReview, killBug, getSprintDef, deathAnimDone, DEATH_ANIM, quitRun } from '../src/engine/game.js';
@@ -188,10 +188,10 @@ test('quitRun is ignored in the menu and after a loss', () => {
 test('a normal kill pays a random drink: reward x drinkMultiplier', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.spawnQueue = []; g.random = () => 0;
-  killBug(g, spawnBug(g, 'b'));
+  killBug(g, spawnBug(g, 'b')); collectAll(g);
   assert.equal(g.drinks.coffee, 53);
   g.mods.drinkMultiplier = 2;
-  killBug(g, spawnBug(g, 'b'));
+  killBug(g, spawnBug(g, 'b')); collectAll(g);
   assert.equal(g.drinks.coffee, 59);
 });
 
@@ -199,14 +199,14 @@ test('a kill pays at least 1 drink', () => {
   R.registerBug({ id: 'tiny', hp: 1, speed: 1, reward: 1, radius: 5 });
   const g = createGame(); startGame(g); startWave(g);
   g.random = () => 0; g.mods.drinkMultiplier = 0.4;
-  killBug(g, spawnBug(g, 'tiny'));
+  killBug(g, spawnBug(g, 'tiny')); collectAll(g);
   assert.equal(g.drinks.coffee, 51);
 });
 
 test('a boss kill pays every drink reward / n', () => {
   R.registerBug({ id: 'boss', hp: 1, speed: 1, reward: 30, boss: true, radius: 5 });
   const g = createGame(); startGame(g); startWave(g);
-  killBug(g, spawnBug(g, 'boss'));
+  killBug(g, spawnBug(g, 'boss')); collectAll(g);
   assert.deepEqual(g.drinks, { coffee: 60, monster: 60, redbull: 60 });
 });
 

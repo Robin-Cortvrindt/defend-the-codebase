@@ -7,7 +7,7 @@ import { tickPowerups } from './powerups.js';
 import { rollEvent, endEvent } from './random-events.js';
 import { applyInvestments } from './investments.js';
 import { startingDrinks, addEachDrink, eachShare } from './drinks.js';
-import { payKill } from './drops.js';
+import { dropDrinks, tickDrops } from './drops.js';
 
 export const START_LIVES = 20;
 export const BOSS_DELAY = 3;    // seconds between the last regular bug and the boss
@@ -41,6 +41,7 @@ export function createGame() {
     bugs: [],
     devs: [],
     effects: [],
+    drops: [],                // drinks lying on the board, waiting to be clicked
     spawnQueue: [],
     waveTime: 0,
     deathTime: 0,             // seconds since production went down (drives the collapse animation)
@@ -91,6 +92,7 @@ export function getSprintDef(n) {
 
 export function startGame(game) {
   game.phase = 'building';
+  game.drops = [];
   applyInvestments(game);
   emit('game:start', { game });
 }
@@ -144,7 +146,7 @@ export function killBug(game, bug, dev = null) {
   const i = game.bugs.indexOf(bug);
   if (i >= 0) game.bugs.splice(i, 1);
   const def = getBug(bug.type);
-  payKill(game, def);
+  dropDrinks(game, bug, def);
   game.stats.squashed++;
   game.quarterStats.squashed++;
   try { def?.onDeath?.(bug, game); } catch (e) { console.error(e); }
@@ -171,6 +173,7 @@ function moveBugs(game, dt) {
 
 function loseRun(game) {
   endEvent(game);
+  game.drops = [];
   game.phase = 'lost';
   emit('game:lost', { game, wave: game.wave + 1, sprint: game.sprint + 1, info: sprintInfo(game.sprint) });
 }
@@ -187,6 +190,8 @@ export function quitRun(game) {
 function checkEnd(game) {
   if (game.lives <= 0) { loseRun(game); return; }
   if (game.spawnQueue.length || game.bugs.length) return;
+  // The last sprint of a quarter waits until every drop is collected or gone.
+  if (sprintInfo(game.sprint).sprint === SPRINTS_PER_QUARTER && game.drops.length) return;
   endEvent(game);
   const info = sprintInfo(game.sprint);
   const bonus = sprintBonus(game.sprint);
@@ -223,6 +228,7 @@ export function step(game, dt) {
     moveBugs(game, dt);
     tickDevs(game, dt);
   }
+  if (game.phase === 'wave' || game.phase === 'bell') tickDrops(game, dt);
   tickPowerups(game, dt);
   tickEffects(game, dt);
   for (const f of getFeatures()) {

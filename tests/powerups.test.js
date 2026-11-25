@@ -1,6 +1,6 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step, killBug } from '../src/engine/game.js';
@@ -61,6 +61,7 @@ test('Claude success kills all bugs and pays rewards; power-ups cost nothing', (
   spawnBug(g, 'b', 10); spawnBug(g, 'b', 20);
   assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(g.bugs.length, 0);
+  collectAll(g);
   assert.equal(totalDrinks(g), drinksBefore + 8);
 });
 

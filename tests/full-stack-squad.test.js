@@ -1,4 +1,4 @@
-import { registerTestDrinks, totalDrinks } from './helpers/drinks.js';
+import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
@@ -100,6 +100,7 @@ test('bounce kill credits the React developer: XP, kill, drinks', () => {
   assert.equal(g.bugs.includes(weak), false);
   assert.equal(react.kills, 1);
   assert.equal(react.xp, 1);
+  collectAll(g);
   assert.equal(totalDrinks(g), before + 3);
 });
 
