@@ -6,7 +6,8 @@ import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.j
 import { placeDev, sellDev } from '../src/engine/devs.js';
 import { isPathCell } from '../src/engine/map.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
-import securityTraining, { firewallFeature, findFirewalls, tickFirewalls, FIREWALL_DPS } from '../src/content/investments/security-training.js';
+import securityTraining, { firewallFeature, findFirewalls, tickFirewalls, FIREWALL_DPS, fireParticles } from '../src/content/investments/security-training.js';
+import { stubCtx } from './stub-ctx.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); setStorage(null);
@@ -106,4 +107,28 @@ test('buying security training then startGame sets game.unlocks.firewall', () =>
   assert.equal(g.unlocks.firewall, true);
   const g2 = createGame(); setStorage(null); startGame(g2);
   assert.equal(g2.unlocks.firewall, undefined);
+});
+
+test('fireParticles: the same moment always gives the same fire', () => {
+  assert.deepEqual(fireParticles(3.7, 100, 60, 40, 50), fireParticles(3.7, 100, 60, 40, 50));
+  assert.notDeepEqual(fireParticles(3.7, 100, 60, 40, 50), fireParticles(3.8, 100, 60, 40, 50));
+});
+
+test('fireParticles: flames burn across the cell and rise from it', () => {
+  for (const time of [0, 1.23, 9.9]) {
+    const parts = fireParticles(time, 100, 60, 40, 110);
+    assert.equal(parts.length, 110);
+    for (const p of parts) {
+      assert.ok(p.age >= 0 && p.age < 1, 'age is 0..1');
+      if (p.ember) continue;
+      assert.ok(p.x >= 100 - 20 - 6 && p.x <= 100 + 20 + 6, `x ${p.x} inside the cell (± sway)`);
+      assert.ok(p.y <= 60 + 20 && p.y >= 60 - 20 - 40, `y ${p.y} in or just above the cell`);
+    }
+  }
+});
+
+test('firewall draw does not throw, with a bug burning inside', () => {
+  const { g } = pairGame();
+  spawnBug(g, 'b', 100);
+  firewallFeature.draw(stubCtx(), g);
 });

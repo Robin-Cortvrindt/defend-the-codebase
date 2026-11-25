@@ -63,28 +63,84 @@ export const firewallFeature = {
     if (!game.unlocks?.firewall || game.phase !== 'wave') return;
     tickFirewalls(game, dt);
   },
-  // Features draw on top of the bugs, so the wall stays see-through.
+  // The whole lane cell burns with fuchsia fire. Features draw on top of the bugs, so bugs inside
+  // seem to walk through the flames, and they catch fire while they're in it.
   draw(ctx, game) {
     if (!game.unlocks?.firewall) return;
-    const pulse = 0.35 + 0.25 * (0.5 + 0.5 * Math.sin((game.time || 0) * 4));
-    for (const w of findFirewalls(game)) {
+    const walls = findFirewalls(game);
+    if (!walls.length) return;
+    const time = game.time || 0;
+    ctx.save();
+    for (const w of walls) {
       const { x, y } = cellCenter(w.col, w.row);
-      // The bar crosses the lane: a horizontal lane gets a vertical bar and vice versa.
-      const [bw, bh] = w.vertical ? [CELL, 8] : [8, CELL];
-      ctx.globalAlpha = pulse;
-      ctx.fillStyle = ACCENT;
-      ctx.shadowColor = ACCENT;
-      ctx.shadowBlur = 12;
-      ctx.fillRect(x - bw / 2, y - bh / 2, bw, bh);
-      ctx.globalAlpha = Math.min(1, pulse + 0.3);
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#F5D0FE';
-      if (w.vertical) ctx.fillRect(x - bw / 2, y - 1, bw, 2);
-      else ctx.fillRect(x - 1, y - bh / 2, 2, bh);
+      const glow = ctx.createRadialGradient(x, y, 2, x, y, CELL * 1.15);
+      glow.addColorStop(0, `rgba(192,38,211,${0.35 + 0.08 * Math.sin(time * 13)})`);
+      glow.addColorStop(1, 'rgba(192,38,211,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - CELL * 1.25, y - CELL * 1.25, CELL * 2.5, CELL * 2.5);
     }
-    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const w of walls) {
+      const { x, y } = cellCenter(w.col, w.row);
+      drawFire(ctx, fireParticles(time, x, y, CELL, FIRE_PARTICLES), 1);
+      for (const bug of game.bugs) {
+        const c = cellAt(bug.x, bug.y);
+        if (c.col === w.col && c.row === w.row) drawFire(ctx, fireParticles(time + bug.id * 0.37, bug.x, bug.y, 18, 16), 0.75);
+      }
+    }
+    ctx.restore();
   },
 };
+
+// ---- the fire ----
+export const FIRE_PARTICLES = 110;
+const fract = n => n - Math.floor(n);
+const hash = n => fract(Math.sin(n * 12.9898 + 78.233) * 43758.5453);
+
+// The flames of a burning square of `size` px centred on (x, y) at `time`, worked out from the time
+// alone (nothing to store or update). Particle i lives for a fixed time, starts somewhere in the
+// square each time round, rises and sways. Every 25th is an ember: tiny, longer lived, rises further.
+export function fireParticles(time, x, y, size, count) {
+  const parts = [];
+  for (let i = 0; i < count; i++) {
+    const ember = i % 25 === 0;
+    const life = ember ? 0.6 + 0.6 * hash(i + 0.5) : 0.27 + 0.27 * hash(i + 0.5);
+    const u = time + hash(i + 0.25) * life, cycle = Math.floor(u / life), t = u - cycle * life;
+    const seed = i * 7.13 + cycle * 1.37;
+    const x0 = x - size / 2 + 3 + hash(seed) * (size - 6), y0 = y - size / 2 + 4 + hash(seed + 0.3) * (size - 4);
+    const rise = (ember ? 60 : 32) * (0.6 + 0.6 * hash(seed + 0.6));
+    parts.push({
+      x: x0 + (hash(seed + 0.9) - 0.5) * 12 * t + Math.sin(time * 7 + y0 * 0.2) * 2,
+      y: y0 - rise * t - 10 * t * t,
+      r: ember ? 1 : 4.5 * (0.7 + 0.6 * hash(seed + 1.2)),
+      age: t / life,
+      ember,
+    });
+  }
+  return parts;
+}
+
+// Born pale and hot, cooling to fuchsia, then dark purple as they rise and fade.
+function fireColor(age) {
+  if (age < 0.18) return '#FCE7F3';
+  if (age < 0.4) return '#F0ABFC';
+  if (age < 0.7) return ACCENT;
+  return '#701A75';
+}
+
+function drawFire(ctx, parts, scale) {
+  for (const p of parts) {
+    if (p.ember) {
+      ctx.globalAlpha = (1 - p.age) * 0.9; ctx.fillStyle = '#F5D0FE';
+      ctx.fillRect(p.x, p.y, 1.6, 1.6);
+      continue;
+    }
+    ctx.globalAlpha = (1 - p.age) * 0.55;
+    ctx.fillStyle = fireColor(p.age);
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, p.r * scale * (1 - p.age * 0.65)), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
 
 registerInvestment(investment);
 registerFeature(firewallFeature);
