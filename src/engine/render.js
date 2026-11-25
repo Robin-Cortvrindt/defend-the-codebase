@@ -373,6 +373,19 @@ export function hitFlash(game, bug) {
 }
 const attackProgress = e => Math.min(1, Math.max(0, 1 - e.ttl / (e.maxTtl || 1)));
 
+// Six walking legs for a bug drawn facing +x, for bugs that draw themselves (bug `draw`).
+// `step` moves them: pass the bug's distance so they stop when it stops.
+export function drawBugLegs(ctx, r, step, color = COLORS.s400, spread = 1) {
+  const w = Math.sin(step / 3) * 1.6;
+  ctx.strokeStyle = color; ctx.lineWidth = r > 10 ? 2 : 1.4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (const s of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const fx = (-0.5 + i * 0.55) * r, sw = (i % 2 ? w : -w) * s;
+    ctx.moveTo(fx, s * r * 0.6); ctx.lineTo(fx + (i - 1) * r * 0.35 + sw, s * (r * spread + 4));
+  }
+  ctx.stroke();
+}
+
 // The look of a bug that doesn't draw itself: legs, a pale oval in its ring colour, its icon.
 function drawDefaultBug(ctx, def, bug, r) {
   if (def.legs) {

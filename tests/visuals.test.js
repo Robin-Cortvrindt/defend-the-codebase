@@ -140,3 +140,15 @@ test('every shipped developer look draws without throwing', async () => {
     }
   }
 });
+
+test('every shipped bug look draws without throwing', async () => {
+  const files = ['typo', 'nullpointer', 'legacy', 'merge-conflict', 'memory-leak', 'security-risk'];
+  for (const f of files) await import(`../src/content/bugs/${f}.js?t=${Math.random()}`);
+  const ids = ['typo', 'nullpointer', 'legacy', 'merge-conflict', 'merge-conflict-half', 'memory-leak', 'security-risk'];
+  for (const id of ids) {
+    const def = R.getBug(id);
+    assert.equal(typeof def.draw, 'function', `${id} has draw`);
+    for (const side of ['ours', 'theirs']) def.draw(stubCtx(), def.radius, { radius: def.radius, side, distance: 40 }, 1.3);
+    def.draw(stubCtx(), def.radius, undefined, 0);
+  }
+});
