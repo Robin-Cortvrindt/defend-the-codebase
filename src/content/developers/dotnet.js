@@ -15,15 +15,15 @@ registerDeveloper({
   blurb: 'Slow, heavy hits',
   levelName: '.NET Framework 4.8',
   upgrades: {
-    level2: { id: 'core', name: '.NET Core', cost: 90, description: 'Faster attacks', stats: { fireRate: 0.9 } },
+    level2: { id: 'core', name: '.NET Core', cost: 40, description: 'Faster attacks', stats: { fireRate: 0.9 } },
     level3: [
       {
-        id: 'vs', name: 'Visual Studio Enterprise', kind: 'steady', cost: 160,
+        id: 'vs', name: 'Visual Studio Enterprise', kind: 'steady', cost: 80,
         description: 'Huge single hit',
         stats: { damage: 160, fireRate: 0.6 },
       },
       {
-        id: 'azure', name: 'Azure Function', kind: 'gamble', cost: 140,
+        id: 'azure', name: 'Azure Function', kind: 'gamble', cost: 100,
         description: 'Area damage, pay-as-you-go',
         update(game, dev, dt, stats) {
           if (dev.state.azureOff) return false;

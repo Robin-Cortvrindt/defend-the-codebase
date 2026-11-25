@@ -21,10 +21,10 @@ registerDeveloper({
   blurb: 'Balanced all-rounder',
   levelName: 'Junior Java Dev',
   upgrades: {
-    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 60, description: '+damage, +range', stats: { damage: 26, range: 2.6 } },
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
     level3: [
       {
-        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 120,
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 30,
         description: '+15% damage to developers nearby',
         tooltip: "I don't code anymore, I enable.",
         modifyStats(game, dev, stats) { stats.damage *= 0.6; },
