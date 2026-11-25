@@ -3,15 +3,20 @@
 // until you claim it. Spec: docs/superpowers/specs/2026-11-25-mailbox-design.md
 //
 // To add a task: add one line to TEMPLATES below.
-import { registerFeature, getPowerup } from '../../engine/registry.js';
-import { addWarrants, addEffect } from '../../engine/game.js';
+import { registerFeature, getPowerup, getBugs, getDeveloper } from '../../engine/registry.js';
+import { addWarrants, addEffect, spawnBug } from '../../engine/game.js';
 import { on, emit } from '../../engine/events.js';
+import { WIDTH, HEIGHT } from '../../engine/map.js';
 
 export const MAX_MAILS = 4;
 export const FIRST_MAIL_DELAY = 5;     // seconds after the game starts
 export const MAIL_INTERVAL = 30;       // seconds of (scaled) game time between mails
 export const PHISH_CHANCE = 1 / 6;
 export const CLAUDE_REWARD_CHANCE = 1 / 8;
+export const CLAUDE_STEAL = 100;       // Warrants a phished "free Claude" mail takes
+export const LOCK_SECONDS = 10;        // how long a compromised developer is locked out
+const FLASH_SECONDS = 0.4;
+const RED = '#DC2626';
 const ACTIVE_PHASES = ['building', 'wave', 'bell'];
 
 const hire = type => ({ 'dev:placed': (m, d) => (d.dev?.type === type ? 1 : 0) });
@@ -91,8 +96,86 @@ function payReward(game, mail) {
   addEffect(game, { kind: 'banner', title: 'Reward claimed', text: `${mail.from}: ${what}`, accent: '#16A34A', ttl: 2.5 });
 }
 
-// Phishing penalties arrive in the next step; until then a phishing claim simply pays nothing.
-function applyPenalty() { return 'stolen'; }
+// ---------- phishing penalties ----------
+export const stealAmount = mail => (mail.reward.kind === 'claude' ? CLAUDE_STEAL : mail.reward.amount);
+export const malwareCount = game => Math.min(8, 3 + Math.floor(game.sprint / 3));
+
+function phished(game, text) {
+  game.mailbox.flash = FLASH_SECONDS;
+  addEffect(game, { kind: 'banner', title: 'Phished', text, accent: RED, ttl: 3 });
+}
+
+function spawnMalware(game, count) {
+  const types = getBugs().filter(b => !b.boss);
+  if (!types.length) return;
+  for (let i = 0; i < count; i++) {
+    const def = types[Math.floor(game.random() * types.length)];
+    spawnBug(game, def.id, game.random() * 30);
+  }
+}
+
+function steal(game, mail) {
+  const n = stealAmount(mail);
+  game.warrants = Math.max(0, game.warrants - n);
+  phished(game, `That wasn't ${mail.from}. ${n} Warrants gone.`);
+  return 'stolen';
+}
+
+function malware(game) {
+  const n = malwareCount(game);
+  if (game.phase === 'wave') {
+    spawnMalware(game, n);
+    phished(game, `The attachment was malware. ${n} bugs incoming.`);
+  } else {
+    game.mailbox.pendingMalware += n;
+    phished(game, `The attachment was malware. ${n} bugs next sprint.`);
+  }
+  return 'malware';
+}
+
+function compromise(game, mail) {
+  if (!game.devs.length) return steal(game, mail);
+  const dev = game.devs[Math.floor(game.random() * game.devs.length)];
+  dev.cooldown = LOCK_SECONDS;
+  game.mailbox.locks.push({ devId: dev.id, until: game.time + LOCK_SECONDS });
+  const name = getDeveloper(dev.type)?.name ?? 'developer';
+  phished(game, `A ${name} developer gave away their password.`);
+  return 'compromised';
+}
+
+export function applyPenalty(game, mail) {
+  const kinds = [steal, malware, compromise];
+  return kinds[Math.min(kinds.length - 1, Math.floor(game.random() * kinds.length))](game, mail);
+}
+
+function tickPenalties(game, dt) {
+  const box = game.mailbox;
+  if (!box) return;
+  box.flash = Math.max(0, box.flash - dt);
+  box.locks = box.locks.filter(l => l.until > game.time && game.devs.some(d => d.id === l.devId));
+}
+
+function drawPadlock(ctx, x, y) {
+  ctx.fillStyle = 'rgba(0, 30, 50, 0.6)';
+  ctx.fillRect(x - 16, y - 16, 32, 32);
+  ctx.strokeStyle = '#E2E8F0'; ctx.fillStyle = '#E2E8F0'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y - 3, 5, Math.PI, 0); ctx.stroke();
+  ctx.fillRect(x - 7, y - 3, 14, 10);
+  ctx.fillStyle = '#001E32'; ctx.fillRect(x - 1, y, 2, 4);
+}
+
+function drawPenalties(ctx, game) {
+  const box = game.mailbox;
+  if (!box) return;
+  for (const lock of box.locks) {
+    const dev = game.devs.find(d => d.id === lock.devId);
+    if (dev) drawPadlock(ctx, dev.x, dev.y);
+  }
+  if (box.flash > 0) {
+    ctx.fillStyle = `rgba(220, 38, 38, ${(0.25 * box.flash / FLASH_SECONDS).toFixed(3)})`;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  }
+}
 
 export function claimMail(game, mailId) {
   const box = game.mailbox;
@@ -119,13 +202,21 @@ export function attachListeners() {
   on('powerup:activated', ({ game, id }) => {
     if (id === 'claude' && game?.mailbox?.vouchers > 0) game.mailbox.vouchers--;
   });
+  on('wave:start', ({ game }) => {
+    const box = game?.mailbox;
+    if (!box?.pendingMalware) return;
+    const n = box.pendingMalware;
+    box.pendingMalware = 0;
+    spawnMalware(game, n);
+  });
 }
 attachListeners();
 
 const feature = {
   id: 'mailbox',
   init(game) { game.mailbox = createMailbox(); wrapClaude(); },
-  update(game, dt) { tickMailbox(game, dt); },
+  update(game, dt) { tickMailbox(game, dt); tickPenalties(game, dt); },
+  draw(ctx, game) { drawPenalties(ctx, game); },
   hudButtons: [{ label: 'Inbox', hint: '0 new · 0/4', onClick(game) { if (game.mailbox) game.mailbox.open = !game.mailbox.open; } }],
 };
 registerFeature(feature);

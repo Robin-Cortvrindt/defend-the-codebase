@@ -254,3 +254,132 @@ test('wrapClaude does not double-wrap across inits', () => {
   g.mailbox.vouchers = 0;
   assert.equal(powerupCost(g, 'claude'), 150);
 });
+
+// ---------- Task 3: phishing penalties ----------
+import { applyPenalty, stealAmount, malwareCount, LOCK_SECONDS, CLAUDE_STEAL } from '../src/content/features/mailbox.js';
+
+const PENALTY = { stolen: 0.1, malware: 0.5, compromised: 0.9 };
+// A finished phishing mail, ready to claim; the next random roll picks the penalty.
+function phish(kind, opts = {}) {
+  const m = give('hire-dotnet', { phishing: true, ...opts });
+  m.progress = m.target;
+  g.random = rolls(PENALTY[kind], 0.5);
+  return m;
+}
+function addDev(id, type = 'dotnet') {
+  const dev = { id, type, col: 0, row: 0, x: 20, y: 20, level: 0, xp: 0, cooldown: 0, kills: 0 };
+  g.devs.push(dev);
+  return dev;
+}
+const banners = () => g.effects.filter(e => e.kind === 'banner');
+const noopCtx = () => new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => {}), set: (t, k, v) => { t[k] = v; return true; } });
+
+test('constants for penalties match the spec', () => {
+  assert.equal(LOCK_SECONDS, 10);
+  assert.equal(CLAUDE_STEAL, 100);
+});
+
+test('stolen subtracts the reward and floors at 0', () => {
+  let m = phish('stolen');
+  g.warrants = 100;
+  assert.equal(claimMail(g, m.id), 'stolen');
+  assert.equal(g.warrants, 40);
+  m = phish('stolen');
+  g.warrants = 10;
+  claimMail(g, m.id);
+  assert.equal(g.warrants, 0);
+});
+
+test('stolen claude mail costs 100', () => {
+  stubClaude(); mailbox.init(g);
+  const m = phish('stolen', { claude: true });
+  assert.equal(stealAmount(m), 100);
+  g.warrants = 250;
+  claimMail(g, m.id);
+  assert.equal(g.warrants, 150);
+});
+
+test('malware spawns min(8, 3 + floor(sprint/3)) non-boss bugs during a sprint', () => {
+  R.registerBug({ id: 'boss', boss: true, hp: 300, speed: 10, livesLost: 5, reward: 30, radius: 18 });
+  g.phase = 'wave';
+  g.sprint = 6;
+  assert.equal(malwareCount(g), 5);
+  const m = phish('malware');
+  assert.equal(claimMail(g, m.id), 'malware');
+  assert.equal(g.bugs.length, 5);
+  assert.ok(g.bugs.every(b => b.type !== 'boss'));
+  g.sprint = 30;
+  assert.equal(malwareCount(g), 8);
+});
+
+test('malware outside a sprint is queued and spawns on wave:start', () => {
+  g.phase = 'bell';
+  const m = phish('malware');
+  claimMail(g, m.id);
+  assert.equal(g.bugs.length, 0);
+  assert.equal(g.mailbox.pendingMalware, 3);
+  assert.ok(banners().some(b => b.text.includes('next sprint')));
+  emit('wave:start', { game: g, wave: 1 });
+  assert.equal(g.bugs.length, 3);
+  assert.equal(g.mailbox.pendingMalware, 0);
+});
+
+test('compromised locks one developer for 10 s', () => {
+  R.registerDeveloper({ id: 'dotnet', name: '.NET', accent: '#C026D3', cost: 100, damage: 10, fireRate: 1, range: 2, counters: 'typo' });
+  const dev = addDev(7);
+  g.time = 3;
+  const m = phish('compromised');
+  assert.equal(claimMail(g, m.id), 'compromised');
+  assert.equal(dev.cooldown, 10);
+  assert.deepEqual(g.mailbox.locks, [{ devId: 7, until: 13 }]);
+  assert.ok(banners().some(b => b.title === 'Phished' && b.text.includes('.NET')));
+});
+
+test('compromised falls back to stolen with no developers', () => {
+  const m = phish('compromised');
+  g.warrants = 100;
+  assert.equal(claimMail(g, m.id), 'stolen');
+  assert.equal(g.warrants, 40);
+});
+
+test('phishing claim shows a Phished banner, a red flash and no reward', () => {
+  const m = phish('stolen');
+  const earned = g.stats.warrantsEarned;
+  claimMail(g, m.id);
+  assert.ok(banners().some(b => b.title === 'Phished'));
+  assert.ok(!banners().some(b => b.title === 'Reward claimed'));
+  assert.equal(g.stats.warrantsEarned, earned);
+  assert.ok(g.mailbox.flash > 0);
+});
+
+test('applyPenalty is exported and returns the kind', () => {
+  const m = give('hire-dotnet', { phishing: true });
+  g.random = rolls(PENALTY.stolen);
+  assert.equal(applyPenalty(g, m), 'stolen');
+});
+
+test('lock expires after 10 s of game time', () => {
+  addDev(7);
+  const m = phish('compromised');
+  claimMail(g, m.id);
+  g.time += 10.1;
+  mailbox.update(g, 0.016);
+  assert.equal(g.mailbox.locks.length, 0);
+});
+
+test('lock is dropped when its developer is sold', () => {
+  addDev(7);
+  const m = phish('compromised');
+  claimMail(g, m.id);
+  g.devs = [];
+  mailbox.update(g, 0.016);
+  assert.equal(g.mailbox.locks.length, 0);
+  assert.doesNotThrow(() => mailbox.draw(noopCtx(), g));
+});
+
+test('draw does not throw with a lock and a flash', () => {
+  addDev(7);
+  const m = phish('compromised');
+  claimMail(g, m.id);
+  assert.doesNotThrow(() => mailbox.draw(noopCtx(), g));
+});
