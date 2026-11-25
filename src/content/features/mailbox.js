@@ -106,13 +106,19 @@ function phished(game, text) {
   addEffect(game, { kind: 'banner', title: 'Phished', text, accent: RED, ttl: 3 });
 }
 
+// Malware must never end a run on its own: only one-life bugs, and always one life to spare.
+const malwareTypes = () => getBugs().filter(b => !b.boss && (b.livesLost ?? 1) <= 1);
+const safeMalware = (game, n) => Math.max(0, Math.min(n, game.lives - 1));
+
 function spawnMalware(game, count) {
-  const types = getBugs().filter(b => !b.boss);
-  if (!types.length) return;
-  for (let i = 0; i < count; i++) {
+  const types = malwareTypes();
+  if (!types.length) return 0;
+  const n = safeMalware(game, count);
+  for (let i = 0; i < n; i++) {
     const def = types[Math.floor(game.random() * types.length)];
     spawnBug(game, def.id, game.random() * 30);
   }
+  return n;
 }
 
 function steal(game, mail) {
@@ -122,8 +128,9 @@ function steal(game, mail) {
   return 'stolen';
 }
 
-function malware(game) {
-  const n = malwareCount(game);
+function malware(game, mail) {
+  const n = safeMalware(game, malwareCount(game));
+  if (n === 0 || !malwareTypes().length) return steal(game, mail);
   if (game.phase === 'wave') {
     spawnMalware(game, n);
     phished(game, `The attachment was malware. ${n} bugs incoming.`);
@@ -138,7 +145,7 @@ function compromise(game, mail) {
   if (!game.devs.length) return steal(game, mail);
   const dev = game.devs[Math.floor(game.random() * game.devs.length)];
   dev.cooldown = LOCK_SECONDS;
-  game.mailbox.locks.push({ devId: dev.id, until: game.time + LOCK_SECONDS });
+  game.mailbox.locks.push({ devId: dev.id });
   const name = getDeveloper(dev.type)?.name ?? 'developer';
   phished(game, `A ${name} developer gave away their password.`);
   return 'compromised';
@@ -153,7 +160,9 @@ function tickPenalties(game, dt) {
   const box = game.mailbox;
   if (!box) return;
   box.flash = Math.max(0, box.flash - dt);
-  box.locks = box.locks.filter(l => l.until > game.time && game.devs.some(d => d.id === l.devId));
+  // A lock lasts as long as the developer is really idle. Dev cooldown only ticks during sprints,
+  // so a lock made between sprints carries its padlock into the next sprint.
+  box.locks = box.locks.filter(l => (game.devs.find(d => d.id === l.devId)?.cooldown ?? 0) > 0);
 }
 
 function drawPadlock(ctx, x, y) {

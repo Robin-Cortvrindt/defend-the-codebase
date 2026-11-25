@@ -331,7 +331,7 @@ test('compromised locks one developer for 10 s', () => {
   const m = phish('compromised');
   assert.equal(claimMail(g, m.id), 'compromised');
   assert.equal(dev.cooldown, 10);
-  assert.deepEqual(g.mailbox.locks, [{ devId: 7, until: 13 }]);
+  assert.deepEqual(g.mailbox.locks, [{ devId: 7 }]);
   assert.ok(banners().some(b => b.title === 'Phished' && b.text.includes('.NET')));
 });
 
@@ -358,11 +358,11 @@ test('applyPenalty is exported and returns the kind', () => {
   assert.equal(applyPenalty(g, m), 'stolen');
 });
 
-test('lock expires after 10 s of game time', () => {
-  addDev(7);
+test('lock ends when the developer can fire again', () => {
+  const dev = addDev(7);
   const m = phish('compromised');
   claimMail(g, m.id);
-  g.time += 10.1;
+  dev.cooldown = 0;   // tickDevs counted the 10 s down during the sprint
   mailbox.update(g, 0.016);
   assert.equal(g.mailbox.locks.length, 0);
 });
@@ -382,4 +382,56 @@ test('draw does not throw with a lock and a flash', () => {
   const m = phish('compromised');
   claimMail(g, m.id);
   assert.doesNotThrow(() => mailbox.draw(noopCtx(), g));
+});
+
+// ---------- Final review fixes ----------
+test('a lock made between sprints lasts until the developer can fire again', () => {
+  const dev = addDev(7);
+  g.phase = 'bell';
+  const m = phish('compromised');
+  claimMail(g, m.id);
+  g.time += 30;                       // game time passes in the bell, but dev cooldown does not tick
+  mailbox.update(g, 0.016);
+  assert.equal(g.mailbox.locks.length, 1);
+  dev.cooldown = 0;                   // the developer has served the lock during the next sprint
+  mailbox.update(g, 0.016);
+  assert.equal(g.mailbox.locks.length, 0);
+});
+
+test('malware only spawns one-life bugs', () => {
+  R.registerBug({ id: 'legacy', hp: 200, speed: 25, livesLost: 3, reward: 8, radius: 14 });
+  g.phase = 'wave';
+  g.random = rolls(0.99);
+  const m = give('hire-dotnet', { phishing: true });
+  m.progress = m.target;
+  g.random = rolls(PENALTY.malware, 0.99);
+  claimMail(g, m.id);
+  assert.ok(g.bugs.length > 0);
+  assert.ok(g.bugs.every(b => b.type === 'typo'));
+});
+
+test('malware can never cost the last life on its own', () => {
+  g.phase = 'wave';
+  g.lives = 3;
+  const m = phish('malware');
+  claimMail(g, m.id);
+  assert.equal(g.bugs.length, 2);
+});
+
+test('malware with one life left steals instead', () => {
+  g.phase = 'wave';
+  g.lives = 1;
+  g.warrants = 100;
+  const m = phish('malware');
+  assert.equal(claimMail(g, m.id), 'stolen');
+  assert.equal(g.bugs.length, 0);
+});
+
+test('queued malware is capped by lives when it spawns', () => {
+  g.phase = 'bell';
+  const m = phish('malware');
+  claimMail(g, m.id);
+  g.lives = 2;
+  emit('wave:start', { game: g, wave: 1 });
+  assert.equal(g.bugs.length, 1);
 });
