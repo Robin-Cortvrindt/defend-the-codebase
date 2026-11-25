@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bell on New Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #001E32; --navy2: #0A2A40; --navy3: #123650; --green: #16A34A; --s400: #94A3B8; --s200: #E2E8F0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+  .lede { color: var(--s200); margin: 0 0 8px; max-width: 760px; line-height: 1.5; }
+  h2 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 36px 0 4px; }
+  h2 b { color: #fff; }
+  .note { color: var(--s200); font-size: 14px; margin: 0 0 10px; line-height: 1.5; max-width: 760px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--green); color: #fff; margin-left: 6px; vertical-align: 2px; letter-spacing: 0; text-transform: none; }
+
+  .stage { position: relative; border: 1px solid var(--navy3); border-radius: 10px; overflow: hidden; line-height: 0; }
+  .stage canvas { display: block; width: 100%; height: auto; }
+  .dim { position: absolute; inset: 0; background: rgba(0, 30, 50, .35); }
+  .card { position: absolute; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; line-height: 1.25;
+    background: rgba(0, 30, 50, .94); border: 1px solid var(--navy3); border-radius: 14px; padding: 1.2% 1.8% 1.6%; }
+  .card.center { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 26%; }
+  .card.hq { left: 64.5%; top: 2%; width: 28%; }
+  .card h3 { margin: 2px 0; font-size: clamp(12px, 1.7vw, 17px); font-weight: 900; }
+  .card small { color: var(--s400); font-size: clamp(10px, 1.1vw, 12px); }
+  .eyebrow { font-size: clamp(8px, .9vw, 10px); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--s400); }
+  .bell-svg { width: 48%; height: auto; cursor: pointer; }
+  .bell-body { transform-origin: 0 -54px; animation: idle 1.6s ease-in-out infinite; }
+  .waves { opacity: .5; }
+  @keyframes idle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  .hidden-mark { position: absolute; z-index: 2; background: rgba(248,113,113,.12); border: 2px dashed #F87171; border-radius: 6px; }
+  .legend { font-size: 13px; color: #FCA5A5; margin: 6px 0 0; }
+  .dim.locked { background: rgba(0, 30, 50, .55); cursor: not-allowed; }
+  .frame-locked { background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; }
+  .frame-locked .stage { border: 0; border-radius: 0; }
+  .bars { position: relative; border-top: 1px solid var(--navy3); padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .pu-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .hire-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pu, .hire { opacity: .4; filter: grayscale(.7); background: var(--navy2); border: 1px solid var(--navy3); border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; cursor: not-allowed; }
+  .pu small { color: var(--s400); font-size: 11px; }
+  .hire { flex-direction: row; align-items: center; gap: 10px; border-left: 3px solid var(--a); }
+  .hire i { width: 26px; height: 26px; border-radius: 6px; background: var(--a); }
+  .hire b { flex: 1; }
+  .hire em { font-style: normal; font-weight: 900; color: #F59E0B; }
+  .lock-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0, 30, 50, .95); border: 1px solid var(--navy3); border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--s200); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The bell on the new board</h1>
+  <p class="lede">The bell you picked (stacked, bigger bell) drawn on the 24 × 12 Nexios office board. On the old board the middle was empty. On the new one the lane runs right through it, and that's where the best developer spots are.</p>
+
+  <template id="bell-tpl">
+    <svg class="bell-svg" viewBox="-100 -100 200 200" aria-label="Nexios victory bell">
+      <circle r="74" fill="none" stroke="#123650"/><circle r="92" fill="none" stroke="#0A2A40"/>
+      <g class="bell-body">
+        <rect x="-5" y="-54" width="10" height="12" rx="3" fill="#E2E8F0"/>
+        <path d="M-36 28 Q-38 -36 0 -42 Q38 -36 36 28 L46 38 H-46 Z" fill="#fff"/>
+        <path d="M-46 38 H46" stroke="#16A34A" stroke-width="3"/>
+        <circle cy="47" r="7" fill="#E2E8F0"/>
+        <text y="6" text-anchor="middle" font-size="11" font-weight="900" letter-spacing="1.5" fill="#001E32" font-family="Lato, sans-serif">NEXIOS</text>
+      </g>
+      <path class="waves" d="M-60 -20 q-8 10 0 20 M-70 -26 q-12 16 0 32 M60 -20 q8 10 0 20 M70 -26 q12 16 0 32" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </template>
+
+  <h2><b>1</b> · Centred, as picked</h2>
+  <p class="note">The card covers the middle of the lane and the developers around it (outlined in red). They can't be clicked, upgraded or sold until you ring the bell, which is exactly when you'd want to rearrange them.</p>
+  <div class="stage" data-stage>
+    <div class="dim"></div>
+    <div class="hidden-mark" style="left:41.6%;top:41.6%;width:4.2%;height:8.4%"></div>
+    <div class="hidden-mark" style="left:50%;top:41.6%;width:4.2%;height:8.4%"></div>
+    <div class="hidden-mark" style="left:54.2%;top:50%;width:4.2%;height:8.4%"></div>
+    <div class="hidden-mark" style="left:50%;top:58.3%;width:4.2%;height:8.4%"></div>
+    <div class="card center"><span data-bell></span>
+      <div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Hiring and selling still work</small>
+    </div>
+  </div>
+  <p class="legend">Red outline: developers hidden under the card.</p>
+
+  <h2><b>2</b> · Same card, at Nexios HQ</h2>
+  <p class="note">The same stacked card with the bigger bell, placed in the open space in the top right, next to the PROD building, so the bell rings at Nexios HQ. That corner is the furthest from most of the lane, so it hides the fewest useful spots, and the whole middle stays clear.</p>
+  <div class="stage" data-stage>
+    <div class="dim"></div>
+    <div class="card hq"><span data-bell></span>
+      <div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Hiring and selling still work</small>
+    </div>
+  </div>
+
+  <h2 id="locked"><b>3</b> · Centred, everything locked <span class="tag">your rule · my pick</span></h2>
+  <p class="note">Nothing can change while the bell waits. The board is dimmed a bit more and doesn't react to clicks (no hiring, selling, upgrading or moving developers), the hire buttons and power-ups are greyed out with a small lock, and mail can't be accepted or claimed. Pause, speed, sound and quit still work. With nothing to click on the board, the centred card hides nothing you need. The card's last line changes to say how to ring it.</p>
+  <div class="frame-locked">
+    <div class="stage" data-stage>
+      <div class="dim locked"></div>
+      <div class="card center"><span data-bell></span>
+        <div class="eyebrow">Sprint 3 done · +40 Warrants · +1 coin</div><h3>Ring the bell to start sprint 4</h3><small>Click the bell or press Space</small>
+      </div>
+    </div>
+    <div class="bars">
+      <div class="pu-row"><span class="pu"><b>Training manager</b><small>Ready</small></span><span class="pu"><b>Business manager</b><small>Ready</small></span><span class="pu"><b>CEO</b><small>Cooldown 12 s</small></span><span class="pu"><b>Claude</b><small>180 W</small></span></div>
+      <div class="hire-row"><span class="hire" style="--a:#2563EB"><i></i><b>React</b><em>40</em></span><span class="hire" style="--a:#EA580C"><i></i><b>Java</b><em>60</em></span><span class="hire" style="--a:#C026D3"><i></i><b>.NET</b><em>90</em></span></div>
+      <div class="lock-note">🔒 Locked until you ring the bell</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const M = { cols: 24, rows: 12, prod: { x: 896, y: 226 },
+  wp: [[0,60],[300,60],[300,220],[140,220],[140,420],[460,420],[460,140],[620,140],[620,380],[780,380],[780,260],[896,260]],
+  devs: [[5,7,'R'],[8,3,'J'],[10,7,'J'],[10,5,'R'],[12,5,'J'],[13,6,'N'],[12,7,'R'],[16,6,'N'],[17,8,'R'],[4,2,'N']] };
+const CELL = 40, PATH_W = 36, W = M.cols * CELL, H = M.rows * CELL;
+const COLORS = { R: '#2563EB', J: '#EA580C', N: '#C026D3' };
+const CODE = ['if (user == null) return;', 'const res = await fetch(url);', 'try { save(order); }', 'catch (e) { log(e); }',
+  'SELECT * FROM users;', 'public void deploy() {', 'return items.map(x => x.id);', '// TODO: fix later', 'throw new Exception();'];
+
+function distToSeg(px, py, [ax, ay], [bx, by]) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+const freeCell = (c, r) => { const x = c * CELL + 20, y = r * CELL + 20;
+  return !M.wp.slice(1).some((b, i) => distToSeg(x, y, M.wp[i], b) < PATH_W / 2 + 18) && !(x > M.prod.x - 30 && y < M.prod.y + 100); };
+
+function office(ctx) {
+  const shades = ['#132A3E', '#152E44', '#11283B'];
+  for (let c = 0; c < M.cols; c++) for (let r = 0; r < M.rows; r++) {
+    ctx.fillStyle = shades[(c * 7 + r * 3) % 3]; ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+    ctx.strokeStyle = 'rgba(255,255,255,.025)'; ctx.beginPath();
+    for (let k = 6; k < CELL; k += 6) {
+      if ((c + r) % 2) { ctx.moveTo(c * CELL + k, r * CELL); ctx.lineTo(c * CELL + k, r * CELL + CELL); }
+      else { ctx.moveTo(c * CELL, r * CELL + k); ctx.lineTo(c * CELL + CELL, r * CELL + k); }
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 1; c < M.cols; c++) { ctx.moveTo(c * CELL + .5, 0); ctx.lineTo(c * CELL + .5, H); }
+  for (let r = 1; r < M.rows; r++) { ctx.moveTo(0, r * CELL + .5); ctx.lineTo(W, r * CELL + .5); }
+  ctx.stroke();
+  const plant = (x, y) => {
+    ctx.fillStyle = '#7C4A2A'; ctx.fillRect(x - 6, y + 2, 12, 9);
+    ctx.fillStyle = '#16A34A'; for (const [dx, dy, s] of [[-5, -2, 6], [5, -2, 6], [0, -7, 7], [0, 0, 6]]) { ctx.beginPath(); ctx.arc(x + dx, y + dy, s, 0, 7); ctx.fill(); }
+  };
+  const desk = (x, y) => {
+    ctx.fillStyle = '#C8A67A'; ctx.fillRect(x, y, 32, 18);
+    ctx.fillStyle = '#1E293B'; ctx.fillRect(x + 9, y + 3, 14, 8);
+    ctx.fillStyle = '#38BDF8'; ctx.fillRect(x + 10, y + 4, 12, 6);
+    ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(x + 16, y + 26, 6, 0, 7); ctx.fill();
+  };
+  if (freeCell(0, 11)) plant(20, 456); if (freeCell(11, 0)) plant(460, 20); if (freeCell(12, 0)) plant(500, 20);
+  if (freeCell(1, 9)) desk(44, 364); if (freeCell(2, 9)) desk(84, 364);
+  if (freeCell(20, 0)) desk(804, 6); if (freeCell(21, 0)) desk(844, 6);
+}
+
+function draw(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 900;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * H / W * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  office(ctx);
+  const path = () => { ctx.beginPath(); M.wp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = 'rgba(45,212,191,.45)'; ctx.lineWidth = PATH_W; path(); ctx.stroke();
+  ctx.strokeStyle = '#0B3448'; ctx.lineWidth = PATH_W - 4; path(); ctx.stroke();
+  ctx.font = '500 7.5px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  let n = 0;
+  for (let i = 1; i < M.wp.length; i++) {
+    const [ax, ay] = M.wp[i - 1], [bx, by] = M.wp[i], len = Math.hypot(bx - ax, by - ay);
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(by - ay, bx - ax));
+    ctx.beginPath(); ctx.rect(-PATH_W / 2 + 2, -PATH_W / 2 + 2, len + PATH_W - 4, PATH_W - 4); ctx.clip();
+    for (const row of [-2, -1, 0, 1, 2]) {
+      let x = -((n * 37 + row * 23) % 90);
+      while (x < len + PATH_W) { const s = CODE[(n++) % CODE.length]; ctx.fillStyle = row === 0 ? 'rgba(94,234,212,.55)' : 'rgba(148,163,184,.32)'; ctx.fillText(s, x, row * 7); x += ctx.measureText(s).width + 14; }
+    }
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(45,212,191,.4)'; ctx.lineWidth = 2;
+  for (const [x, y] of M.wp.slice(1, -1)) { ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke(); }
+  const p = M.prod;
+  ctx.fillStyle = '#0A2A40'; ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1;
+  ctx.fillRect(p.x + 2, p.y, 52, 68); ctx.strokeRect(p.x + 2.5, p.y + .5, 51, 67);
+  ctx.fillStyle = '#FDE68A';
+  for (let fy = p.y + 8; fy < p.y + 56; fy += 12) for (let fx = p.x + 10; fx < p.x + 48; fx += 12) ctx.fillRect(fx, fy, 6, 6);
+  ctx.fillStyle = '#94A3B8'; ctx.font = '700 9px Lato'; ctx.textAlign = 'center'; ctx.fillText('PROD', p.x + 28, p.y + 78); ctx.textAlign = 'left';
+  for (const [c, r, t] of M.devs) {
+    ctx.fillStyle = COLORS[t]; rr(ctx, c * CELL + 4, r * CELL + 4, 32, 32, 6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '900 11px Lato'; ctx.textAlign = 'center'; ctx.fillText(t === 'N' ? '.N' : t, c * CELL + 20, r * CELL + 21); ctx.textAlign = 'left';
+  }
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+const bell = document.getElementById('bell-tpl');
+document.querySelectorAll('[data-bell]').forEach(s => s.replaceWith(bell.content.cloneNode(true)));
+document.querySelectorAll('[data-stage]').forEach(s => s.prepend(document.createElement('canvas')));
+const drawAll = () => document.querySelectorAll('[data-stage] canvas').forEach(draw);
+document.fonts.ready.then(drawAll);
+addEventListener('resize', drawAll);
+</script>
+</body>
+</html>

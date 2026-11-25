@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top Bar</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #001E32; --navy2: #0A2A40; --navy3: #123650;
+    --blue: #2563EB; --orange: #EA580C; --fuchsia: #C026D3; --green: #16A34A; --green-l: #4ADE80; --red: #DC2626;
+    --s600: #475569; --s500: #64748B; --s400: #94A3B8; --s200: #E2E8F0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 1240px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+  .lede { color: var(--s200); margin: 0 0 8px; max-width: 820px; line-height: 1.5; }
+  h2 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 40px 0 4px; }
+  h2 b { color: #fff; }
+  .note { color: var(--s200); font-size: 14px; margin: 0 0 10px; line-height: 1.5; max-width: 820px; }
+  .state { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--s500); margin: 12px 0 4px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--green); color: #fff; margin-left: 6px; vertical-align: 2px; letter-spacing: 0; text-transform: none; }
+
+  /* frame: top bar + a strip of the board below it */
+  .frame { background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; }
+  .strip { height: 34px; background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 1px, transparent 1px 40px),
+    linear-gradient(#132A3E, #152E44); position: relative; }
+  .strip::after { content: ''; position: absolute; left: 0; width: 32%; top: 8px; height: 26px; background: #0B3448; border: 2px solid rgba(45,212,191,.45); border-bottom: 0; border-left: 0; }
+
+  .hud { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); min-height: 62px; }
+  .wordmark { font-weight: 900; letter-spacing: .14em; font-size: 15px; }
+  .stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+  .stat small { white-space: nowrap; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
+  .stat b { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .stat b.incident { font-size: 15px; color: var(--s400); }
+  .stat b.incident.on { color: var(--orange); }
+  .stat .raise { font-style: normal; color: var(--green-l); }
+  .prod { display: flex; gap: 3px; margin-top: 6px; }
+  .prod i { width: 10px; height: 9px; border-radius: 2px; background: var(--green); }
+  .prod i.off { background: var(--navy3); }
+  .spacer { flex: 1; }
+  .btn { border: 1px solid transparent; border-radius: 8px; padding: 8px 11px; font: inherit; font-size: 13px; font-weight: 700; background: var(--navy2); color: #fff; white-space: nowrap; }
+  .btn.ghost { background: transparent; border-color: var(--navy3); color: var(--s200); }
+  .btn.primary { background: var(--blue); }
+  .btn:disabled { background: var(--navy3); color: var(--s400); }
+  .btn.icon { padding: 8px 9px; min-width: 34px; }
+
+  /* shared bits for the new options */
+  .val { display: flex; align-items: center; gap: 6px; }
+  .ico { width: 18px; height: 18px; flex: none; }
+  .divider { width: 1px; align-self: stretch; background: var(--navy3); margin: 0 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 99px; background: rgba(234,88,12,.15); color: #FDBA74; border: 1px solid rgba(234,88,12,.5); white-space: nowrap; }
+  .chip.calm { background: transparent; color: var(--s500); border-color: var(--navy3); font-weight: 400; }
+  .health { width: 120px; height: 10px; border-radius: 99px; background: var(--navy3); overflow: hidden; margin-top: 6px; }
+  .health i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--green-l)); border-radius: 99px; }
+
+  /* A: sprint pips */
+  .pips { display: flex; gap: 4px; margin-top: 5px; align-items: center; }
+  .pip { width: 18px; height: 10px; border-radius: 3px; background: var(--navy3); position: relative; overflow: hidden; }
+  .pip.done { background: var(--green); }
+  .pip.now { background: var(--navy3); outline: 2px solid var(--blue); outline-offset: 1px; }
+  .pip.now i { position: absolute; inset: 0 auto 0 0; background: var(--blue); }
+  .pip.review { width: auto; padding: 0 5px; height: 14px; font-size: 9px; font-weight: 900; letter-spacing: .08em; color: var(--s400); background: transparent; border: 1px dashed var(--s600); line-height: 12px; }
+  .sprint-head { display: flex; align-items: baseline; gap: 8px; }
+  .sprint-head b { font-size: 16px; }
+  .sprint-head span { font-size: 12px; color: var(--s400); }
+
+  /* B: year roadmap */
+  .roadmap { flex: 1 1 360px; min-width: 300px; max-width: 460px; }
+  .roadmap .top { display: flex; justify-content: space-between; font-size: 12px; color: var(--s400); margin-bottom: 4px; }
+  .roadmap .top b { color: #fff; font-size: 14px; }
+  .quarters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .q { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; position: relative; padding-bottom: 13px; }
+  .q span { height: 8px; border-radius: 2px; background: var(--navy3); }
+  .q span.done { background: var(--green); }
+  .q span.now { background: var(--blue); box-shadow: 0 0 0 2px rgba(37,99,235,.4); }
+  .q label { position: absolute; left: 0; bottom: 0; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--s500); }
+  .q.cur label { color: #fff; }
+  .q::after { content: '★'; position: absolute; right: -2px; bottom: -1px; font-size: 9px; color: var(--s600); }
+  .q.past::after { color: #FACC15; }
+  .q:last-child::after { content: '🏆'; font-size: 9px; }
+
+  /* C: sprint card with live progress */
+  .sprint-card { display: flex; align-items: center; gap: 12px; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 10px; padding: 6px 12px; min-width: 330px; }
+  .sprint-num { display: flex; flex-direction: column; align-items: center; line-height: 1; padding-right: 12px; border-right: 1px solid var(--navy3); }
+  .sprint-num small { font-size: 9px; font-weight: 700; letter-spacing: .16em; color: var(--s400); text-transform: uppercase; }
+  .sprint-num b { font-size: 22px; font-weight: 900; margin-top: 2px; }
+  .sprint-num b em { font-style: normal; font-size: 13px; color: var(--s500); }
+  .sprint-body { flex: 1; min-width: 0; }
+  .sprint-body .line { display: flex; justify-content: space-between; font-size: 12px; color: var(--s400); gap: 8px; }
+  .sprint-body .line b { color: #fff; }
+  .bar { position: relative; height: 10px; border-radius: 99px; background: var(--navy3); margin: 5px 14px 4px 0; }
+  .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: linear-gradient(90deg, #1D4ED8, #60A5FA); }
+  .bar .boss { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%; background: #450A0A; border: 2px solid var(--red); display: grid; place-items: center; font-size: 10px; }
+  .bar .ticks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,30,50,.6) calc(10% - 1px) 10%); border-radius: 99px; }
+  .sprint-body .sub { font-size: 11px; color: var(--s500); }
+  .sprint-body .sub b { color: var(--s200); font-weight: 700; }
+  .wave-mix { display: flex; gap: 4px; align-items: center; }
+  .wave-mix i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 10px; }
+  .idea { background: var(--navy2); border: 1px solid var(--navy3); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--s200); line-height: 1.45; }
+  .idea b { display: block; color: #fff; margin-bottom: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Top bar</h1>
+  <p class="lede">Today the sprint shows as "Y1 · Q2 · 3 / 7": correct, but you have to read and work it out. Below are three ways to make it clear at a glance where you are in the quarter, how far the sprint has got and what's coming next. Each option shows two moments: <b>between sprints</b> and <b>mid-sprint</b>. The bar stays one row high, so the board keeps its space.</p>
+
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-warrant" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.5" fill="#F59E0B" stroke="#FCD34D"/><text x="10" y="14" text-anchor="middle" font-size="10" font-weight="900" fill="#78350F" font-family="Lato">W</text></symbol>
+    <symbol id="i-coin" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.5" fill="#16A34A" stroke="#4ADE80"/><text x="10" y="14" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Lato">N</text></symbol>
+    <symbol id="i-prod" viewBox="0 0 20 20"><rect x="4" y="3" width="12" height="15" rx="1" fill="#0A2A40" stroke="#94A3B8"/><g fill="#FDE68A"><rect x="6.5" y="6" width="2.5" height="2.5"/><rect x="11" y="6" width="2.5" height="2.5"/><rect x="6.5" y="10.5" width="2.5" height="2.5"/><rect x="11" y="10.5" width="2.5" height="2.5"/></g></symbol>
+  </svg>
+
+  <!-- NOW -->
+  <h2><b>Now</b></h2>
+  <div class="state">Mid-sprint</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><b>245</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="stat"><small>Sprint</small><b>Y1 · Q2 · 3 / 7</b></div>
+      <div class="stat"><small>Incident</small><b class="incident on">Heat wave</b></div>
+      <div class="spacer"></div>
+      <button class="btn ghost">2×</button><button class="btn ghost">Pause</button><button class="btn ghost">Quit</button><button class="btn ghost">Sound on</button>
+      <button class="btn primary" disabled>Sprint running</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+
+  <!-- A -->
+  <h2><b>A</b> · Sprint pips</h2>
+  <p class="note">The smallest change. The sprint becomes 7 blocks for the quarter: green when done, a blue outline for the current sprint that fills as you squash its bugs, then a dashed "review" marker for the quarter review. Year and quarter go above in words. Everything else stays as it is.</p>
+  <div class="state">Between sprints</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><b>245</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="stat">
+        <div class="sprint-head"><b>Sprint 3 of 7</b><span>Year 1 · Q2</span></div>
+        <div class="pips"><span class="pip done"></span><span class="pip done"></span><span class="pip now"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip review">REVIEW</span></div>
+      </div>
+      <div class="stat"><small>Incident</small><b class="incident">None</b></div>
+      <div class="spacer"></div>
+      <button class="btn ghost">1×</button><button class="btn ghost">Pause</button><button class="btn ghost">Quit</button><button class="btn ghost">Sound on</button>
+      <button class="btn primary">Start sprint 3 →</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+  <div class="state">Mid-sprint</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><b>245</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="stat">
+        <div class="sprint-head"><b>Sprint 3 of 7</b><span>Year 1 · Q2</span></div>
+        <div class="pips"><span class="pip done"></span><span class="pip done"></span><span class="pip now"><i style="width:60%"></i></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip review">REVIEW</span></div>
+      </div>
+      <div class="stat"><small>Incident</small><b class="incident on">Heat wave</b></div>
+      <div class="spacer"></div>
+      <button class="btn ghost">2×</button><button class="btn ghost">Pause</button><button class="btn ghost">Quit</button><button class="btn ghost">Sound on</button>
+      <button class="btn primary" disabled>Sprint running</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+
+  <!-- B -->
+  <h2 id="roadmap"><b>B</b> · Year roadmap</h2>
+  <p class="note">The whole year as a roadmap: 4 quarters of 7 sprints. Green is done, blue is now, a star marks each quarter review and a trophy the yearly review. You can see at a glance how far it is to the next review. It needs more room, so the buttons become icons with tooltips and the incident only shows when one is on.</p>
+  <div class="state">Between sprints</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><b>245</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="divider"></div>
+      <div class="roadmap">
+        <div class="top"><span><b>Year 1</b> · Q2 · Sprint 3</span><span>5 sprints to quarter review ★</span></div>
+        <div class="quarters">
+          <div class="q past"><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><label>Q1</label></div>
+          <div class="q cur"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span><span></span><span></span><label>Q2</label></div>
+          <div class="q"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><label>Q3</label></div>
+          <div class="q"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><label>Q4</label></div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost icon" title="Speed">1×</button><button class="btn ghost icon" title="Pause">❚❚</button><button class="btn ghost icon" title="Sound">🔊</button><button class="btn ghost icon" title="Quit">✕</button>
+      <button class="btn primary">Start sprint 3 →</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+  <div class="state">Mid-sprint</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><b>245</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Coins</small><b>4</b></div>
+      <div class="divider"></div>
+      <div class="roadmap">
+        <div class="top"><span><b>Year 1</b> · Q2 · Sprint 3</span><span>18 / 30 bugs squashed</span></div>
+        <div class="quarters">
+          <div class="q past"><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><label>Q1</label></div>
+          <div class="q cur"><span class="done"></span><span class="done"></span><span class="now" style="background:linear-gradient(90deg,var(--blue) 60%,var(--navy3) 60%)"></span><span></span><span></span><span></span><span></span><label>Q2</label></div>
+          <div class="q"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><label>Q3</label></div>
+          <div class="q"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><label>Q4</label></div>
+        </div>
+      </div>
+      <span class="chip">🔥 Heat wave</span>
+      <div class="spacer"></div>
+      <button class="btn ghost icon">2×</button><button class="btn ghost icon">❚❚</button><button class="btn ghost icon">🔊</button><button class="btn ghost icon">✕</button>
+      <button class="btn primary" disabled>Sprint running</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+
+  <!-- C -->
+  <h2><b>C</b> · Sprint card with live progress <span class="tag">my pick</span></h2>
+  <p class="note">The sprint gets its own card: a big "3/7" with the quarter underneath, and a progress bar for the bugs in this sprint that ends at the security-risk boss. Between sprints the card shows what's coming (which bug colours, and when the next review is). The other stats get small icons, production becomes a health bar, and the incident shows as a chip only while one is on.</p>
+  <div class="state">Between sprints</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><div class="val"><svg class="ico"><use href="#i-warrant"/></svg><b>245</b></div></div>
+      <div class="stat"><small>Production</small><div class="val"><svg class="ico"><use href="#i-prod"/></svg><div class="health"><i style="width:80%"></i></div></div></div>
+      <div class="stat"><small>Coins</small><div class="val"><svg class="ico"><use href="#i-coin"/></svg><b>4</b></div></div>
+      <div class="sprint-card">
+        <div class="sprint-num"><small>Sprint</small><b>3<em>/7</em></b><small>Y1 · Q2</small></div>
+        <div class="sprint-body">
+          <div class="line"><span>Up next: <b>30 bugs</b> + boss</span><span class="wave-mix"><i style="background:var(--blue)"></i><i style="background:var(--orange)"></i><i style="background:var(--s400)"></i></span></div>
+          <div class="bar"><span class="ticks"></span><span class="boss">🔓</span></div>
+          <div class="sub">Quarter review in <b>5 sprints</b></div>
+        </div>
+      </div>
+      <span class="chip calm">No incident</span>
+      <div class="spacer"></div>
+      <button class="btn ghost">1×</button><button class="btn ghost">Pause</button><button class="btn ghost">Quit</button><button class="btn ghost">Sound on</button>
+      <button class="btn primary">Start sprint 3 →</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+  <div class="state">Mid-sprint</div>
+  <div class="frame">
+    <div class="hud">
+      <span class="wordmark">NEXIOS</span>
+      <div class="stat"><small>Warrants <em class="raise">+10%</em></small><div class="val"><svg class="ico"><use href="#i-warrant"/></svg><b>245</b></div></div>
+      <div class="stat"><small>Production</small><div class="val"><svg class="ico"><use href="#i-prod"/></svg><div class="health"><i style="width:80%"></i></div></div></div>
+      <div class="stat"><small>Coins</small><div class="val"><svg class="ico"><use href="#i-coin"/></svg><b>4</b></div></div>
+      <div class="sprint-card">
+        <div class="sprint-num"><small>Sprint</small><b>3<em>/7</em></b><small>Y1 · Q2</small></div>
+        <div class="sprint-body">
+          <div class="line"><span><b>18 / 30</b> bugs squashed</span><span>boss incoming</span></div>
+          <div class="bar"><i style="width:60%"></i><span class="ticks"></span><span class="boss">🔓</span></div>
+          <div class="sub">Quarter review in <b>5 sprints</b></div>
+        </div>
+      </div>
+      <span class="chip">🔥 Heat wave</span>
+      <div class="spacer"></div>
+      <button class="btn ghost">2×</button><button class="btn ghost">Pause</button><button class="btn ghost">Quit</button><button class="btn ghost">Sound on</button>
+      <button class="btn primary" disabled>Sprint running</button>
+    </div>
+    <div class="strip"></div>
+  </div>
+
+  <h2><b>Other things we could improve</b> · ideas, no mockups yet</h2>
+  <p class="note">Pick any you like and I'll mock them up next.</p>
+  <div class="ideas">
+    <div class="idea"><b>Power-up cards</b>The four power-ups are text-only cards. Small portraits (training manager, business manager, CEO, Claude) and a round cooldown ring would make them easier to spot mid-sprint.</div>
+    <div class="idea"><b>Sprint preview on the board</b>Before you start a sprint, show the bugs that are coming lined up at the lane entrance, so you can hire the right counters.</div>
+    <div class="idea"><b>Hit feedback</b>Small floating numbers when developers hit (bigger and coloured on a counter hit), and "+3 W" popping up from squashed bugs.</div>
+    <div class="idea"><b>Hire bar</b>Make the three hire buttons more like cards: the developer, what it counters (with the bug's icon), and the price as a coin badge.</div>
+  </div>
+</main>
+</body>
+</html>

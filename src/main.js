@@ -74,11 +74,23 @@ startMusic(() => app.game); // background loop; silent until the first click unl
 // ----- canvas -----
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+// The board fits the window: as wide as its column allows, but never so tall that the HUD, power-ups
+// and hire row stop fitting on screen. Below MIN_BOARD_H the page may scroll instead.
+const MIN_BOARD_H = 240;
 function resize() {
   const stage = document.getElementById('stage');
-  const cssW = stage.clientWidth;
-  const cssH = cssW * (HEIGHT / WIDTH);
+  const play = document.getElementById('play');
+  const side = document.getElementById('side-panel');
+  const stacked = side.offsetTop > play.offsetTop + 1;          // narrow screens put the panel below the board
+  const availW = play.clientWidth - (stacked ? 0 : side.offsetWidth);
+  const body = getComputedStyle(document.body);
+  const bodyPad = parseFloat(body.paddingTop) + parseFloat(body.paddingBottom);
+  const chrome = ['hud', 'powerups', 'hire'].reduce((h, id) => h + document.getElementById(id).offsetHeight, 2); // + #app border
+  const availH = Math.max(MIN_BOARD_H, window.innerHeight - bodyPad - chrome);
+  const cssW = Math.floor(Math.min(availW, availH * (WIDTH / HEIGHT)));
+  const cssH = Math.round(cssW * (HEIGHT / WIDTH));
   const dpr = window.devicePixelRatio || 1;
+  stage.style.width = `${cssW}px`;
   canvas.style.width = `${cssW}px`;
   canvas.style.height = `${cssH}px`;
   canvas.width = Math.round(cssW * dpr);
@@ -86,6 +98,11 @@ function resize() {
   ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
 }
 window.addEventListener('resize', resize);
+// The HUD can wrap and the bars appear or disappear per screen: re-fit when their height changes.
+if (typeof ResizeObserver !== 'undefined') {
+  const ro = new ResizeObserver(() => resize());
+  for (const id of ['hud', 'powerups', 'hire']) ro.observe(document.getElementById(id));
+}
 
 initUI(app);
 initInput(canvas, app);
@@ -97,7 +114,7 @@ if (DEMO) {
   startGame(app.game);
   for (const id of Object.keys(app.game.drinks)) app.game.drinks[id] = 1000;
   placeDev(app.game, 'react', 3, 3);
-  placeDev(app.game, 'java', 6, 5);
+  placeDev(app.game, 'java', 6, 3);
   placeDev(app.game, 'dotnet', 9, 5);
   startWave(app.game);
 }

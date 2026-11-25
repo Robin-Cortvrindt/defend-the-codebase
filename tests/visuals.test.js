@@ -251,7 +251,7 @@ test('render: the hit flash turns with a self-drawn bug', () => {
   R.registerBug({ id: 'drawn2', ring: '#fff', hp: 1000, speed: 0, livesLost: 1, reward: 1, radius: 7, draw() {} });
   const { g, dev } = setup('plain');
   g.bugs.length = 0;
-  const bug = spawnBug(g, 'drawn2', 260);   // on the lane going down, right of the developer
+  const bug = spawnBug(g, 'drawn2', 380);   // on the lane going down, right of the developer
   dev.x = bug.x - 40; dev.y = bug.y;
   tickDevs(g, 0.01);
   const ctx = recordingCtx();

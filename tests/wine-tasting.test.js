@@ -14,14 +14,14 @@ beforeEach(async () => {
   R.registerEvent((await import('../src/content/events/wine-tasting.js')).default);
 });
 
-// A developer at (140,140) with three bugs in range and one out of range.
+// A developer at (260,140) with three bugs in range and one out of range.
 function setup({ event = true, resistance = 0 } = {}) {
   const g = createGame(); startGame(g); startWave(g); g.spawnQueue = [];
   g.activeEvent = event ? 'wine-tasting' : null;
   g.resistance['wine-tasting'] = resistance;
-  const dev = placeDev(g, 'r', 3, 3);
-  const bugs = [spawnBug(g, 'other', 230), spawnBug(g, 'other', 260), spawnBug(g, 'other', 300)];
-  spawnBug(g, 'other', 700); // out of range
+  const dev = placeDev(g, 'r', 6, 3);
+  const bugs = [spawnBug(g, 'other', 350), spawnBug(g, 'other', 380), spawnBug(g, 'other', 420)];
+  spawnBug(g, 'other', 820); // out of range
   return { g, dev, bugs, range: devStats(g, dev).range };
 }
 
@@ -66,9 +66,9 @@ test('water cooler level 1: roughly a third of the shots are sober', () => {
 test('one bug in range: a tipsy shot still hits it; none in range: no target', () => {
   const g = createGame(); startGame(g); startWave(g); g.spawnQueue = [];
   g.activeEvent = 'wine-tasting';
-  const dev = placeDev(g, 'r', 3, 3), range = devStats(g, dev).range;
+  const dev = placeDev(g, 'r', 6, 3), range = devStats(g, dev).range;
   assert.deepEqual(pickTarget(g, dev, range), { target: null, tipsy: false });
-  const only = spawnBug(g, 'other', 260);
+  const only = spawnBug(g, 'other', 380);
   assert.equal(pickTarget(g, dev, range).target, only);
 });
 
@@ -84,12 +84,12 @@ test('a tipsy shot marks its attack effect tipsy; the developer is sober again a
 });
 
 test('the building draws a water cooler that fills a third per level, also next to every other upgrade', async () => {
-  const { drawBuilding } = await import('../src/engine/building.js');
+  const { drawBuilding, BUILDING } = await import('../src/engine/building.js');
   const { recordingCtx } = await import('./stub-ctx.js');
   const waterFills = level => {
     const ctx = recordingCtx();
     drawBuilding(ctx, { floors: 1, lives: 5, maxLives: 10, time: 1, levels: { aircon: 3, heating: 3, coffee: 3, fridge: 3, generator: 3, water: level } });
-    return ctx.calls.filter(c => c[0] === 'fillRect' && c[1] >= 578 && c[1] < 590 && c[2] > 150 && c[2] < 172).length;
+    return ctx.calls.filter(c => c[0] === 'fillRect' && c[1] >= BUILDING.x && c[1] < BUILDING.x + 12 && c[2] > BUILDING.ground - 28 && c[2] < BUILDING.ground - 6).length;
   };
   const none = waterFills(0);
   assert.ok(waterFills(1) > none, 'level 1 adds the cooler');

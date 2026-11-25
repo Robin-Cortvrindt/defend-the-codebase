@@ -4,7 +4,8 @@ import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registr
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawLane } from './lane.js';
-import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop } from './building.js';
+import { drawOffice } from './office.js';
+import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop, BUILDING } from './building.js';
 import { drawDrinkIcon } from './drink-icons.js';
 
 export const COLORS = {
@@ -88,21 +89,14 @@ function drawActiveEvent(ctx, game, view) {
 }
 
 function drawMap(ctx, game) {
-  ctx.fillStyle = COLORS.navy;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  ctx.strokeStyle = COLORS.navy2;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let c = 1; c < COLS; c++) { ctx.moveTo(c * CELL + 0.5, 0); ctx.lineTo(c * CELL + 0.5, HEIGHT); }
-  for (let r = 1; r < ROWS; r++) { ctx.moveTo(0, r * CELL + 0.5); ctx.lineTo(WIDTH, r * CELL + 0.5); }
-  ctx.stroke();
+  drawOffice(ctx);
 
   drawLane(ctx, game.time);
 
   drawBuilding(ctx, game);
 }
 
-const BUILDING_GROUND = 178;      // bottom of the Nexios building (same as BUILDING.ground in building.js)
+const BUILDING_GROUND = BUILDING.ground;   // bottom of the Nexios building
 
 // The Nexios building (your base) at the end of the path. On game over it burns and caves in.
 function drawBuilding(ctx, game) {
@@ -179,7 +173,7 @@ function drawCollapse(ctx, game) {
     ctx.fillStyle = `rgba(0, 10, 20, ${0.55 * heat})`;
     ctx.fillRect(x, top, w, height);
     // windows lit by the fire
-    for (let fy = 110; fy > top + 2; fy -= 12) {
+    for (let fy = BUILDING.groundTop - 8; fy > top + 2; fy -= 12) {
       for (let k = 0; k < 4; k++) {
         const seed = fy * 7 + k;
         if (rnd(seed) > heat * 1.1) continue;
@@ -190,8 +184,8 @@ function drawCollapse(ctx, game) {
     }
     for (let k = 0; k < 3; k++) {
       ctx.fillStyle = hexA('#F59E0B', heat * (0.6 + 0.4 * Math.sin(t * 13 + k)));
-      ctx.fillRect(x + 16 + k * 11, 134, 7, 8);
-      ctx.fillRect(x + 16 + k * 11, 150, 7, 8);
+      ctx.fillRect(x + 16 + k * 11, BUILDING.groundTop + 16, 7, 8);
+      ctx.fillRect(x + 16 + k * 11, BUILDING.groundTop + 32, 7, 8);
     }
     // flames licking out of the roof and the sides
     for (let i = 0; i < 6; i++) {

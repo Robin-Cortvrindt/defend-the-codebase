@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playing Field Update</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #001E32; --navy2: #0A2A40; --navy3: #123650; --green: #16A34A; --blue: #2563EB; --s400: #94A3B8; --s200: #E2E8F0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+  .lede { color: var(--s200); margin: 0 0 8px; max-width: 760px; line-height: 1.5; }
+  h2 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 36px 0 4px; }
+  h2 b { color: #fff; }
+  .note { color: var(--s200); font-size: 14px; margin: 0 0 10px; line-height: 1.5; max-width: 760px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .facts span { font-size: 12px; padding: 3px 9px; border-radius: 99px; background: var(--navy2); border: 1px solid var(--navy3); color: var(--s200); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--green); color: #fff; margin-left: 6px; vertical-align: 2px; letter-spacing: 0; text-transform: none; }
+  canvas.board { display: block; width: 100%; height: auto; border: 1px solid var(--navy3); border-radius: 10px; }
+
+  /* laptop screen frames */
+  .screens { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .screens { grid-template-columns: 1fr; } }
+  .screen-label { font-size: 13px; font-weight: 700; margin: 0 0 6px; color: var(--s200); }
+  .screen-label em { font-style: normal; color: #F87171; }
+  .screen-label strong { color: #4ADE80; }
+  .laptop { position: relative; aspect-ratio: 1366 / 650; background: #00141F; border: 2px solid #334155; border-radius: 8px; overflow: hidden; }
+  .fold { position: absolute; left: 0; right: 0; border-top: 2px dashed #F87171; z-index: 3; }
+  .fold::after { content: 'screen ends here — you scroll to see the rest'; position: absolute; right: 6px; top: 3px; font-size: 9px; font-weight: 700; color: #F87171; background: #00141F; padding: 0 4px; }
+  .app { position: absolute; left: 1.2%; right: 1.2%; top: 2.4%; background: var(--navy); border: 1px solid var(--navy3); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+  .app .hud { height: 8%; border-bottom: 1px solid var(--navy3); display: flex; align-items: center; gap: 6%; padding: 0 2%; font-size: 8px; color: var(--s400); flex: none; }
+  .app .play { display: grid; grid-template-columns: 1fr 21%; flex: 1 1 auto; min-height: 0; }
+  .app .stagebox { display: flex; align-items: center; justify-content: center; min-height: 0; background: #001725; }
+  .app .stagebox canvas { display: block; max-width: 100%; max-height: 100%; }
+  .app .side { border-left: 1px solid var(--navy3); background: #001A2B; font-size: 8px; color: var(--s400); padding: 4%; }
+  .app .row { border-top: 1px solid var(--navy3); display: grid; grid-template-columns: repeat(4, 1fr); gap: 1%; padding: 1% 1.2%; flex: none; }
+  .app .row.hire { grid-template-columns: repeat(3, 1fr); border-top: 0; }
+  .app .row i { display: block; height: 100%; border-radius: 4px; background: var(--navy2); border: 1px solid var(--navy3); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Playing field update</h1>
+  <p class="lede">A bigger board with a longer, twistier route. The lane keeps today's look exactly: the circuit-board trace, the code flowing towards PROD and the solder rings at the corners. Developers are placed the same way as now.</p>
+  <p class="lede">All boards below are drawn at the same width, so you can see how big the cells and developers get.</p>
+
+  <h2><b>Now</b> · 16 × 8</h2>
+  <div class="facts"><span>128 cells</span><span>4 corners</span><span>route ≈ 900 px</span></div>
+  <canvas class="board" data-map="now"></canvas>
+
+  <h2><b>A</b> · 20 × 10, snake route <span class="tag">my pick</span></h2>
+  <p class="note">Two more rows and four more columns. The route doubles back on itself twice, so developers in the middle reach two or three stretches of lane. Cells stay big enough to read the developer icons on a laptop.</p>
+  <div class="facts"><span>200 cells (+56%)</span><span>8 corners</span><span>route ≈ 1,700 px (+89%)</span></div>
+  <canvas class="board" data-map="a"></canvas>
+
+  <h2><b>B</b> · 24 × 12, long maze</h2>
+  <p class="note">A much bigger board with 10 corners and a route about 2.5 times as long. There's lots of room to build, but cells get smaller, so developers and bugs look about 30% smaller than today on the same screen.</p>
+  <div class="facts"><span>288 cells (+125%)</span><span>10 corners</span><span>route ≈ 2,220 px (+147%)</span></div>
+  <canvas class="board" data-map="b"></canvas>
+
+  <h2><b>Fits on one screen</b> · 1366 × 768 laptop</h2>
+  <p class="note">Today the board's height comes only from the window's width, so on a laptop the power-ups and hire buttons fall below the screen. After the update the board is sized to fit the space left over, in both width and height, so the board, power-ups and hire row all fit without scrolling. On a very wide screen there's a little empty space either side of the board instead.</p>
+  <div class="screens">
+    <div>
+      <p class="screen-label"><em>Now:</em> the board is too tall, so the hire row is below the fold</p>
+      <div class="laptop" data-frame="now"></div>
+    </div>
+    <div>
+      <p class="screen-label"><strong>After (option A):</strong> everything fits</p>
+      <div class="laptop" data-frame="a"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const MAPS = {
+  now: { cols: 16, rows: 8, prod: { x: 576, y: 106 },
+    wp: [[0,60],[180,60],[180,260],[420,260],[420,140],[576,140]],
+    devs: [[3,2,'R'],[5,5,'J'],[9,5,'N'],[11,4,'R']] },
+  a: { cols: 20, rows: 10, prod: { x: 736, y: 186 },
+    wp: [[0,60],[260,60],[260,180],[100,180],[100,340],[500,340],[500,100],[660,100],[660,220],[736,220]],
+    devs: [[3,3,'R'],[4,6,'J'],[7,6,'N'],[8,2,'R'],[11,5,'J'],[13,4,'N']] },
+  b: { cols: 24, rows: 12, prod: { x: 896, y: 226 },
+    wp: [[0,60],[300,60],[300,220],[140,220],[140,420],[460,420],[460,140],[620,140],[620,380],[780,380],[780,260],[896,260]],
+    devs: [[4,4,'R'],[5,7,'J'],[9,8,'N'],[10,3,'R'],[13,6,'J'],[16,7,'N'],[17,4,'R']] },
+};
+const CELL = 40, PATH_W = 36;
+const COLORS = { R: '#2563EB', J: '#EA580C', N: '#C026D3' };
+const CODE = ['if (user == null) return;', 'const res = await fetch(url);', 'try { save(order); }', 'catch (e) { log(e); }',
+  'SELECT * FROM users;', 'public void deploy() {', 'return items.map(x => x.id);', '// TODO: fix later', 'throw new Exception();'];
+
+function drawMap(cv, key, cssW) {
+  const m = MAPS[key], W = m.cols * CELL, H = m.rows * CELL;
+  const dpr = window.devicePixelRatio || 1;
+  const w = cssW || cv.clientWidth || 900;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * H / W * dpr);
+  if (cssW) { cv.style.width = cssW + 'px'; }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  ctx.fillStyle = '#001E32'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#0A2A40'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 1; c < m.cols; c++) { ctx.moveTo(c * CELL + .5, 0); ctx.lineTo(c * CELL + .5, H); }
+  for (let r = 1; r < m.rows; r++) { ctx.moveTo(0, r * CELL + .5); ctx.lineTo(W, r * CELL + .5); }
+  ctx.stroke();
+  const path = () => { ctx.beginPath(); m.wp.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = 'rgba(45,212,191,.45)'; ctx.lineWidth = PATH_W; path(); ctx.stroke();
+  ctx.strokeStyle = '#0B3448'; ctx.lineWidth = PATH_W - 4; path(); ctx.stroke();
+  // code flowing along each segment
+  ctx.font = '500 7.5px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  let n = 0;
+  for (let i = 1; i < m.wp.length; i++) {
+    const [ax, ay] = m.wp[i - 1], [bx, by] = m.wp[i], len = Math.hypot(bx - ax, by - ay);
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(by - ay, bx - ax));
+    ctx.beginPath(); ctx.rect(-PATH_W / 2 + 2, -PATH_W / 2 + 2, len + PATH_W - 4, PATH_W - 4); ctx.clip();
+    for (const row of [-2, -1, 0, 1, 2]) {
+      let x = -((n * 37 + row * 23) % 90);
+      while (x < len + PATH_W) { const s = CODE[(n++) % CODE.length]; ctx.fillStyle = row === 0 ? 'rgba(94,234,212,.55)' : 'rgba(148,163,184,.32)'; ctx.fillText(s, x, row * 7); x += ctx.measureText(s).width + 14; }
+    }
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(45,212,191,.4)'; ctx.lineWidth = 2;
+  for (const [x, y] of m.wp.slice(1, -1)) { ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke(); }
+  // PROD building
+  const p = m.prod;
+  ctx.fillStyle = '#0A2A40'; ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1;
+  ctx.fillRect(p.x + 2, p.y, 52, 68); ctx.strokeRect(p.x + 2.5, p.y + .5, 51, 67);
+  ctx.fillStyle = '#FDE68A';
+  for (let fy = p.y + 8; fy < p.y + 56; fy += 12) for (let fx = p.x + 10; fx < p.x + 48; fx += 12) ctx.fillRect(fx, fy, 6, 6);
+  ctx.fillStyle = '#94A3B8'; ctx.font = '700 9px Lato'; ctx.textAlign = 'center'; ctx.fillText('PROD', p.x + 28, p.y + 78); ctx.textAlign = 'left';
+  // developers
+  for (const [c, r, t] of m.devs) {
+    ctx.fillStyle = COLORS[t]; roundRect(ctx, c * CELL + 4, r * CELL + 4, 32, 32, 6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '900 11px Lato'; ctx.textAlign = 'center'; ctx.fillText(t === 'N' ? '.N' : t, c * CELL + 20, r * CELL + 21); ctx.textAlign = 'left';
+  }
+  // a few bugs on the lane
+  const bugs = [.12, .3, .47, .66, .8];
+  const total = segLens(m).reduce((a, b) => a + b, 0);
+  bugs.forEach((f, i) => { const q = pointAt(m, f * total); ctx.fillStyle = ['#2563EB', '#EA580C', '#94A3B8', '#C026D3', '#2563EB'][i]; ctx.beginPath(); ctx.arc(q.x, q.y, 6, 0, Math.PI * 2); ctx.fill(); });
+}
+const segLens = m => m.wp.slice(1).map(([x, y], i) => Math.hypot(x - m.wp[i][0], y - m.wp[i][1]));
+function pointAt(m, d) {
+  const L = segLens(m);
+  for (let i = 0; i < L.length; i++) { if (d <= L[i]) { const t = d / L[i], [ax, ay] = m.wp[i], [bx, by] = m.wp[i + 1]; return { x: ax + (bx - ax) * t, y: ay + (by - ay) * t }; } d -= L[i]; }
+  const e = m.wp[m.wp.length - 1]; return { x: e[0], y: e[1] };
+}
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+// laptop frames: the viewport is 1366 x 650 (768 minus browser chrome), drawn scaled down
+function buildFrame(el, key) {
+  const fit = key !== 'now';
+  const VW = 1366, VH = 650, s = el.clientWidth / VW;
+  const appW = VW - 32, stageW = appW - 280, hud = 52, rows = 64 + 70;
+  const m = MAPS[key], ratio = m.rows / m.cols;
+  let boardW = stageW, boardH = stageW * ratio;
+  if (fit) { const maxH = VH - 32 - hud - rows; if (boardH > maxH) { boardH = maxH; boardW = maxH / ratio; } }
+  const appH = hud + boardH + rows;
+  el.innerHTML = `<div class="app" style="height:${appH * s}px">
+    <div class="hud" style="height:${hud * s}px"><b style="color:#fff">NEXIOS</b><span>WARRANTS 120</span><span>LIVES 20</span><span>Q1 · SPRINT 4</span></div>
+    <div class="play" style="height:${boardH * s}px"><div class="stagebox"><canvas></canvas></div><div class="side">BUILDING<br><br>DEVELOPERS<br><br>TASKS</div></div>
+    <div class="row" style="height:${64 * s}px"><i></i><i></i><i></i><i></i></div>
+    <div class="row hire" style="height:${70 * s}px"><i></i><i></i><i></i></div></div>`;
+  drawMap(el.querySelector('canvas'), key, boardW * s);
+  if (!fit) { const f = document.createElement('div'); f.className = 'fold'; f.style.top = 'calc(100% - 2px)'; el.append(f); el.style.overflow = 'visible'; el.style.marginBottom = (appH + 16 - VH) * s + 'px'; }
+}
+
+function drawAll() {
+  document.querySelectorAll('canvas[data-map]').forEach(cv => { cv.style.width = '100%'; drawMap(cv, cv.dataset.map); });
+  document.querySelectorAll('[data-frame]').forEach(el => buildFrame(el, el.dataset.frame));
+}
+document.fonts.ready.then(drawAll);
+addEventListener('resize', drawAll);
+</script>
+</body>
+</html>

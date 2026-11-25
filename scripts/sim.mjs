@@ -12,7 +12,7 @@ import { placeDev, hireCost } from '../src/engine/devs.js';
 import { canAfford, drinkFor } from '../src/engine/drinks.js';
 import { PICKUP, mulberry32, trackPickups, tickPickups } from './pickup.mjs';
 import { usePowerup } from '../src/engine/powerups.js';
-import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH } from '../src/engine/map.js';
+import { isBuildable, isPathCell, cellCenter, pointAt, PATH_LENGTH, COLS, ROWS } from '../src/engine/map.js';
 import { getInvestments } from '../src/engine/registry.js';
 import { setStorage, saveProgress, loadProgress, awardCapital, investmentCost, invest, investmentLevel } from '../src/engine/investments.js';
 
@@ -26,7 +26,7 @@ function coverage(col, row, range) {
   return n;
 }
 const cells = [];
-for (let c = 0; c < 16; c++) for (let r = 0; r < 8; r++) if (isBuildable(c, r)) cells.push({ c, r, cov: coverage(c, r, 2.2 * 40) });
+for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (isBuildable(c, r)) cells.push({ c, r, cov: coverage(c, r, 2.2 * 40) });
 cells.sort((a, b) => b.cov - a.cov);
 
 // Firewall slots: pairs of buildable cells facing each other across one lane cell, best coverage first.
@@ -58,7 +58,9 @@ function play(strategy, usePowers, seed = 1) {
     step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
+    // Nothing can change while the bell waits: ring it, then hire at the start of the sprint.
+    if (g.phase === 'bell') { ringBell(g); buy(); }
+    else if (g.phase === 'review') { buy(); ringBell(g); }
   }
   return g;
 }

@@ -1,7 +1,7 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getDrinks, getDrink, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
 import { loadProgress, capitalFor } from './investments.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_WARRANTS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_WARRANTS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach, isLocked, lockedView } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
 import { canUse, usePowerup, powerupState, effectiveCooldown } from './powerups.js';
@@ -9,6 +9,7 @@ import { drinkFor, drinkName, canAfford } from './drinks.js';
 import { quarterHoldLeft } from './drops.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
+import { roadmapModel } from './roadmap.js';
 import { hireCardInfo } from './hire-card.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
@@ -35,16 +36,66 @@ function buildHud() {
     stat('Drinks', refs.drinks = h('span', { class: 'drinks' }), refs.raise = h('em', { class: 'raise' }, '')),
     stat('Production', refs.prod = h('div', { class: 'prod' })),
     stat('Warrants', refs.warrants = h('b', {}, '0')),
-    stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
-    stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
+    h('div', { class: 'hud-divider run-only' }),
+    buildRoadmap(),
+    refs.incident = h('span', { class: 'incident-chip run-only hidden', html: ICONS.incident }, refs.incidentName = h('span', {})),
     h('div', { class: 'hud-spacer' }),
     refs.speed = h('button', { class: 'btn ghost run-only', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
-    refs.pause = h('button', { class: 'btn ghost run-only', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
-    h('button', { class: 'btn ghost run-only', title: 'Quit this run', onclick: openQuit }, 'Quit'),
-    refs.mute = h('button', { class: 'btn ghost', title: 'Sound (M)', onclick: toggleMute }, 'Sound on'),
+    refs.pause = h('button', { class: 'btn ghost icon run-only', title: 'Pause (P)', 'aria-label': 'Pause', onclick: togglePause }),
+    refs.mute = h('button', { class: 'btn ghost icon', title: 'Sound (M)', 'aria-label': 'Sound', onclick: toggleMute }),
+    h('button', { class: 'btn ghost icon run-only', title: 'Quit this run', 'aria-label': 'Quit', onclick: openQuit, html: ICONS.quit }),
     refs.waveBtn = h('button', { class: 'btn primary run-only', onclick: onWaveButton }, 'Start wave 1'),
   );
   for (let i = 0; i < 10; i++) refs.prod.append(h('i'));
+}
+
+// Inline icons for the compact HUD buttons and the incident chip (no emoji in the shipped UI).
+const svg = body => `<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">${body}</svg>`;
+const ICONS = {
+  pause: svg('<rect x="3.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/>'),
+  resume: svg('<path d="M4.5 2.5v11l9-5.5z" fill="currentColor"/>'),
+  soundOn: svg('<path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.5a6 6 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'),
+  soundOff: svg('<path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 6l4 4M15 6l-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'),
+  quit: svg('<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'),
+  incident: svg('<path d="M8 1.8l6.5 12H1.5z" fill="currentColor"/><path d="M8 6v4" stroke="#001E32" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="12" r=".9" fill="#001E32"/>'),
+  trophy: svg('<path d="M4.5 2h7v3.5a3.5 3.5 0 0 1-7 0z" fill="currentColor"/><path d="M4.5 3H2.5v1.2A2.3 2.3 0 0 0 4.8 6.5M11.5 3h2v1.2a2.3 2.3 0 0 1-2.3 2.3" fill="none" stroke="currentColor" stroke-width="1.1"/><rect x="7.2" y="8.5" width="1.6" height="3" fill="currentColor"/><rect x="5" y="11.5" width="6" height="2" rx=".6" fill="currentColor"/>'),
+  star: svg('<path d="M8 1.5l1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2 4 13.5l1-4.4-3.4-3 4.5-.5z" fill="currentColor"/>'),
+};
+// Swap an element's icon only when it changes (innerHTML never reads back exactly as written).
+function setIcon(el, key) { if (el.dataset.icon !== key) { el.dataset.icon = key; el.innerHTML = ICONS[key]; } }
+
+// The year roadmap: 4 quarters x 7 sprints, built once and updated with classes.
+function buildRoadmap() {
+  refs.road = { quarters: [] };
+  const grid = h('div', { class: 'rm-quarters' });
+  for (let q = 0; q < 4; q++) {
+    const cells = Array.from({ length: SPRINTS_PER_QUARTER }, () => h('span', { class: 'rm-sprint' }));
+    const mark = h('i', { class: 'rm-mark', html: q === 3 ? ICONS.trophy : ICONS.star });
+    const el = h('div', { class: 'rm-q' }, ...cells, h('label', {}, `Q${q + 1}`), mark);
+    refs.road.quarters.push({ el, cells });
+    grid.append(el);
+  }
+  return h('div', { class: 'roadmap run-only' },
+    h('div', { class: 'rm-top' }, refs.road.left = h('span', {}), refs.road.right = h('span', {})),
+    grid);
+}
+
+function updateRoadmap(g) {
+  const m = roadmapModel(g);
+  set(refs.road.left, 'innerHTML', `<b>Year ${m.year}</b> · Q${m.quarter} · Sprint ${m.sprint}`);
+  set(refs.road.right, 'textContent', m.right);
+  m.quarters.forEach((q, i) => {
+    const r = refs.road.quarters[i];
+    toggle(r.el, 'past', q.state === 'past');
+    toggle(r.el, 'current', q.state === 'current');
+    q.sprints.forEach((s, k) => {
+      const cell = r.cells[k];
+      toggle(cell, 'done', s === 'done');
+      toggle(cell, 'now', s === 'now');
+      const fill = s === 'now' ? `${Math.round(m.nowFill * 100)}%` : '';
+      if (cell.style.getPropertyValue('--fill') !== fill) cell.style.setProperty('--fill', fill);
+    });
+  });
 }
 
 function stat(label, valueEl, extra) {
@@ -114,6 +165,7 @@ function buildPowerups() {
 }
 
 export function selectHire(id) {
+  if (isLocked(app.game)) return;   // nothing changes while the bell waits
   app.view.hire = app.view.hire === id ? null : id;
   app.view.selected = null;
 }
@@ -194,14 +246,17 @@ function swingBell() {
 
 export function updateUI() {
   const g = app.game, v = app.view;
+  // The bell locks the game: drop any selection or hire in progress (the view object is shared, so mutate it).
+  if (isLocked(g) && (v.selected || v.hire)) Object.assign(v, lockedView(v));
+  toggle($('#app'), 'bell-locked', isLocked(g));
   updateDrinks(g);
   const si = sprintInfo(g.sprint);
-  set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
+  updateRoadmap(g);
   set(refs.warrants, 'textContent', String(g.warrants));
   set(refs.raise, 'textContent', g.raise > 1.0001 ? ` +${Math.round((g.raise - 1) * 100)}%` : '');
   const ev = g.activeEvent && getEvent(g.activeEvent);
-  set(refs.incident, 'textContent', ev ? ev.name : 'None');
-  toggle(refs.incident, 'on', !!ev);
+  set(refs.incidentName, 'textContent', ev ? ev.name : '');
+  toggle(refs.incident, 'hidden', !ev);
   const lit = Math.ceil((g.lives / g.maxLives) * 10);
   [...refs.prod.children].forEach((el, i) => { toggle(el, 'off', i >= lit); toggle(el, 'low', g.lives / g.maxLives <= 0.4); });
 
@@ -215,8 +270,10 @@ export function updateUI() {
     set(wb, 'disabled', true);
   }
   set(refs.speed, 'textContent', `${v.speed}×`);
-  set(refs.pause, 'textContent', v.paused ? 'Resume' : 'Pause');
-  set(refs.mute, 'textContent', isMuted() ? 'Sound off' : 'Sound on');
+  setIcon(refs.pause, v.paused ? 'resume' : 'pause');
+  set(refs.pause, 'title', v.paused ? 'Resume (P)' : 'Pause (P)');
+  setIcon(refs.mute, isMuted() ? 'soundOff' : 'soundOn');
+  set(refs.mute, 'title', isMuted() ? 'Sound off (M)' : 'Sound on (M)');
 
   for (const { def, btn, price: priceEl } of refs.hire) {
     const price = hireCost(g, def.id);
@@ -377,7 +434,7 @@ function showOverlay(phase) {
       h('div', {},
         h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 Warrant`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
-        h('small', {}, 'Hiring and selling still work'),
+        h('small', {}, 'Click the bell or press Space'),
       ),
     ));
   } else if (phase === 'review') {

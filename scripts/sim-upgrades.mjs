@@ -9,7 +9,7 @@ import { canAfford, drinkFor } from '../src/engine/drinks.js';
 import { trackPickups, tickPickups } from './pickup.mjs';
 import { placeDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade } from '../src/engine/devs.js';
 import { usePowerup } from '../src/engine/powerups.js';
-import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL } from '../src/engine/map.js';
+import { isBuildable, cellCenter, pointAt, PATH_LENGTH, CELL, COLS, ROWS } from '../src/engine/map.js';
 import { getDeveloper } from '../src/engine/registry.js';
 import { setStorage } from '../src/engine/investments.js';
 setStorage(null);   // no saved investments: every run starts from the same base game
@@ -43,7 +43,7 @@ function coverage(col, row, range) {
   return n;
 }
 const cells = [];
-for (let c = 0; c < 16; c++) for (let r = 0; r < 8; r++) if (isBuildable(c, r)) cells.push({ c, r, cov: coverage(c, r, 2.2 * 40) });
+for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (isBuildable(c, r)) cells.push({ c, r, cov: coverage(c, r, 2.2 * 40) });
 cells.sort((a, b) => b.cov - a.cov);
 
 // Which upgrades this dev may take: at level 1 the bot sticks to one branch.
@@ -99,10 +99,10 @@ function play({ order, powers, branch, bell }, seed) {
     step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (powers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyBuilding(g, 'aircon') || buyBuilding(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') {
-      if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); }
-      ringBell(g);
-    }
+    // Nothing can change while the bell waits: ring it, then spend at the start of the sprint.
+    const spend = () => { if (bell === 'up') { upgrade(); hire(); } else { hire(); upgrade(); } };
+    if (g.phase === 'bell') { ringBell(g); spend(); }
+    else if (g.phase === 'review') { spend(); ringBell(g); }
   }
   return { survived: g.phase !== 'lost', sprints: g.sprint, lives: g.lives, bought };
 }
