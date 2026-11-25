@@ -102,7 +102,7 @@ Only Claude costs Warrants. The other power-ups are free and limited only by coo
 - **Panel:** a DOM element the file creates inside `#stage`, matching the mockup.
   - It sits on the **left** of the board. The bell card now lives in the bottom-right corner (recent change), so the right side would cover it. This differs from the mockup.
   - Mails show unread dots until the panel is opened.
-- **Popup:** a toast at the top right of the stage that disappears after 4 s. Clicking it opens the inbox. No popup appears while the inbox is open.
+- **Popup:** a toast right above the Inbox card (bottom of the board, right edge in line with the card, arrow pointing at it) that disappears after 4 s. Clicking it opens the inbox. No popup appears while the inbox is open.
   - It plays a short chime, registered with `registerSound('mail', ...)`.
 - **Styles:** the CSS is injected from the file as one `<style>` tag, using the Nexios palette and Lato. That keeps the change to one file plus the manifest line.
 - **Restart:** `init(game)` resets the mailbox state and empties the panel. Bus listeners are added at the top level of the file, as CONTRIBUTING requires.

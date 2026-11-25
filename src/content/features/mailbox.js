@@ -251,12 +251,14 @@ const CSS = `
 .mb-claim { grid-column: 1 / -1; margin-top: 5px; background: #16A34A; border: 0; border-radius: 6px; color: #fff; font-size: 11px; font-weight: 700; padding: 5px 0; }
 .mb-claim:hover { background: #15803D; }
 .mb-foot { padding: 6px 12px; font-size: 10px; color: #94A3B8; border-top: 1px solid #123650; }
-.mb-toast { position: absolute; top: 10px; right: 10px; width: min(260px, 55%); display: flex; flex-direction: column; gap: 1px; cursor: pointer; z-index: 6;
+.mb-toast { position: absolute; bottom: 4px; right: 10px; width: min(260px, 55%); display: flex; flex-direction: column; gap: 1px; cursor: pointer; z-index: 6;
   background: rgba(0, 30, 50, .97); border: 1px solid #123650; border-left: 3px solid #16A34A; border-radius: 8px; padding: 8px 12px; line-height: 1.3;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .35); font-family: Lato, system-ui, sans-serif; animation: mb-in .25s ease-out; }
 .mb-toast b { font-size: 13px; }
 .mb-toast small { font-size: 11px; color: #4ADE80; }
-@keyframes mb-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.mb-toast::after { content: ""; position: absolute; bottom: -7px; right: var(--mb-arrow, 40px); width: 12px; height: 12px; background: rgb(0, 30, 50);
+  border-right: 1px solid #123650; border-bottom: 1px solid #123650; transform: rotate(45deg); }
+@keyframes mb-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
 #powerups .pu.feature.mb-card { overflow: visible; }
 .mb-badge { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #EA580C; color: #fff;
   font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
@@ -316,6 +318,20 @@ function setupDom(game) {
   hideToast();
 }
 
+const inboxCard = () => [...document.querySelectorAll('#powerups .pu.feature')].find(c => c.querySelector('b')?.textContent === 'Inbox');
+
+// Pin the popup to the bottom of the board, right edge in line with the Inbox card, arrow over the card.
+function placeToast() {
+  const card = inboxCard();
+  const stage = dom.toast.parentElement;
+  if (!card || !stage) return;
+  const s = stage.getBoundingClientRect(), c = card.getBoundingClientRect();
+  const right = Math.max(0, Math.round(s.right - c.right));
+  if (dom.toast.style.right !== `${right}px`) dom.toast.style.right = `${right}px`;
+  const arrow = `${Math.round(Math.min(c.width / 2, 120)) - 6}px`;
+  if (dom.toast.style.getPropertyValue('--mb-arrow') !== arrow) dom.toast.style.setProperty('--mb-arrow', arrow);
+}
+
 function hideToast() {
   if (!dom) return;
   clearTimeout(dom.toastTimer);
@@ -327,6 +343,7 @@ function showToast(game, mail) {
   dom.toast.textContent = '';
   dom.toast.append(el('span', 'mb-from', `New mail · ${mail.from}`), el('b', '', mail.subject), el('small', '', `${rewardText(mail)} · click to open the inbox`));
   dom.toast.hidden = false;
+  placeToast();
   clearTimeout(dom.toastTimer);
   dom.toastTimer = setTimeout(hideToast, TOAST_MS);
   playSound('mail');
@@ -346,7 +363,7 @@ function renderList(box) {
 }
 
 function syncCard(box) {
-  const card = [...document.querySelectorAll('#powerups .pu.feature')].find(c => c.querySelector('b')?.textContent === 'Inbox');
+  const card = inboxCard();
   if (!card) return;
   const unread = box.mails.filter(m => m.unread).length;
   card.classList.add('mb-card');
@@ -366,6 +383,7 @@ function syncDom(game) {
   const visible = box.open && VISIBLE_PHASES.includes(game.phase);
   if (dom.panel.hidden === visible) dom.panel.hidden = !visible;
   if (!VISIBLE_PHASES.includes(game.phase)) hideToast();
+  else if (!dom.toast.hidden) placeToast();   // keeps it in place if the window is resized
   if (!visible) return;
   if (box.open) for (const m of box.mails) m.unread = false;
   const key = box.mails.map(m => `${m.id}:${m.progress}:${m.unread ? 1 : 0}`).join(',');
