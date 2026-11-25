@@ -30,21 +30,21 @@ test('java: Spring Boot stats; names', () => {
   assert.equal(levelName(d), 'Spring Boot Dev');
   assert.equal(devStats(g, d).damage, 40);
   assert.equal(devStats(g, d).range, 2.6 * 40);
-  assert.equal(d.spent, 75 + 30);
+  assert.equal(d.spent, 75 + 25);
 });
 
-test('java: Enterprise Architect keeps its own damage and gives +15% to neighbours, once, not to itself', () => {
+test('java: Enterprise Architect deals x0.9 itself and gives +15% to neighbours, once, not to itself', () => {
   const g = waveGame();
   const ea = devAt(g, 'java', 3, 3, 'springboot', 'architect');
   const ea2 = devAt(g, 'java', 3, 4, 'springboot', 'architect');
   const r = devAt(g, 'react', 2, 3);
-  near(devStats(g, ea).damage, 40 * 1.15); // gets ea2's aura, not its own
+  near(devStats(g, ea).damage, 40 * 0.9 * 1.15); // gets ea2's aura, not its own
   near(devStats(g, r).damage, 6 * 1.15);         // two architects, applied once
   sellDev(g, ea); sellDev(g, ea2);
   assert.equal(devStats(g, r).damage, 6);        // aura ends on sell
 });
 
-test('java: Garbage Collector holds fire 1 s every 8 s, then pulses its shot damage to all in range', () => {
+test('java: Garbage Collector holds fire 1 s every 8 s, then pulses 2x to all in range', () => {
   const g = waveGame();
   devAt(g, 'java', 3, 3, 'springboot', 'gc');
   const far = spawnBug(g, 'typo', 260, 10000); far.slow = 0;
@@ -60,8 +60,8 @@ test('java: Garbage Collector holds fire 1 s every 8 s, then pulses its shot dam
   }
   const pulse = log.find(e => e.t > 8.5 && e.dNear > 0); // first tick at or past 9 s (float drift may land it on the 9.05 tick)
   assert.ok(pulse.t >= 9.0 - 1e-6 && pulse.t <= 9.05 + 1e-6);
-  assert.equal(pulse.dFar, 40); // bug at 260 is the less advanced one, not the regular shot's target
-  assert.ok(pulse.dNear >= 40); // furthest-along (300) may also take the regular shot
+  assert.equal(pulse.dFar, 80); // bug at 260 is the less advanced one, not the regular shot's target
+  assert.ok(pulse.dNear >= 80); // furthest-along (300) may also take the regular shot
   assert.ok(g.effects.some(e => e.kind === 'pop' && e.text === 'Stop-the-World'));
 });
 
