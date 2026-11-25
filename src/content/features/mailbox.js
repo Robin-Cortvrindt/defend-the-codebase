@@ -229,7 +229,7 @@ const TOAST_MS = 4000;
 let dom = null;   // { panel, list, foot, toast, toastTimer, key }
 
 const CSS = `
-.mb-inbox { position: absolute; top: 8px; left: 8px; max-height: calc(100% - 16px); width: min(290px, 60%); display: flex; flex-direction: column; overflow: hidden;
+.mb-inbox { position: absolute; bottom: 4px; right: 10px; max-height: calc(100% - 12px); width: min(290px, 60%); display: flex; flex-direction: column; overflow: hidden;
   background: rgba(0, 30, 50, .97); border: 1px solid #123650; border-radius: 10px; line-height: 1.3; z-index: 5; font-family: Lato, system-ui, sans-serif; }
 .mb-inbox[hidden], .mb-toast[hidden] { display: none; }
 .mb-inbox header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #123650; }
@@ -320,14 +320,22 @@ function setupDom(game) {
 
 const inboxCard = () => [...document.querySelectorAll('#powerups .pu.feature')].find(c => c.querySelector('b')?.textContent === 'Inbox');
 
-// Pin the popup to the bottom of the board, right edge in line with the Inbox card, arrow over the card.
-function placeToast() {
+// Pin an element to the bottom of the board with its right edge in line with the Inbox card.
+// Returns the card's rect so callers can place extras such as the popup's arrow.
+function placeAboveCard(elem) {
   const card = inboxCard();
-  const stage = dom.toast.parentElement;
-  if (!card || !stage) return;
+  const stage = elem.parentElement;
+  if (!card || !stage) return null;
   const s = stage.getBoundingClientRect(), c = card.getBoundingClientRect();
-  const right = Math.max(0, Math.round(s.right - c.right));
-  if (dom.toast.style.right !== `${right}px`) dom.toast.style.right = `${right}px`;
+  const right = `${Math.max(0, Math.round(s.right - c.right))}px`;
+  if (elem.style.right !== right) elem.style.right = right;
+  return c;
+}
+
+// The popup also gets an arrow pointing down at the middle of the card.
+function placeToast() {
+  const c = placeAboveCard(dom.toast);
+  if (!c) return;
   const arrow = `${Math.round(Math.min(c.width / 2, 120)) - 6}px`;
   if (dom.toast.style.getPropertyValue('--mb-arrow') !== arrow) dom.toast.style.setProperty('--mb-arrow', arrow);
 }
@@ -385,6 +393,7 @@ function syncDom(game) {
   if (!VISIBLE_PHASES.includes(game.phase)) hideToast();
   else if (!dom.toast.hidden) placeToast();   // keeps it in place if the window is resized
   if (!visible) return;
+  placeAboveCard(dom.panel);
   if (box.open) for (const m of box.mails) m.unread = false;
   const key = box.mails.map(m => `${m.id}:${m.progress}:${m.unread ? 1 : 0}`).join(',');
   if (key !== dom.key) { dom.key = key; renderList(box); }
