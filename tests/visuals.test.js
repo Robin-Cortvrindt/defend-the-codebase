@@ -4,7 +4,7 @@ import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/game.js';
 import { placeDev, tickDevs } from '../src/engine/devs.js';
-import { render, hitFlash } from '../src/engine/render.js';
+import { render, hitFlash, MAP_TILE } from '../src/engine/render.js';
 import { stubCtx } from './stub-ctx.js';
 
 let calls;
@@ -112,4 +112,31 @@ test('render: a throwing bug draw hook is logged; a bug without one still draws'
   spawnBug(g, 'bad', 50);
   const logged = quietConsole(() => render(stubCtx(), g, {}));
   assert.equal(logged.length, 1);
+});
+
+test('render: a placed developer\'s icon gets the developer and the game time', () => {
+  const seen = [];
+  R.registerDeveloper({ id: 'iconic', accent: '#2563EB', cost: 50, damage: 6, fireRate: 4, range: 2.2, drawIcon(ctx, size, dev, time) { seen.push([size, dev, time]); } });
+  const { g } = setup();
+  const dev = placeDev(g, 'iconic', 3, 2);
+  g.time = 2;
+  render(stubCtx(), g, {});
+  assert.deepEqual(seen, [[MAP_TILE, dev, 2]]);
+});
+
+test('every shipped developer look draws without throwing', async () => {
+  for (const id of ['java', 'dotnet', 'react']) await import(`../src/content/developers/${id}.js?t=${Math.random()}`);
+  for (const id of ['java', 'dotnet', 'react']) {
+    const def = R.getDeveloper(id);
+    assert.equal(typeof def.drawAttack, 'function', `${id} has drawAttack`);
+    assert.ok(def.attackDuration > 0, `${id} has attackDuration`);
+    def.drawIcon(stubCtx(), 36);
+    def.drawIcon(stubCtx(), 36, { lastShotAt: 1 }, 1.1);
+    for (const progress of [0, 0.3, 0.5, 0.7, 1]) {
+      for (const shot of [0, 1]) {
+        def.drawAttack(stubCtx(), { from: { x: 100, y: 100 }, to: { x: 180, y: 40 }, progress, time: 2.3, seed: 0.4, shot, accent: def.accent });
+        def.drawAttack(stubCtx(), { from: { x: 100, y: 100 }, to: { x: 100, y: 100 }, progress, time: 2.3, seed: 0.4, shot, accent: def.accent });
+      }
+    }
+  }
 });

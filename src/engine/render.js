@@ -285,13 +285,14 @@ function circleRange(ctx, x, y, r, color) {
   ctx.setLineDash([]);
 }
 
-export function drawDevTile(ctx, def, x, y, size = 36) {
+// `dev` and `time` are only passed for a developer on the board (so its icon can animate, e.g. Java's steam).
+export function drawDevTile(ctx, def, x, y, size = 36, dev, time) {
   ctx.save();
   ctx.translate(x, y);
   roundRect(ctx, -size / 2, -size / 2, size, size, size / 4);
   ctx.fillStyle = def.accent; ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-  try { def.drawIcon?.(ctx, size); } catch (e) { console.error(e); }
+  try { def.drawIcon?.(ctx, size, dev, time); } catch (e) { console.error(e); }
   ctx.restore();
 }
 
@@ -311,7 +312,7 @@ function drawDev(ctx, game, dev, selected) {
   const def = getDeveloper(dev.type);
   if (!def) return;
   const L = devLayout();
-  drawDevTile(ctx, def, dev.x, dev.y, MAP_TILE);
+  drawDevTile(ctx, def, dev.x, dev.y, MAP_TILE, dev, game.time);
   // ready marker: pulsing green outline inside the cell while an upgrade is unlocked
   if (upgradeUnlocked(dev)) {
     ctx.save();
