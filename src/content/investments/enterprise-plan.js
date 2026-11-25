@@ -1,16 +1,16 @@
 import { registerInvestment } from '../../engine/registry.js';
 import { powerupMod } from '../../engine/powerups.js';
 
-// Claude is cheaper: -10% price per level
+// Claude comes back sooner: -10% cooldown per level
 const investment = {
   id: 'enterprise-plan',
   name: 'Enterprise plan',
-  description: 'Claude is cheaper: -10% price per level',
+  description: 'Claude comes back sooner: -10% cooldown per level',
   group: 'powerups',
   maxLevel: 3,
   getCost(level) { return [15, 30, 50][level] ?? Infinity; },
-  apply(game, level) { powerupMod(game, 'claude').cost *= 1 - 0.10 * level; },
-  effectText(level) { return `Claude -${level * 10}% price`; },
+  apply(game, level) { powerupMod(game, 'claude').cooldown *= 1 - 0.10 * level; },
+  effectText(level) { return `Claude -${level * 10}% cooldown`; },
 };
 registerInvestment(investment);
 export default investment;

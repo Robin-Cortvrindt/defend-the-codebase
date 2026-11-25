@@ -64,7 +64,7 @@ export function makeOffer(game) {
   const claude = getPowerup('claude') && game.random() < CLAUDE_REWARD_CHANCE;
   const mail = {
     id: box.nextId++, template: tpl.id, from: tpl.from, subject: '', target: tpl.target, progress: 0,
-    reward: claude ? { kind: 'claude' } : { kind: 'warrants', amount: tpl.reward },
+    reward: claude ? { kind: 'claude' } : { kind: 'drinks', amount: tpl.reward },
     phishing,
   };
   tpl.setup?.(mail, game);
@@ -233,20 +233,19 @@ export function claimMail(game, mailId) {
   return 'reward';
 }
 
-// A free-Claude voucher makes Claude's next use cost 0. The wrap reads the voucher from the game.
+// A free-Claude voucher lets Claude fire during its cooldown. The hook reads the voucher from the game.
 export function wrapClaude() {
   const def = getPowerup('claude');
   if (!def || def.mailboxWrapped) return;
-  const original = def.getCost;
-  def.getCost = g => (g.mailbox?.vouchers > 0 ? 0 : original?.call(def, g) ?? 0);
+  def.skipCooldown = g => g.mailbox?.vouchers > 0;
   def.mailboxWrapped = true;
 }
 
 // Bus listeners. Called once at the top level (tests call it again after clearing the bus).
 export function attachListeners() {
   for (const name of TRACKED) on(name, d => { if (d?.game?.mailbox) trackMail(d.game, name, d); });
-  on('powerup:activated', ({ game, id }) => {
-    if (id === 'claude' && game?.mailbox?.vouchers > 0) game.mailbox.vouchers--;
+  on('powerup:activated', ({ game, id, skippedCooldown }) => {
+    if (id === 'claude' && skippedCooldown && game?.mailbox?.vouchers > 0) game.mailbox.vouchers--;
   });
   on('wave:start', ({ game }) => {
     const box = game?.mailbox;

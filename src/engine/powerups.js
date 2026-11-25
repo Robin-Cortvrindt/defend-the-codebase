@@ -7,10 +7,10 @@ export function powerupState(game, id) {
   return game.powerups[id];
 }
 
-// Permanent bonuses from investments: cooldown multiplier, effect level, price multiplier.
+// Permanent bonuses from investments: cooldown multiplier and effect level.
 export function powerupMod(game, id) {
   if (!game.powerupMods) game.powerupMods = {};
-  if (!game.powerupMods[id]) game.powerupMods[id] = { cooldown: 1, effect: 0, cost: 1 };
+  if (!game.powerupMods[id]) game.powerupMods[id] = { cooldown: 1, effect: 0 };
   return game.powerupMods[id];
 }
 
@@ -23,31 +23,27 @@ function safe(id, fn, fallback) {
   try { return fn(); } catch (e) { console.error(`[powerup ${id}]`, e); return fallback; }
 }
 
-export function powerupCost(game, id) {
-  const def = getPowerup(id);
-  return safe(id, () => def?.getCost?.(game) ?? 0, Infinity);
-}
-
 export function canUse(game, id) {
   const def = getPowerup(id);
   if (!def || game.phase !== 'wave') return false;
   const st = powerupState(game, id);
-  if (st.active || st.cooldownLeft > 0) return false;
+  if (st.active) return false;
+  if (st.cooldownLeft > 0 && !safe(id, () => def.skipCooldown?.(game), false)) return false;
   if (def.canActivate && !safe(id, () => def.canActivate(game), false)) return false;
-  return game.warrants >= powerupCost(game, id);
+  return true;
 }
 
 export function usePowerup(game, id) {
   if (!canUse(game, id)) return false;
   const def = getPowerup(id);
   const st = powerupState(game, id);
-  game.warrants -= powerupCost(game, id);
+  const skippedCooldown = st.cooldownLeft > 0;
   st.uses++;
   const duration = def.duration || 0;
   if (duration > 0) { st.active = true; st.remaining = duration; }
   else st.cooldownLeft = effectiveCooldown(game, id);
   try { def.activate(game, st); } catch (e) { console.error(`[powerup ${id}]`, e); }
-  emit('powerup:activated', { game, id });
+  emit('powerup:activated', { game, id, skippedCooldown });
   return true;
 }
 

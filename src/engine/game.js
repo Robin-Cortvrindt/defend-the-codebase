@@ -9,7 +9,6 @@ import { applyInvestments } from './investments.js';
 import { startingDrinks, addEachDrink, eachShare } from './drinks.js';
 import { payKill } from './drops.js';
 
-export const START_WARRANTS = 100;
 export const START_LIVES = 20;
 export const BOSS_DELAY = 3;    // seconds between the last regular bug and the boss
 export const DEATH_ANIM = 3.6;  // seconds the building burns and collapses before the game-over screen
@@ -37,7 +36,6 @@ export function createGame() {
     capitalEarned: null,      // Investor Capital paid out when this run was lost
     quarterStats: { squashed: 0, leaked: 0 },
     drinks: startingDrinks(),
-    warrants: START_WARRANTS, // removed in Task 5
     lives: START_LIVES,
     maxLives: START_LIVES,
     bugs: [],

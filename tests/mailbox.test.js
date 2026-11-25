@@ -160,11 +160,11 @@ test('phishing roll uses PHISH_CHANCE', () => {
   assert.equal(makeOffer(g).phishing, false);
 });
 
-test('an accepted task starts at 0 and has a Warrants reward', () => {
+test('an accepted task starts at 0 and has a drinks reward', () => {
   const m = takeOffer();
   assert.equal(m.progress, 0);
   assert.ok(m.target > 0);
-  assert.equal(m.reward.kind, 'warrants');
+  assert.equal(m.reward.kind, 'drinks');
   assert.ok(m.reward.amount > 0);
   assert.ok(m.from && m.subject);
   assert.equal('unread' in m, false);
@@ -207,7 +207,7 @@ test('the mailbox no longer adds a HUD button', () => {
 // ---------- Task 2: progress, claiming and real rewards ----------
 import { TEMPLATES, trackMail, isDone, claimMail } from '../src/content/features/mailbox.js';
 import { emit } from '../src/engine/events.js';
-import { powerupCost } from '../src/engine/powerups.js';
+import { usePowerup, powerupState } from '../src/engine/powerups.js';
 
 // Offer and accept a specific template (real unless phishing: true, Warrants reward unless claude: true).
 function give(id, { phishing = false, claude = false } = {}) {
@@ -220,7 +220,7 @@ function give(id, { phishing = false, claude = false } = {}) {
   assert.equal(m.template, id);
   return m;
 }
-const stubClaude = () => R.registerPowerup({ id: 'claude', name: 'Claude', description: 'x', duration: 0, cooldown: 0, getCost: () => 150, activate() {} });
+const stubClaude = () => R.registerPowerup({ id: 'claude', name: 'Claude', description: 'x', duration: 0, cooldown: 90, activate() {} });
 
 test('hire-dotnet counts only dotnet placements', () => {
   const m = give('hire-dotnet');
@@ -266,10 +266,8 @@ test('claim before done returns null', () => {
 test('claim pays each drink and removes the mail', () => {
   const m = give('hire-dotnet');
   m.progress = m.target;
-  const w = g.warrants;
   assert.equal(claimMail(g, m.id), 'reward');
   assert.deepEqual(g.drinks, { coffee: 70, monster: 70, redbull: 70 });
-  assert.equal(g.warrants, w);
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.text.includes('+20 of each drink')));
   assert.equal(g.mailbox.mails.length, 0);
   assert.ok(g.effects.some(e => e.kind === 'banner' && e.title === 'Reward claimed'));
@@ -309,13 +307,22 @@ test('no-leak fails when a bug leaks during the sprint', () => {
   assert.equal(m.progress, 0);
 });
 
-test('claude voucher makes Claude cost 0 and is spent on activation', () => {
+test('claude voucher lets Claude fire during its cooldown and is spent only then', () => {
   stubClaude(); mailbox.init(g);
+  g.phase = 'wave';
+  powerupState(g, 'claude').cooldownLeft = 50;
   g.mailbox.vouchers = 1;
-  assert.equal(powerupCost(g, 'claude'), 0);
-  emit('powerup:activated', { game: g, id: 'claude' });
+  assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(g.mailbox.vouchers, 0);
-  assert.equal(powerupCost(g, 'claude'), 150);
+  assert.equal(usePowerup(g, 'claude'), false);
+});
+
+test('using Claude off cooldown keeps the voucher', () => {
+  stubClaude(); mailbox.init(g);
+  g.phase = 'wave';
+  g.mailbox.vouchers = 1;
+  assert.equal(usePowerup(g, 'claude'), true);
+  assert.equal(g.mailbox.vouchers, 1);
 });
 
 test('claiming a claude mail gives a voucher', () => {
@@ -329,16 +336,20 @@ test('claiming a claude mail gives a voucher', () => {
 
 test('no claude reward without a claude power-up', () => {
   g.random = () => 0;
-  assert.equal(makeOffer(g).reward.kind, 'warrants');
+  assert.equal(makeOffer(g).reward.kind, 'drinks');
 });
 
 test('wrapClaude does not double-wrap across inits', () => {
   stubClaude(); mailbox.init(g); mailbox.init(g);
+  const hook = R.getPowerup('claude').skipCooldown;
+  mailbox.init(g);
+  assert.equal(R.getPowerup('claude').skipCooldown, hook);
   g.mailbox.vouchers = 1;
-  assert.equal(powerupCost(g, 'claude'), 0);
+  assert.equal(hook(g), true);
   g.mailbox.vouchers = 0;
-  assert.equal(powerupCost(g, 'claude'), 150);
+  assert.equal(hook(g), false);
 });
+
 
 // ---------- Task 3: phishing penalties ----------
 import { applyPenalty, stealAmount, malwareCount, LOCK_SECONDS, CLAUDE_STEAL } from '../src/content/features/mailbox.js';
@@ -499,7 +510,6 @@ test('malware can never cost the last life on its own', () => {
 test('malware with one life left steals instead', () => {
   g.phase = 'wave';
   g.lives = 1;
-  g.warrants = 100;
   const m = phish('malware');
   assert.equal(claimMail(g, m.id), 'stolen');
   assert.equal(g.bugs.length, 0);
@@ -532,9 +542,7 @@ test('claim is refused on the start and game-over screens', () => {
     const m = give('hire-dotnet');
     m.progress = m.target;
     g.phase = phase;
-    const w = g.warrants;
-    assert.equal(claimMail(g, m.id), null, phase);
-    assert.equal(g.warrants, w, phase);
+      assert.equal(claimMail(g, m.id), null, phase);
     assert.equal(g.mailbox.mails.length, 1, phase);
   }
 });

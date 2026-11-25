@@ -1,12 +1,10 @@
 import { registerPowerup } from '../../engine/registry.js';
 import { spawnBug, killBug, addEffect } from '../../engine/game.js';
 import { emit } from '../../engine/events.js';
-import { powerupState, powerupMod } from '../../engine/powerups.js';
+import { powerupMod } from '../../engine/powerups.js';
 
-// Claude: squashes every bug on the map at once. Gets pricier each use,
+// Claude: squashes every bug on the map at once. Free, on a 90 s cooldown,
 // and 1 in 4 times it hallucinates and doubles the bugs instead.
-export const BASE_COST = 150;
-export const COST_GROWTH = 1.5;
 export const BACKFIRE_CHANCE = 0.25;
 export const MIN_BACKFIRE_CHANCE = 0.10;
 
@@ -18,8 +16,7 @@ const claude = {
   name: 'Claude',
   description: 'Squash every bug',
   duration: 0,
-  cooldown: 0,
-  getCost(game) { return Math.round(BASE_COST * powerupMod(game, 'claude').cost * COST_GROWTH ** powerupState(game, 'claude').uses); },
+  cooldown: 90,
   describe(game) { return `Squash every bug · ${Math.round(backfireChance(game) * 100)}% backfire`; },
   canActivate(game) { return game.bugs.length > 0; },
   activate(game) {

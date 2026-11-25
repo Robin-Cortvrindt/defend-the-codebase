@@ -4,7 +4,7 @@ import { loadProgress, capitalFor } from './investments.js';
 import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone, sprintBonusEach } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { sellDev, hireCost, nextUpgrades, upgradeStatus, buyUpgrade as buyDevUpgrade, levelName, XP_GATES } from './devs.js';
-import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
+import { canUse, usePowerup, powerupState, effectiveCooldown } from './powerups.js';
 import { drinkFor, drinkName, canAfford } from './drinks.js';
 import { WIDTH } from './map.js';
 import { popoverPosition } from './popover.js';
@@ -199,7 +199,6 @@ export function updateUI() {
 
   for (const { def, card, status, cd } of refs.powerups) {
     const st = powerupState(g, def.id);
-    const cost = powerupCost(g, def.id);
     const usable = canUse(g, def.id);
     toggle(card, 'active', st.active);
     toggle(card, 'ready', usable && !st.active);
@@ -209,7 +208,7 @@ export function updateUI() {
     try { if (def.describe) desc = def.describe(g); } catch (e) { console.error(`[powerup ${def.id}]`, e); }
     if (st.active) { text = `${desc} · ${Math.ceil(st.remaining)} s left`; pct = st.remaining / def.duration; }
     else if (st.cooldownLeft > 0) { text = `${desc} · ${Math.ceil(st.cooldownLeft)} s`; pct = 1 - st.cooldownLeft / (effectiveCooldown(g, def.id) || 1); }
-    else text = cost ? `${desc} · ${cost}` : `${desc} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
+    else text = `${desc} · ${g.phase === 'wave' ? 'ready' : 'during waves'}`;
     set(status, 'textContent', text);
     cd.style.width = `${Math.round(pct * 100)}%`;
   }

@@ -33,7 +33,7 @@ test('Training manager doubles xpMultiplier for 15s then restores; reuse only af
   assert.equal(canUse(g, 'training'), true);
 });
 
-test('Business manager doubles warrants, CEO speeds attacks', () => {
+test('Business manager doubles drinks, CEO speeds attacks', () => {
   const g = waveGame();
   usePowerup(g, 'business'); usePowerup(g, 'ceo');
   assert.equal(g.mods.drinkMultiplier, 2);
@@ -55,40 +55,58 @@ test('power-ups refused outside wave phase', () => {
   assert.equal(g.mods.xpMultiplier, 1);
 });
 
-test('Claude success kills all bugs, pays rewards, price 150 → 225 → 338', () => {
-  const g = waveGame(); g.random = () => 0.9; g.warrants = 1000;
+test('Claude success kills all bugs and pays rewards; power-ups cost nothing', () => {
+  const g = waveGame(); g.random = () => 0.9;
   const drinksBefore = totalDrinks(g);
   spawnBug(g, 'b', 10); spawnBug(g, 'b', 20);
-  assert.equal(R.getPowerup('claude').getCost(g), 150);
   assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(g.bugs.length, 0);
-  assert.equal(g.warrants, 1000 - 150);
   assert.equal(totalDrinks(g), drinksBefore + 8);
-  assert.equal(R.getPowerup('claude').getCost(g), 225);
-  spawnBug(g, 'b', 10);
-  usePowerup(g, 'claude');
-  assert.equal(R.getPowerup('claude').getCost(g), 338);
 });
 
-test('Review Focus 1: Claude with 0 bugs or insufficient warrants → refused, no charge', () => {
-  const g = waveGame(); g.warrants = 1000;
+test('power-ups work with every drink at 0', () => {
+  const g = waveGame();
+  for (const id of Object.keys(g.drinks)) g.drinks[id] = 0;
+  assert.equal(usePowerup(g, 'ceo'), true);
+});
+
+test('Claude: cooldown 90 s, then usable again', () => {
+  const g = waveGame(); g.random = () => 0.9;
+  spawnBug(g, 'b', 10);
+  assert.equal(usePowerup(g, 'claude'), true);
+  spawnBug(g, 'b', 10);
+  assert.equal(canUse(g, 'claude'), false);
+  tickPowerups(g, 89);
+  assert.equal(canUse(g, 'claude'), false);
+  tickPowerups(g, 1);
+  assert.equal(canUse(g, 'claude'), true);
+});
+
+test('Claude with 0 bugs is refused and starts no cooldown', () => {
+  const g = waveGame();
   assert.equal(usePowerup(g, 'claude'), false);
-  assert.equal(g.warrants, 1000);
-  spawnBug(g, 'b', 10); g.warrants = 149;
-  assert.equal(usePowerup(g, 'claude'), false);
-  assert.equal(g.warrants, 149);
   assert.equal(powerupState(g, 'claude').uses, 0);
 });
 
-test('Review Focus 5: backfire doubles bugs, clones keep distance and hp, still charged; wave waits for clones', () => {
-  const g = waveGame(); g.random = () => 0.1; g.warrants = 500;
+test('usePowerup emits skippedCooldown only when a skipCooldown hook allowed it', () => {
+  const g = waveGame(); g.random = () => 0.9;
+  const seen = []; on('powerup:activated', d => seen.push(d.skippedCooldown));
+  spawnBug(g, 'b', 10);
+  usePowerup(g, 'claude');
+  spawnBug(g, 'b', 10);
+  R.getPowerup('claude').skipCooldown = () => true;
+  assert.equal(usePowerup(g, 'claude'), true);
+  assert.deepEqual(seen, [false, true]);
+});
+
+test('Review Focus 5: backfire doubles bugs, clones keep distance and hp, wave waits for clones', () => {
+  const g = waveGame(); g.random = () => 0.1;
   const a = spawnBug(g, 'b', 30); a.hp = 7;
   spawnBug(g, 'b', 50);
   let bf = 0; on('claude:backfire', () => bf++);
   assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(bf, 1);
   assert.equal(g.bugs.length, 4);
-  assert.equal(g.warrants, 350);
   assert.equal(g.stats.backfires, 1);
   const clone = g.bugs.find(b => b !== a && b.distance === 30);
   assert.equal(clone.hp, 7);
@@ -100,8 +118,8 @@ test('Review Focus 5: backfire doubles bugs, clones keep distance and hp, still 
   assert.equal(g.phase, 'bell');
 });
 
-test('I1: a power-up whose getCost or canActivate throws is just unusable, never throws', () => {
-  R.registerPowerup({ id: 'broken', name: 'Broken', description: 'x', duration: 1, cooldown: 1, getCost() { throw new Error('boom'); }, activate() {} });
+test('I1: a power-up whose canActivate throws is just unusable, never throws', () => {
+  R.registerPowerup({ id: 'broken', name: 'Broken', description: 'x', duration: 1, cooldown: 1, canActivate() { throw new Error('boom'); }, activate() {} });
   R.registerPowerup({ id: 'broken2', name: 'Broken2', description: 'x', duration: 1, cooldown: 1, canActivate() { throw new Error('boom'); }, activate() {} });
   const g = waveGame();
   const orig = console.error; console.error = () => {};
@@ -112,7 +130,7 @@ test('I1: a power-up whose getCost or canActivate throws is just unusable, never
 });
 
 // ---------- power-up investments ----------
-import { powerupMod, effectiveCooldown, powerupCost } from '../src/engine/powerups.js';
+import { powerupMod, effectiveCooldown } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
 
 const PU_INVESTMENTS = ['training-budget', 'training-planning', 'sales-targets', 'sales-pipeline', 'leadership-coaching', 'ceo-calendar', 'prompt-engineering', 'enterprise-plan'];
@@ -151,12 +169,16 @@ test('Review Focus 4: CEO boost + another fireRate change in between unwind clea
   assert.ok(Math.abs(g.mods.fireRateMultiplier - 1) < 1e-9);
 });
 
-test('Claude: prompt engineering lowers backfire, enterprise plan lowers price', () => {
-  const g = waveGame(); powerupMod(g, 'claude').effect = 3; powerupMod(g, 'claude').cost = 0.7;
-  assert.equal(powerupCost(g, 'claude'), 105);
-  g.random = () => 0.12; g.warrants = 1000; spawnBug(g, 'b', 10);
+test('Claude: prompt engineering lowers backfire; enterprise plan level 2 → cooldown 72', async () => {
+  const g = waveGame(); powerupMod(g, 'claude').effect = 3;
+  g.random = () => 0.12; spawnBug(g, 'b', 10);
   usePowerup(g, 'claude'); assert.equal(g.bugs.length, 0);   // 0.12 ≥ 0.10 → success
+  await withPowerupInvestments();
+  saveProgress({ capital: 0, levels: { 'enterprise-plan': 2 } });
+  const g2 = createGame(); startGame(g2);
+  assert.ok(Math.abs(effectiveCooldown(g2, 'claude') - 72) < 1e-9);
 });
+
 
 test('describe() shows the upgraded numbers', () => {
   const g = waveGame(); powerupMod(g, 'training').effect = 1; powerupMod(g, 'claude').effect = 2;
@@ -170,5 +192,5 @@ test('investment files apply to powerupMods via startGame', async () => {
   const g = createGame(); startGame(g);
   assert.equal(powerupMod(g, 'training').effect, 1);
   assert.ok(Math.abs(powerupMod(g, 'ceo').cooldown - 0.8) < 1e-9);
-  assert.ok(Math.abs(powerupMod(g, 'claude').cost - 0.7) < 1e-9);
+  assert.ok(Math.abs(powerupMod(g, 'claude').cooldown - 0.7) < 1e-9);
 });
