@@ -60,6 +60,7 @@ export const CONTENT = [
   './features/side-panel.js',
   './features/mailbox.js',
   './features/retrospective.js',
+  './features/trojan-horse.js',   // pay at the bell to summon a trojan horse
 ];
 
 export const CONTENT_URLS = CONTENT.map(p => new URL(p, import.meta.url).href);
