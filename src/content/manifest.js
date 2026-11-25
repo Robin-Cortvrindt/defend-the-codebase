@@ -30,6 +30,7 @@ export const CONTENT = [
   './events/no-redbull.js',
   './events/heat-wave.js',
   './events/wine-tasting.js',  // developers shoot random bugs; zigzag shots
+  './events/goblin.js',        // a goblin steals dropped drinks
   // Building upgrades (quarter review shop)
   './upgrades/floor.js',
   './upgrades/aircon.js',
