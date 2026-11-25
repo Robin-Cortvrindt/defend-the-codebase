@@ -73,6 +73,7 @@ export function retroAwards(game) {
 
 // ---------- the card (browser only) ----------
 const HAS_DOM = typeof document !== 'undefined';
+let closeCard = null;  // closes the open card and removes its key listener
 let previous = null;   // the game before the last init: a quit run goes straight to the menu, so its card shows then
 
 const CSS = `
@@ -103,7 +104,7 @@ function showCard(game) {
     const style = el('style'); style.id = 'rt-style'; style.textContent = CSS;
     document.head.append(style);
   }
-  document.querySelector('.rt-card')?.remove();
+  closeCard?.();   // never two cards (or two key listeners) at once
   const info = game.retro?.info ?? sprintInfo(game.sprint);
   const card = el('div', 'rt-card');
   card.setAttribute('role', 'dialog');
@@ -115,14 +116,21 @@ function showCard(game) {
     row.append(el('b', '', a.title), el('span', '', a.text));
     list.append(row);
   }
+  card.setAttribute('aria-modal', 'true');
   const go = el('button', 'btn primary big rt-continue', 'Continue →');
   go.type = 'button';
-  const close = () => card.remove();
+  // While the card is open it owns the keyboard, wherever focus is (a click on the dimmed backdrop
+  // moves focus to the page): Space, Enter and Escape close it, every other key is swallowed so the
+  // game underneath never starts a run or a sprint. Held-down repeats are ignored.
+  const onKey = ev => {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if (!ev.repeat && (ev.key === ' ' || ev.key === 'Enter' || ev.key === 'Escape')) close();
+  };
+  const close = () => { window.removeEventListener('keydown', onKey, true); card.remove(); if (closeCard === close) closeCard = null; };
+  closeCard = close;
+  window.addEventListener('keydown', onKey, true);
   go.addEventListener('click', close);
-  // Keep Space/Enter on the card from also reaching the game's own key handler (ring the bell, start a sprint).
-  card.addEventListener('keydown', ev => {
-    if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); close(); }
-  });
   const actions = el('div', 'rt-actions'); actions.append(go);
   panel.append(el('div', 'eyebrow', 'Sprint retrospective'), el('h2', '', `Year ${info.year} · Q${info.quarter} · Sprint ${info.sprint}`), list, actions);
   card.append(panel);
