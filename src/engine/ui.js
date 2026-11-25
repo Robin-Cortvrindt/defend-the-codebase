@@ -1,6 +1,6 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
 import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades } from './registry.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER } from './game.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { LEVELS, sellDev } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
@@ -168,7 +168,9 @@ export function updateUI() {
   }
 
   updateSelPanel();
-  if (g.phase !== lastPhase) { lastPhase = g.phase; showOverlay(g.phase); }
+  // On game over, let the building burn down first; the end screen follows once the collapse is done.
+  const waitForCollapse = g.phase === 'lost' && !deathAnimDone(g);
+  if (g.phase !== lastPhase && !waitForCollapse) { lastPhase = g.phase; showOverlay(g.phase); }
   toggle($('#stage'), 'paused', v.paused);
 }
 

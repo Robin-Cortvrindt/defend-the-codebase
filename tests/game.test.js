@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
-import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef } from '../src/engine/game.js';
+import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, getSprintDef, deathAnimDone, DEATH_ANIM } from '../src/engine/game.js';
 import { PATH_LENGTH } from '../src/engine/map.js';
 
 beforeEach(() => {
@@ -140,4 +140,17 @@ test('Review Focus 5: generated sprint 150 has finite positive counts and interv
     assert.ok(Number.isFinite(gr.count) && gr.count > 0);
     assert.ok(gr.interval >= 0.12);
   }
+});
+
+test('game over: the collapse timer runs after production goes down, then the end screen may show', () => {
+  const g = createGame(); startGame(g); startWave(g);
+  g.spawnQueue = []; g.bugs = []; g.lives = 1;
+  spawnBug(g, 'b', PATH_LENGTH - 1);
+  step(g, 0.05);
+  assert.equal(g.phase, 'lost');
+  assert.equal(g.deathTime, 0);
+  assert.equal(deathAnimDone(g), false);
+  for (let t = 0; t < DEATH_ANIM; t += 0.05) step(g, 0.05);
+  step(g, 0.05);
+  assert.equal(deathAnimDone(g), true);
 });

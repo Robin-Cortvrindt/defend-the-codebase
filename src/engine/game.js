@@ -9,6 +9,10 @@ import { rollEvent, endEvent } from './random-events.js';
 export const START_WARRANTS = 100;
 export const START_LIVES = 20;
 export const BOSS_DELAY = 3;    // seconds between the last regular bug and the boss
+export const DEATH_ANIM = 3.6;  // seconds the building burns and collapses before the game-over screen
+
+// True once the collapse animation has finished playing (the game-over screen waits for it).
+export const deathAnimDone = game => game.phase === 'lost' && game.deathTime >= DEATH_ANIM;
 
 export function createGame() {
   return {
@@ -32,6 +36,7 @@ export function createGame() {
     effects: [],
     spawnQueue: [],
     waveTime: 0,
+    deathTime: 0,             // seconds since production went down (drives the collapse animation)
     mods: {
       xpMultiplier: 1, warrantMultiplier: 1, fireRateMultiplier: 1,
       damageMultiplier: 1, bugSpeedMultiplier: 1, rangeMultiplier: 1,
@@ -187,6 +192,7 @@ function checkEnd(game) {
 
 export function step(game, dt) {
   if (game.phase === 'menu' || game.phase === 'won' || game.phase === 'lost') {
+    if (game.phase === 'lost') game.deathTime += dt;
     tickEffects(game, dt);
     return;
   }

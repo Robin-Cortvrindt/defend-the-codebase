@@ -65,11 +65,19 @@ function drawMap(ctx, game) {
   drawBuilding(ctx, game);
 }
 
-// The Nexios building (your base) at the end of the path: one storey per floor bought,
-// an air-conditioning unit on the roof, and a production bar underneath.
+const BUILDING_GROUND = 178;      // bottom of the Nexios building
+
+// The Nexios building (your base) at the end of the path. On game over it burns and caves in.
 function drawBuilding(ctx, game) {
+  if (game.phase === 'lost') drawCollapse(ctx, game);
+  else drawBuildingBody(ctx, game);
+  drawProductionBar(ctx, game);
+}
+
+// One storey per floor bought and an air-conditioning unit on the roof.
+function drawBuildingBody(ctx, game) {
   const x = PROD.x + 2, w = PROD.w - 4;
-  const ground = 178;              // bottom of the building
+  const ground = BUILDING_GROUND;
   const groundTop = 120;           // ground floor: 120..178 (the path enters at y 140)
   const ac = Math.round((game.heatResistance || 0) * 3);
   const acH = ac ? 6 + ac * 2 : 0;
@@ -137,7 +145,19 @@ function drawBuilding(ctx, game) {
     ctx.fillText(`AC ${ac}`, x + 3, uy + acH / 2);
   }
 
-  // production bar
+}
+
+// Highest point of the building (roof, or the top of the AC unit), same maths as drawBuildingBody.
+function buildingTop(game) {
+  const ac = Math.round((game.heatResistance || 0) * 3);
+  const acH = ac ? 6 + ac * 2 : 0;
+  const uppers = Math.max(0, (game.floors || 1) - 1);
+  const floorH = uppers ? Math.min(12, (120 - 6 - acH) / uppers) : 12;
+  return 120 - uppers * floorH - acH;
+}
+
+function drawProductionBar(ctx, game) {
+  const x = PROD.x + 2, w = PROD.w - 4, ground = BUILDING_GROUND;
   const frac = Math.max(0, game.lives / game.maxLives);
   ctx.fillStyle = COLORS.navy3;
   ctx.fillRect(x, ground + 4, w, 4);
@@ -147,6 +167,161 @@ function drawBuilding(ctx, game) {
   ctx.font = `700 7px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(`${Math.ceil(game.lives)} / ${game.maxLives}`, x + w / 2, ground + 16);
+}
+
+// ----- game over: the building burns, then sinks into itself -----
+// Timeline in seconds since production went down (game.deathTime, see DEATH_ANIM in game.js):
+//   0 - 1.1    fire spreads through the windows, the building trembles
+//   1.0 - 2.8  it caves in floor by floor, throwing up a dust cloud
+//   after that a smoking pile of rubble with a few flames left
+const rnd = i => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+const easeIn = t => t * t * t;
+
+function drawCollapse(ctx, game) {
+  const t = game.deathTime || 0;
+  const x = PROD.x + 2, w = PROD.w - 4, ground = BUILDING_GROUND;
+  const top = buildingTop(game);
+  const height = ground - top;
+  const fall = easeIn(Math.min(1, Math.max(0, (t - 1.0) / 1.8)));   // 0 -> 1 while it caves in
+  const heat = Math.min(1, t / 0.9);                                  // how far the fire has spread
+  const shake = (t < 2.9 ? 0.6 + fall * 2.4 : 0) * Math.sin(t * 61);
+
+  // glow on the ground around the fire
+  const glow = ctx.createRadialGradient(x + w / 2, ground - 10, 4, x + w / 2, ground - 10, 70);
+  glow.addColorStop(0, hexA(COLORS.orange, 0.35 * heat * (1 - fall * 0.5)));
+  glow.addColorStop(1, hexA(COLORS.orange, 0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - 70, ground - 80, w + 140, 110);
+
+  // the building: it sinks below ground level and gets squashed as the floors pancake
+  if (fall < 1) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x - 20, 0, w + 40, ground); ctx.clip();
+    ctx.translate(x + w / 2 + shake, ground);
+    ctx.scale(1 + fall * 0.08, 1 - fall * 0.55);
+    ctx.translate(-(x + w / 2), -ground + fall * height * 0.75);
+    drawBuildingBody(ctx, game);
+    // soot: the building chars as it burns
+    ctx.fillStyle = `rgba(0, 10, 20, ${0.55 * heat})`;
+    ctx.fillRect(x, top, w, height);
+    // windows lit by the fire
+    for (let fy = 110; fy > top + 2; fy -= 12) {
+      for (let k = 0; k < 4; k++) {
+        const seed = fy * 7 + k;
+        if (rnd(seed) > heat * 1.1) continue;
+        const flick = 0.6 + 0.4 * Math.sin(t * (9 + rnd(seed + 1) * 8) + seed);
+        ctx.fillStyle = hexA(rnd(seed + 2) > 0.5 ? '#F59E0B' : COLORS.orange, flick);
+        ctx.fillRect(x + 6 + k * 11, fy + 2, 7, 7);
+      }
+    }
+    for (let k = 0; k < 3; k++) {
+      ctx.fillStyle = hexA('#F59E0B', heat * (0.6 + 0.4 * Math.sin(t * 13 + k)));
+      ctx.fillRect(x + 16 + k * 11, 134, 7, 8);
+      ctx.fillRect(x + 16 + k * 11, 150, 7, 8);
+    }
+    // flames licking out of the roof and the sides
+    for (let i = 0; i < 6; i++) {
+      const fx = x + 4 + (i / 5) * (w - 8);
+      drawFlame(ctx, fx, top + 2, (10 + rnd(i) * 10) * heat, t, i);
+    }
+    for (let i = 0; i < 4; i++) {
+      if (rnd(i + 30) > heat) continue;
+      const fy = top + 14 + rnd(i + 20) * (height - 30);
+      drawFlame(ctx, i % 2 ? x + w - 2 : x + 2, fy, (7 + rnd(i + 40) * 6) * heat, t, i + 10);
+    }
+    ctx.restore();
+  }
+
+  // rubble pile growing as the building comes down
+  const pile = Math.min(1, fall * 1.3);
+  if (pile > 0) {
+    const ph = 16 * pile;
+    const pileY = px => ground - Math.sin(((px - x + 8) / (w + 16)) * Math.PI) * ph;
+    ctx.fillStyle = COLORS.navy3;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, ground);
+    for (let i = 0; i <= 10; i++) {
+      const px = x - 8 + (i / 10) * (w + 16);
+      ctx.lineTo(px, ground - (ground - pileY(px)) * (0.75 + rnd(i + 50) * 0.5));
+    }
+    ctx.lineTo(x + w + 8, ground);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = COLORS.s600; ctx.lineWidth = 1; ctx.stroke();
+    // broken slabs sticking out
+    ctx.fillStyle = COLORS.s500;
+    for (let i = 0; i < 7; i++) {
+      const bx = x + rnd(i + 60) * w, by = ground - rnd(i + 70) * ph * 0.8 - 2;
+      ctx.save();
+      ctx.translate(bx, by); ctx.rotate((rnd(i + 80) - 0.5) * 1.6);
+      ctx.fillRect(-4, -1.5, 8 + rnd(i + 90) * 6, 3);
+      ctx.restore();
+    }
+    // the sign survives, tilted in the rubble
+    ctx.save();
+    ctx.translate(x + w / 2 + 4, ground - ph * 0.7 - 3); ctx.rotate(0.22);
+    ctx.globalAlpha = pile;
+    ctx.fillStyle = '#fff'; ctx.fillRect(-16, -5, 32, 10);
+    ctx.fillStyle = COLORS.navy; ctx.font = `900 7px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('NEXIOS', 0, 0.5);
+    ctx.restore();
+    // the fire keeps going in the rubble
+    for (let i = 0; i < 5; i++) {
+      const fx = x + 2 + rnd(i + 100) * (w - 4);
+      drawFlame(ctx, fx, pileY(fx) + ph * 0.2, (5 + rnd(i + 110) * 7) * pile, t, i + 20);
+    }
+  }
+
+  // dust cloud billowing out at street level while it caves in
+  if (t > 1.0) {
+    const d = Math.min(1, (t - 1.0) / 2.4);
+    const alpha = Math.sin(d * Math.PI) * 0.7;
+    for (let i = 0; i < 14; i++) {
+      const side = i % 2 ? 1 : -1;
+      const spread = (0.3 + rnd(i + 120) * 0.9) * d;
+      const px = x + w / 2 + side * (w / 2 + 30 * spread) * (0.4 + rnd(i + 130) * 0.8);
+      const py = ground - 4 - rnd(i + 140) * 26 * d;
+      ctx.fillStyle = hexA(COLORS.s400, alpha * (0.25 + rnd(i + 150) * 0.25));
+      ctx.beginPath(); ctx.arc(px, py, 5 + d * (8 + rnd(i + 160) * 10), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // smoke rising, from the roof at first and from the rubble afterwards
+  const smokeBase = ground - 10 - (1 - fall) * height * 0.8;
+  const smokeIn = Math.min(1, t / 0.6);
+  for (let i = 0; i < 16; i++) {
+    const life = (t * (0.35 + rnd(i + 170) * 0.2) + rnd(i + 180)) % 1;
+    const sx = x + 6 + rnd(i + 190) * (w - 12) + Math.sin(life * 4 + i) * 6 + life * 14;
+    const sy = smokeBase - life * 90;
+    ctx.fillStyle = hexA(COLORS.s600, (1 - life) * 0.45 * smokeIn);
+    ctx.beginPath(); ctx.arc(sx, sy, 4 + life * 13, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // embers floating up
+  for (let i = 0; i < 12; i++) {
+    const life = (t * (0.5 + rnd(i + 200) * 0.4) + rnd(i + 210)) % 1;
+    const ex = x + rnd(i + 220) * w + Math.sin(life * 9 + i) * 5;
+    const ey = smokeBase + 6 - life * 70;
+    ctx.fillStyle = hexA(rnd(i + 230) > 0.5 ? '#F59E0B' : COLORS.orange, (1 - life) * heat);
+    ctx.fillRect(ex, ey, 1.6, 1.6);
+  }
+}
+
+// A flickering three-layer flame with its base at (x, y).
+function drawFlame(ctx, x, y, size, t, seed) {
+  if (size <= 0.5) return;
+  const h = size * (1 + 0.28 * Math.sin(t * (14 + (seed % 5)) + seed * 2.3));
+  const sway = Math.sin(t * 7 + seed) * size * 0.18;
+  for (const [color, k] of [[COLORS.orange, 1], ['#F59E0B', 0.68], ['#FDE68A', 0.36]]) {
+    const hw = size * 0.42 * k, hh = h * k;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - hw, y);
+    ctx.quadraticCurveTo(x - hw, y - hh * 0.55, x + sway * k, y - hh);
+    ctx.quadraticCurveTo(x + hw, y - hh * 0.55, x + hw, y);
+    ctx.quadraticCurveTo(x, y + hw * 0.6, x - hw, y);
+    ctx.fill();
+  }
 }
 
 function drawRanges(ctx, game, view) {
