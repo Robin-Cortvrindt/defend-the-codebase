@@ -1,4 +1,12 @@
 import { registerDeveloper } from '../../engine/registry.js';
+import { addEffect } from '../../engine/game.js';
+import { on } from '../../engine/events.js';
+import { bugsInRange, hitBug } from '../../engine/devs.js';
+
+on('dev:placed', ({ game, dev }) => {
+  if (dev.type !== 'java') return;
+  addEffect(game, { kind: 'pop', x: dev.x, y: dev.y - 26, text: 'Initializing 847 beans…', ttl: 1 });
+});
 
 // Java: balanced speed and damage. Counters null pointers.
 registerDeveloper({
@@ -11,6 +19,41 @@ registerDeveloper({
   range: 2.2,
   counters: 'nullpointer',
   blurb: 'Balanced all-rounder',
+  levelName: 'Junior Java Dev',
+  upgrades: {
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 60, description: '+damage, +range', stats: { damage: 26, range: 2.6 } },
+    level3: [
+      {
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 120,
+        description: '+15% damage to developers nearby',
+        tooltip: "I don't code anymore, I enable.",
+        modifyStats(game, dev, stats) { stats.damage *= 0.6; },
+        aura: { radius: 2, apply(game, dev, stats) { stats.damage *= 1.15; } },
+      },
+      {
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 120,
+        description: 'Stop-the-World, then a pulse',
+        update(game, dev, dt, stats) {
+          const st = dev.state;
+          st.gcT = (st.gcT ?? 0) + dt;
+          if (st.gcT >= 9) {
+            for (const bug of bugsInRange(game, dev, stats.range)) hitBug(game, dev, bug, 3 * stats.damage);
+            addEffect(game, { kind: 'ring', x: dev.x, y: dev.y, color: '#EA580C', ttl: 0.5 });
+            st.gcT = 0; st.stopped = false;
+            return true;
+          }
+          if (st.gcT >= 8) {
+            if (!st.stopped) {
+              st.stopped = true;
+              addEffect(game, { kind: 'pop', x: dev.x, y: dev.y - 26, text: 'Stop-the-World', ttl: 1 });
+            }
+            return false;
+          }
+          return true;
+        },
+      },
+    ],
+  },
   drawIcon(ctx, size) {
     const s = size / 36;
     ctx.save();

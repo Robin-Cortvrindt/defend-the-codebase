@@ -75,7 +75,15 @@ export function devStats(game, dev) {
   if (dev.level === 2 && dev.upgrade?.stats) Object.assign(stats, dev.upgrade.stats);
   try { def.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] modifyStats failed`, e); }
   try { dev.upgrade?.modifyStats?.(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] upgrade modifyStats failed`, e); }
-  // Aura step: Task 4 applies nearby developers' auras to `stats` here.
+  // Aura step: each distinct upgrade id with an aura applies once if another dev with it is in radius.
+  const applied = new Set();
+  for (const other of game.devs) {
+    const aura = other.upgrade?.aura;
+    if (other === dev || !aura || applied.has(other.upgrade.id)) continue;
+    if (Math.hypot(other.x - dev.x, other.y - dev.y) > aura.radius * CELL) continue;
+    applied.add(other.upgrade.id);
+    try { aura.apply(game, dev, stats); } catch (e) { console.error(`[dev ${dev.type}] aura failed`, e); }
+  }
   return {
     ...stats,
     damage: stats.damage * game.mods.damageMultiplier,
