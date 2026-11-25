@@ -1,0 +1,189 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Investment tooltip options</title>
+<style>
+:root { --navy:#001E32; --navy2:#0A2A40; --navy3:#123650; --blue:#2563EB; --orange:#EA580C; --fuchsia:#C026D3; --green:#16A34A; --green-l:#4ADE80; --s500:#64748B; --s400:#94A3B8; --s200:#E2E8F0; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px; background: #00141F; color: #fff; font-family: Lato, system-ui, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.intro h1 { font-size: 20px; margin: 0 0 4px; } .intro p { color: var(--s400); margin: 0 0 8px; font-size: 14px; max-width: 760px; }
+.label { font-size: 15px; font-weight: 900; color: #FDE68A; margin: 28px 0 2px; }
+.sub { font-size: 13px; color: var(--s400); margin: 0 0 10px; max-width: 760px; }
+.frame { position: relative; border: 1px solid var(--navy3); border-radius: 10px; padding: 18px; background: var(--navy); max-width: 960px; }
+
+/* game styles (from style.css) */
+.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin-bottom: 1px; }
+.inv-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.inv-head h1 { margin: 0; font-size: 26px; font-weight: 900; }
+.inv-capital { font-size: 14px; font-weight: 700; color: #FACC15; }
+.inv-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.inv-col { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.inv { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 8px; align-items: center; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 8px; padding: 6px 8px 6px 10px; min-height: 36px; }
+.inv:hover, .inv.pinned { border-color: var(--s500); }
+.inv > b { display: flex; align-items: center; gap: 6px; font-size: 14px; min-width: 0; }
+.inv > b span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv .buy { grid-row: 1; grid-column: 2; border: 1px solid transparent; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; background: var(--blue); white-space: nowrap; }
+.inv .buy:disabled { background: var(--navy3); color: var(--s400); cursor: default; }
+.inv .buy.own:disabled { background: transparent; color: var(--green-l); border-color: var(--green); }
+.pips { display: inline-flex; gap: 2px; flex: none; }
+.pips i { width: 6px; height: 6px; border-radius: 2px; background: var(--navy3); }
+.pips i.on { background: var(--green); }
+.inv-foot { font-size: 11px; color: var(--s500); margin-top: 10px; }
+.chip { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+
+/* ---------- 1: dark game-style popover beside the card ---------- */
+.o1 .tip { display: none; position: absolute; z-index: 10; left: calc(100% + 10px); top: -4px; width: 260px; background: var(--navy2); border: 1px solid var(--s500); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 12px; box-shadow: 0 12px 30px rgba(0,0,0,.6); font-size: 13px; line-height: 1.45; pointer-events: none; }
+.o1 .inv-col:last-child .tip { left: auto; right: calc(100% + 10px); }
+.o1 .inv:hover .tip, .o1 .inv.pinned .tip { display: block; }
+.o1 .inv-cols:hover .inv.pinned:not(:hover) .tip { display: none; }
+.o1 .tip .g { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.o1 .tip h4 { margin: 2px 0 4px; font-size: 15px; font-weight: 900; }
+.o1 .tip p { margin: 0 0 9px; color: var(--s200); }
+.o1 .tip .rows { display: flex; flex-direction: column; gap: 4px; }
+.o1 .tip .rows div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.o1 .tip .rows span:first-child { color: var(--s400); }
+.o1 .tip .rows b.next { color: var(--green-l); }
+
+/* ---------- 2: details strip docked under the columns ---------- */
+.o2 .detail { margin-top: 12px; min-height: 74px; display: grid; grid-template-columns: 4px 1fr auto; gap: 0 14px; background: var(--navy2); border: 1px solid var(--navy3); border-radius: 10px; padding: 12px 14px 12px 0; overflow: hidden; }
+.o2 .detail .bar { background: var(--accent); border-radius: 0 3px 3px 0; }
+.o2 .detail h4 { margin: 0 0 3px; font-size: 16px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.o2 .detail p { margin: 0; color: var(--s200); font-size: 14px; line-height: 1.4; }
+.o2 .detail .stats { display: flex; gap: 18px; align-items: center; }
+.o2 .detail .stat { display: flex; flex-direction: column; align-items: flex-end; }
+.o2 .detail .stat small { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--s400); }
+.o2 .detail .stat b { font-size: 14px; }
+.o2 .detail .stat b.next { color: var(--green-l); }
+.o2 .detail .empty { grid-column: 2 / 4; color: var(--s500); font-size: 13px; align-self: center; }
+
+/* ---------- 3: card unfolds in place ---------- */
+.o3 .more { grid-column: 1 / -1; display: grid; grid-template-rows: 0fr; transition: grid-template-rows .18s ease; }
+.o3 .more > div { overflow: hidden; }
+.o3 .inv:hover .more, .o3 .inv.pinned .more { grid-template-rows: 1fr; }
+.o3 .inv-cols:hover .inv.pinned:not(:hover) .more { grid-template-rows: 0fr; }
+.o3 .inv:hover, .o3 .inv.pinned { background: #0E3350; }
+.o3 .more p { margin: 7px 0 6px; font-size: 12.5px; line-height: 1.4; color: var(--s200); }
+.o3 .more .chips { display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 2px; }
+.o3 .chip.now { background: var(--navy3); color: var(--s200); }
+.o3 .chip.next { background: rgba(22,163,74,.18); color: var(--green-l); }
+.o3 .chip.done { background: rgba(22,163,74,.18); color: var(--green-l); }
+</style></head>
+<body>
+<div class="intro">
+  <h1>Investments: three tooltip styles</h1>
+  <p>Each version uses the same compact cards (name, pips, buy button). Hover any card to try it. One card is pinned open as an example.
+     The levels you own are sample data.</p>
+</div>
+
+<div class="label">1 · Dark popover beside the card</div>
+<p class="sub">Matches the game's navy panels instead of a white box. A coloured edge shows the group. Opens to the side, so it never covers the cards below.</p>
+<div class="frame o1" data-opt="1"></div>
+
+<div class="label">2 · Details strip under the list</div>
+<p class="sub">No floating box at all: one fixed strip at the bottom of the screen shows whichever card you hover. Nothing gets covered, and the text can be bigger.</p>
+<div class="frame o2" data-opt="2"></div>
+
+<div class="label">3 · Card unfolds in place</div>
+<p class="sub">The hovered card grows to show the explanation, plus small chips for now / next level. The cards below slide down.</p>
+<div class="frame o3" data-opt="3"></div>
+
+<script>
+const c1 = [10, 20, 35, 55, 80], c2 = [15, 30, 50], c3 = [10, 25, 45];
+const groups = [
+  ['Developers', '#2563EB', [
+    ['Agile coaching', 'All developers work faster: +8% attack speed per level', 5, c1, 2, l => `+${l * 8}% attack speed`],
+    ['Better laptops', 'All developers hit harder: +10% damage per level', 5, c1, 0, l => `+${l * 10}% damage`],
+    ['Bigger monitors', 'All developers see further: +5% range per level', 3, c2, 3, l => `+${l * 5}% range`],
+    ['Recruitment network', 'Hiring is cheaper: -5% hiring cost per level', 3, c2, 1, l => `-${l * 5}% hiring cost`],
+  ]],
+  ['Power-ups', '#EA580C', [
+    ["CEO's calendar", 'The CEO drops by more often: -10% cooldown per level', 3, c3, 1, l => `CEO cooldown -${l * 10}%`],
+    ['Leadership coaching', 'The CEO motivates harder: +10% attack speed per level', 3, c3, 0, l => `CEO attack speed +${50 + 10 * l}%`],
+    ['Enterprise plan', 'Claude comes back sooner: -10% cooldown per level', 3, c2, 0, l => `Claude -${l * 10}% cooldown`],
+    ['Prompt engineering', 'Claude hallucinates less: -5 points backfire chance per level', 3, c2, 2, l => `Claude backfires ${25 - 5 * l}% of the time`],
+    ['Sales pipeline', 'Business manager is back sooner: -10% cooldown per level', 3, c3, 0, l => `Business manager cooldown -${l * 10}%`],
+    ['Sales targets', 'Business manager earns more: +0.25× drinks per level', 3, c3, 1, l => `Business manager ×${2 + 0.25 * l} drinks`],
+    ['Training budget', 'Training manager gives more XP: +0.25× per level', 3, c3, 0, l => `Training manager ×${2 + 0.25 * l} XP`],
+    ['Training planning', 'Training manager is back sooner: -10% cooldown per level', 3, c3, 0, l => `Training manager cooldown -${l * 10}%`],
+  ]],
+  ['Unlocks', '#C026D3', [
+    ['Cross-functional team', 'Equal React, Java and .NET developers: +25% attack speed for everyone', 1, [40], 1, () => 'Balanced team: +25% productivity'],
+    ['Full-stack squad', 'A React developer with a Java and a .NET developer directly above, below, left or right: its hits bounce to a second bug', 1, [40], 0, () => 'React next to Java + .NET: hits bounce for 50%'],
+    ['Garbage collection', 'Four Java developers in a 2x2 square: every 10th kill slows nearby bugs', 1, [40], 0, () => 'Java 2x2 squares: GC pause every 10th kill'],
+    ['Security training (.NET)', 'Two .NET developers facing each other across the lane build a firewall', 1, [40], 0, () => 'Opposite .NET pairs build a firewall'],
+    ['Robot vacuum', 'A robot vacuum collects dropped drinks for you. Each level makes it faster.', 3, [40, 30, 50], 1, l => `Robot vacuum: ${[70, 100, 130][l - 1]} px/s`],
+  ]],
+];
+const PINNED = 'Full-stack squad';
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+function info(it, group) {
+  const [name, desc, max, costs, lvl, eff] = it;
+  const unlock = max === 1, maxed = lvl >= max;
+  return { name, desc, max, lvl, unlock, maxed, group,
+    level: unlock ? null : `${lvl} of ${max}`,
+    now: lvl > 0 ? eff(lvl) : null,
+    next: maxed ? null : eff(lvl + 1),
+    nextLabel: lvl > 0 ? 'Next level' : (unlock ? 'Unlocks' : 'Level 1'),
+    done: maxed ? (unlock ? 'Owned' : 'Fully upgraded') : null };
+}
+
+function cardShell(it, extra) {
+  const [name, , max, costs, lvl] = it;
+  const maxed = lvl >= max, unlock = max === 1;
+  const pips = unlock ? '' : `<span class="pips">${Array.from({ length: max }, (_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</span>`;
+  const btn = maxed ? `<button class="buy own" disabled>${unlock ? 'Owned' : 'Max'}</button>` : `<button class="buy">💼 ${costs[lvl]}</button>`;
+  return `<b><span>${esc(name)}</span>${pips}</b>${btn}${extra}`;
+}
+
+function tip1(d) {
+  const rows = [];
+  if (d.level) rows.push(['Level', d.level, '']);
+  if (d.now) rows.push(['Now', d.now, '']);
+  if (d.next) rows.push([d.nextLabel, d.next, 'next']);
+  if (d.done) rows.push(['Status', d.done, 'next']);
+  return `<div class="tip"><div class="g">${d.group}</div><h4>${esc(d.name)}</h4><p>${esc(d.desc)}</p>
+    <div class="rows">${rows.map(([k, v, c]) => `<div><span>${k}</span><b class="${c}">${esc(v)}</b></div>`).join('')}</div></div>`;
+}
+function more3(d) {
+  const chips = [];
+  if (d.now) chips.push(`<span class="chip now">Now: ${esc(d.now)}</span>`);
+  if (d.next) chips.push(`<span class="chip next">${d.nextLabel}: ${esc(d.next)}</span>`);
+  if (d.done) chips.push(`<span class="chip done">✓ ${d.done}</span>`);
+  return `<div class="more"><div><p>${esc(d.desc)}</p><div class="chips">${chips.join('')}</div></div></div>`;
+}
+function detail2(d) {
+  if (!d) return `<div class="bar" style="background:var(--navy3)"></div><div class="empty">Hover an investment to see what it does.</div>`;
+  const stats = [];
+  if (d.level) stats.push(['Level', d.level, '']);
+  if (d.now) stats.push(['Now', d.now, '']);
+  if (d.next) stats.push([d.nextLabel, d.next, 'next']);
+  if (d.done) stats.push(['Status', d.done, 'next']);
+  return `<div class="bar"></div><div><h4>${esc(d.name)} <span class="chip" style="background:color-mix(in srgb, var(--accent) 25%, transparent);color:#fff">${d.group}</span></h4><p>${esc(d.desc)}</p></div>
+    <div class="stats">${stats.map(([k, v, c]) => `<div class="stat"><small>${k}</small><b class="${c}">${esc(v)}</b></div>`).join('')}</div>`;
+}
+
+for (const frame of document.querySelectorAll('.frame')) {
+  const opt = frame.dataset.opt;
+  const cols = groups.map(([title, color, items]) =>
+    `<div class="inv-col" style="--accent:${color}"><div class="eyebrow">${title}</div>${items.map((it, i) => {
+      const d = info(it, title);
+      const extra = opt === '1' ? tip1(d) : opt === '3' ? more3(d) : '';
+      return `<div class="inv${it[0] === PINNED ? ' pinned' : ''}" data-g="${title}" data-i="${i}">${cardShell(it, extra)}</div>`;
+    }).join('')}</div>`).join('');
+  frame.innerHTML = `<div class="inv-head"><h1>Investments</h1><span class="inv-capital">💼 60 Investor Capital</span></div>
+    <div class="inv-cols">${cols}</div>${opt === '2' ? '<div class="detail"></div>' : ''}
+    <div class="inv-foot">Investments stay for all future runs. Hover one to see what it does.</div>`;
+  if (opt === '2') {
+    const box = frame.querySelector('.detail');
+    const show = el => {
+      const [, color, items] = groups.find(g => g[0] === el.dataset.g);
+      box.style.setProperty('--accent', color);
+      box.innerHTML = detail2(info(items[+el.dataset.i], el.dataset.g));
+      frame.querySelectorAll('.inv').forEach(c => c.classList.toggle('pinned', c === el));
+    };
+    frame.querySelectorAll('.inv').forEach(el => el.addEventListener('mouseenter', () => show(el)));
+    show(frame.querySelector('.inv.pinned'));
+  }
+}
+</script>
+</body></html>
