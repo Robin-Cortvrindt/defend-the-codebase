@@ -4,6 +4,7 @@ import { getDrink, getDeveloper, getBug, getFeatures, getEvent } from './registr
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, PROD, cellCenter, headingAt } from './map.js';
 import { devStats, canPlace, upgradeUnlocked, XP_GATES } from './devs.js';
 import { drawLane } from './lane.js';
+import { drawOffice } from './office.js';
 import { drawBuilding as drawBuildingArt, buildingTop as buildingArtTop, BUILDING } from './building.js';
 
 export const COLORS = {
@@ -63,14 +64,7 @@ function drawActiveEvent(ctx, game, view) {
 }
 
 function drawMap(ctx, game) {
-  ctx.fillStyle = COLORS.navy;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  ctx.strokeStyle = COLORS.navy2;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let c = 1; c < COLS; c++) { ctx.moveTo(c * CELL + 0.5, 0); ctx.lineTo(c * CELL + 0.5, HEIGHT); }
-  for (let r = 1; r < ROWS; r++) { ctx.moveTo(0, r * CELL + 0.5); ctx.lineTo(WIDTH, r * CELL + 0.5); }
-  ctx.stroke();
+  drawOffice(ctx);
 
   drawLane(ctx, game.time);
 
