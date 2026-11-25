@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursor and drink icons</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #001E32; --navy2: #0A2A40; --navy3: #123650;
+    --blue: #2563EB; --orange: #EA580C; --fuchsia: #C026D3; --green: #16A34A; --green-l: #4ADE80;
+    --s500: #64748B; --s400: #94A3B8; --s200: #E2E8F0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #00111D; color: var(--s200); font: 14px/1.45 Lato, system-ui, sans-serif; padding: 28px 16px 60px; }
+  main { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; color: #fff; }
+  h2 { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); margin: 40px 0 6px; }
+  p.lede { color: var(--s400); margin: 0 0 8px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .card { background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; }
+  .card .head { padding: 10px 12px 8px; }
+  .card .head b { color: #fff; font-size: 14px; }
+  .card .head small { display: block; color: var(--s400); font-size: 12px; }
+  .num { display: inline-block; width: 20px; height: 20px; border-radius: 5px; background: var(--navy3); color: #fff; font-weight: 900; font-size: 12px; text-align: center; line-height: 20px; margin-right: 6px; }
+  .field { height: 150px; position: relative; border-top: 1px solid var(--navy3);
+    background-color: var(--navy);
+    background-image: linear-gradient(var(--navy2) 1px, transparent 1px), linear-gradient(90deg, var(--navy2) 1px, transparent 1px);
+    background-size: 36px 36px; }
+  .field .lane { position: absolute; left: 0; right: 0; top: 54px; height: 36px; background: #0E2E46; border-top: 1px solid var(--navy3); border-bottom: 1px solid var(--navy3); }
+  .field .bug { position: absolute; top: 62px; width: 18px; height: 20px; border-radius: 50%; background: #F1F5F9; border: 3px solid var(--orange); }
+  .field .preview { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 10px; align-items: center; }
+  .field .preview img { width: 32px; height: 32px; }
+  .field .preview img.big { width: 64px; height: 64px; image-rendering: auto; }
+  .field .hint { position: absolute; right: 10px; bottom: 8px; font-size: 11px; color: var(--s400); }
+
+  /* drink options */
+  .opt { background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: center; }
+  @media (max-width: 760px) { .opt { grid-template-columns: 1fr; } }
+  .opt .title b { color: #fff; font-size: 15px; }
+  .opt .title small { display: block; color: var(--s400); font-size: 12px; margin-top: 2px; }
+  .ctx { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
+  .box { background: var(--navy2); border: 1px solid var(--navy3); border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .box > small { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
+  .row { display: flex; gap: 14px; align-items: center; }
+  .mapbit { width: 150px; height: 64px; border-radius: 6px; position: relative;
+    background-color: var(--navy); background-image: linear-gradient(var(--navy2) 1px, transparent 1px), linear-gradient(90deg, var(--navy2) 1px, transparent 1px); background-size: 18px 18px; }
+  .mapbit svg { position: absolute; top: 50%; transform: translate(-50%, -50%); }
+  .zoom svg { width: 56px; height: 56px; }
+  .hud { display: flex; gap: 12px; align-items: center; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .hud span { display: inline-flex; gap: 4px; align-items: center; font-size: 18px; }
+  .cost { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 700; color: var(--s200); background: var(--navy); border: 1px solid var(--navy3); border-left: 3px solid var(--accent); border-radius: 8px; padding: 5px 9px; }
+  .cost b { color: #fff; margin-right: 6px; }
+  .note { color: var(--s400); font-size: 12px; margin-top: 6px; }
+  .current { opacity: .9; border-style: dashed; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cursor and drink icons, 5 options each</h1>
+  <p class="lede">Hover each cursor card to try the cursor for real. The drink options show the drop on the map (actual size and zoomed), the HUD counter and a cost label. Coffee is drawn in each style too, so you can see if the three drinks fit together. The designs only borrow each can's colours, not the real logos.</p>
+
+  <h2>Mouse cursor over the map</h2>
+  <p class="lede">Today: the browser's default crosshair. Every option below can light up green when it's over a drink you can click.</p>
+  <div class="grid" id="cursors"></div>
+
+  <h2>Drink icons (White Monster · Red Bull · coffee)</h2>
+  <div class="opt current" id="opt-current"></div>
+  <div id="drinks"></div>
+</main>
+
+<script>
+const C = { navy:'#001E32', navy2:'#0A2A40', navy3:'#123650', green:'#16A34A', gl:'#4ADE80', blue:'#2563EB', s500:'#64748B', s400:'#94A3B8', s200:'#E2E8F0', white:'#FFFFFF' };
+const svg = (vb, body, w, h) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${w}" height="${h ?? w}">${body}</svg>`;
+const uri = s => `url("data:image/svg+xml,${encodeURIComponent(s)}")`;
+const src = s => `data:image/svg+xml,${encodeURIComponent(s)}`;
+
+/* ---------------- cursors (32×32, hotspot given) ---------------- */
+const cursors = [
+  { name: 'Nexios reticle', note: 'Green ring with four gaps and a centre dot. Clean and very readable.', hot: [16,16],
+    body: `<circle cx="16" cy="16" r="10" fill="none" stroke="${C.navy}" stroke-width="5"/>
+           <circle cx="16" cy="16" r="10" fill="none" stroke="${C.gl}" stroke-width="2.2" stroke-dasharray="11.7 4" stroke-dashoffset="5.85"/>
+           <circle cx="16" cy="16" r="2.6" fill="${C.navy}"/><circle cx="16" cy="16" r="1.6" fill="${C.gl}"/>` },
+  { name: 'Viewfinder brackets', note: 'Four corner brackets, like selecting code. Fits a grid game well.', hot: [16,16],
+    body: (() => { const L = (d) => `<path d="${d}" fill="none" stroke="${C.navy}" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`;
+      return L('M6 12V6h6') + L('M20 6h6v6') + L('M26 20v6h-6') + L('M12 26H6v-6') + `<circle cx="16" cy="16" r="2.4" fill="${C.navy}"/><circle cx="16" cy="16" r="1.4" fill="${C.gl}"/>`; })() },
+  { name: 'Bug swatter', note: 'A small fly swatter. Playful; the hotspot is the middle of the mesh.', hot: [12,12],
+    body: `<g transform="rotate(-45 16 16)">
+             <rect x="14.6" y="17" width="2.8" height="13" rx="1.4" fill="${C.navy}" stroke="${C.navy}" stroke-width="2"/>
+             <rect x="15" y="17" width="2" height="12.5" rx="1" fill="#CBD5E1"/>
+             <rect x="8.5" y="1.5" width="15" height="16" rx="3" fill="${C.navy}"/>
+             <rect x="10" y="3" width="12" height="13" rx="2" fill="${C.green}"/>
+             <path d="M13 3v13M16 3v13M19 3v13M10 6.5h12M10 9.5h12M10 12.5h12" stroke="#0B5A26" stroke-width="1"/>
+           </g>` },
+  { name: 'Debug magnifier', note: 'A magnifying glass with a crosshair in the lens. Says "debugging".', hot: [13,13],
+    body: `<path d="M20 20l8 8" stroke="${C.navy}" stroke-width="7" stroke-linecap="round"/>
+           <path d="M20 20l7.5 7.5" stroke="#CBD5E1" stroke-width="3.5" stroke-linecap="round"/>
+           <circle cx="13" cy="13" r="9" fill="rgba(74,222,128,.15)" stroke="${C.navy}" stroke-width="5"/>
+           <circle cx="13" cy="13" r="9" fill="none" stroke="#fff" stroke-width="2.2"/>
+           <path d="M13 8.5v3M13 14.5v3M8.5 13h3M14.5 13h3" stroke="${C.gl}" stroke-width="1.6" stroke-linecap="round"/>` },
+  { name: 'Nexios arrow', note: 'A normal pointer in house colours: navy fill, green edge. The least surprising.', hot: [5,4],
+    body: `<path d="M5 4l0 21 5.5-5 3.8 8.5 3.6-1.6-3.8-8.3 7.4-.6z" fill="${C.navy}" stroke="${C.gl}" stroke-width="2" stroke-linejoin="round"/>` },
+];
+const host = document.getElementById('cursors');
+cursors.forEach((c, i) => {
+  const s = svg('0 0 32 32', c.body, 32);
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="head"><b><span class="num">${i+1}</span>${c.name}</b><small>${c.note}</small></div>
+    <div class="field"><div class="lane"></div><div class="bug" style="left:${60 + i*14}px"></div><div class="bug" style="left:${140 - i*6}px"></div>
+      <div class="preview"><img src="${src(s)}" alt=""><img class="big" src="${src(s)}" alt=""></div><div class="hint">hover me</div></div>`;
+  card.querySelector('.field').style.cursor = `${uri(s)} ${c.hot[0]} ${c.hot[1]}, crosshair`;
+  host.append(card);
+});
+
+/* ---------------- drink icons ----------------
+   Each option: drop(id) -> svg body in viewBox -14 -14 28 28 (centre 0,0, ~22px like today)
+                icon(id) -> svg body in viewBox 0 0 24 24 for HUD/cost */
+const DR = {
+  monster: { name: 'White Monster', color: '#64748B', light: '#F1F5F9', mid: '#CBD5E1' },
+  redbull: { name: 'Red Bull', color: '#2563EB', light: '#DBEAFE', mid: '#CBD5E1' },
+  coffee:  { name: 'Coffee', color: '#92400E', light: '#FDE68A', mid: '#B45309' },
+};
+const ring = (fill, stroke = '#fff') => `<circle r="11" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+
+// side-view can, drawn in a 24x24 box
+function canSide(id) {
+  if (id === 'coffee') return `
+    <path d="M6 7h10l-1.2 13a1.5 1.5 0 0 1-1.5 1.3H8.7a1.5 1.5 0 0 1-1.5-1.3z" fill="#FFF7ED" stroke="#7C2D12" stroke-width="1.2"/>
+    <path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H15.4" fill="none" stroke="#7C2D12" stroke-width="1.4"/>
+    <rect x="6.6" y="12" width="8.8" height="4" fill="#92400E"/>
+    <path d="M9 2.5c-1 1.2 1 1.8 0 3M13 2.5c-1 1.2 1 1.8 0 3" stroke="#CBD5E1" stroke-width="1" fill="none" stroke-linecap="round"/>`;
+  const body = id === 'monster'
+    ? `<rect x="7" y="4" width="10" height="17" rx="2" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+       <rect x="7.6" y="8" width="8.8" height="1.6" fill="#94A3B8"/><rect x="7.6" y="15.5" width="8.8" height="1.6" fill="#94A3B8"/>
+       <path d="M10 10.5l1.2 4M12 10.5l0 4.2M14 10.5l-1.2 4" stroke="#64748B" stroke-width="1" stroke-linecap="round"/>`
+    : `<rect x="7" y="4" width="10" height="17" rx="2" fill="#CBD5E1" stroke="#1E3A8A" stroke-width="1.2"/>
+       <path d="M7.6 5.5h4.4v15H8.6a1 1 0 0 1-1-1z" fill="#2563EB"/>
+       <path d="M12 5.5l4.4 0v4.5l-4.4 3z" fill="#2563EB"/>
+       <path d="M10.5 12.5l2.5-2.5-.6 2h2l-2.6 3 .6-2h-2z" fill="#FACC15"/>`;
+  return body + `<rect x="8" y="2.6" width="8" height="2" rx="1" fill="#94A3B8"/>`;
+}
+// top-down lid
+function lidTop(id) {
+  if (id === 'coffee') return `<circle cx="12" cy="12" r="10" fill="#FFF7ED" stroke="#7C2D12" stroke-width="1.4"/><circle cx="12" cy="12" r="7.2" fill="#78350F"/><path d="M8.5 11c2-1.6 5-1.6 7 0" stroke="#D97706" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+  const rim = id === 'monster' ? '#F8FAFC' : '#2563EB', inner = id === 'monster' ? '#CBD5E1' : '#BFDBFE', edge = id === 'monster' ? '#334155' : '#1E3A8A';
+  return `<circle cx="12" cy="12" r="10" fill="${rim}" stroke="${edge}" stroke-width="1.4"/>
+          <circle cx="12" cy="12" r="7.4" fill="${inner}" stroke="${edge}" stroke-width=".8" opacity=".95"/>
+          <rect x="9" y="6.5" width="6" height="7.5" rx="3" fill="#94A3B8" stroke="${edge}" stroke-width=".8"/><circle cx="12" cy="8.8" r="1.2" fill="${inner}"/>
+          <ellipse cx="12" cy="16.3" rx="2.6" ry="1.3" fill="${edge}"/>`;
+}
+// mascot glyphs
+function mascot(id, onDisc) {
+  const fg = onDisc ? '#fff' : DR[id].color;
+  if (id === 'monster') return `
+    <path d="M4.5 20V11a7.5 7.5 0 0 1 15 0v9l-2.5-1.6-2.5 1.6-2.5-1.6-2.5 1.6-2.5-1.6z" fill="${onDisc ? '#fff' : '#E2E8F0'}" stroke="${onDisc ? 'none' : '#475569'}" stroke-width="1.2"/>
+    <circle cx="12" cy="10.5" r="3.4" fill="#64748B"/><circle cx="12.8" cy="9.8" r="1.2" fill="#fff"/>
+    <path d="M8.5 15h7l-1 1.8-1-1.2-1 1.4-1-1.4-1 1.2z" fill="#0F172A"/>`;
+  if (id === 'redbull') return `
+    <path d="M12 6c-3-3-8-2.6-9.5 1 2.5-.6 4.5 0 6 1.4-2.6-.2-4.6.6-5.6 2.4 2.4-.4 4.4 0 5.8 1" fill="${fg}" opacity=".85"/>
+    <path d="M12 6c3-3 8-2.6 9.5 1-2.5-.6-4.5 0-6 1.4 2.6-.2 4.6.6 5.6 2.4-2.4-.4-4.4 0-5.8 1" fill="${fg}" opacity=".85"/>
+    <path d="M13.2 5L8.4 13.4h3.4L10.6 21l5.2-9h-3.4z" fill="${onDisc ? '#FACC15' : '#FACC15'}" stroke="${onDisc ? 'none' : '#1E3A8A'}" stroke-width=".9" stroke-linejoin="round"/>`;
+  return `<path d="M5 9h12v5.5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z" fill="${fg}"/><path d="M17 10.5h1.2a2.4 2.4 0 0 1 0 4.8H16.6" fill="none" stroke="${fg}" stroke-width="1.6"/>
+    <path d="M8.5 3c-1 1.3 1 2 0 3.6M12.5 3c-1 1.3 1 2 0 3.6" stroke="${fg}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>`;
+}
+// hex token with letter
+function hexTok(id) {
+  const st = { monster: ['#F1F5F9', '#475569', '#334155', 'M'], redbull: ['#2563EB', '#fff', '#1E3A8A', 'R'], coffee: ['#92400E', '#FDE68A', '#451A03', 'C'] }[id];
+  return `<path d="M12 1.5l9.1 5.25v10.5L12 22.5l-9.1-5.25V6.75z" fill="${st[0]}" stroke="${st[2]}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M12 4.2l6.8 3.9v7.8L12 19.8l-6.8-3.9V8.1z" fill="none" stroke="${st[1]}" stroke-width=".8" opacity=".45"/>
+    <text x="12" y="16.2" text-anchor="middle" font-family="Lato, sans-serif" font-weight="900" font-size="11" fill="${st[1]}">${st[3]}</text>`;
+}
+// pixel art (12x12 grid -> 2px cells)
+const PX = {
+  monster: { k: { o: '#1E293B', w: '#F8FAFC', g: '#94A3B8', s: '#64748B' }, rows: [
+    '....oooo....','...oggggo...','...owwwwo...','...oggggo...','...owswso...','...owswso...','...owswso...','...owwwwo...','...oggggo...','...owwwwo...','...oggggo...','....oooo....'] },
+  redbull: { k: { o: '#172554', b: '#2563EB', l: '#CBD5E1', y: '#FACC15', g: '#94A3B8' }, rows: [
+    '....oooo....','...oggggo...','...obbllo...','...obbllo...','...obyylo...','...obyblo...','...obbylo...','...obbllo...','...obbllo...','...obbllo...','...oggggo...','....oooo....'] },
+  coffee: { k: { o: '#451A03', c: '#FFF7ED', b: '#92400E', s: '#CBD5E1' }, rows: [
+    '...s..s.....','....s..s....','............','..oooooooo..','..obbbbbboo.','..occccccoco','..occccccoco','..occccccoo.','..occccccoo.','...occcco...','....oooo....','............'] },
+};
+function pixel(id) {
+  const { k, rows } = PX[id]; let out = '';
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (k[ch]) out += `<rect x="${x*2}" y="${y*2}" width="2" height="2" fill="${k[ch]}"/>`; }));
+  return `<g shape-rendering="crispEdges">${out}</g>`;
+}
+
+const inBox = (body) => `<g transform="translate(-12 -12)">${body}</g>`;
+const options = [
+  { name: 'Can, side view', note: 'A tiny can: white with grey bands for White Monster, half blue/half silver for Red Bull. The drop is the can itself with a soft glow.',
+    drop: id => `<circle r="12" fill="${DR[id].color}" opacity=".35"/>` + `<g transform="scale(1.05)">${inBox(canSide(id))}</g>`, icon: canSide },
+  { name: 'Can lid, top down', note: 'Looking down on the can: rim colour plus a pull tab. Stays round, so drops keep today\'s shape.',
+    drop: id => `<circle r="12.5" fill="#fff" opacity=".9"/>` + `<g transform="scale(1.02)">${inBox(lidTop(id))}</g>`, icon: lidTop },
+  { name: 'Mascot glyphs', note: 'A one-eyed little monster for White Monster, a winged lightning bolt for Red Bull, a steaming cup for coffee. The most character.',
+    drop: id => ring(DR[id].color) + `<g transform="scale(.78)">${inBox(mascot(id, true))}</g>`, icon: id => mascot(id, false) },
+  { name: 'Hex token', note: 'Keeps the letters but makes them game coins: a hexagon in the can colour. Coffee gets a C to match.',
+    drop: id => `<g transform="scale(1.1)">${inBox(hexTok(id))}</g>`, icon: hexTok },
+  { name: 'Pixel can', note: 'Retro 12×12 pixel art. Charming, but it stands out from the smooth look of the rest of the game.',
+    drop: id => `<circle r="12" fill="${DR[id].color}" opacity=".3"/>` + `<g transform="scale(1.05)">${inBox(pixel(id))}</g>`, icon: pixel },
+];
+const current = {
+  name: 'Today', note: 'A disc in the drink colour with a white letter (coffee uses the ☕ emoji).',
+  drop: id => ring(DR[id].color) + `<text y="4.3" text-anchor="middle" font-family="Lato" font-weight="700" font-size="12" fill="#fff">${id === 'coffee' ? '☕' : id === 'monster' ? 'M' : 'R'}</text>`,
+  icon: id => `<text x="12" y="17" text-anchor="middle" font-family="Lato" font-weight="900" font-size="15" fill="${DR[id].color === '#64748B' ? '#94A3B8' : DR[id].color}">${id === 'coffee' ? '☕' : id === 'monster' ? 'M' : 'R'}</text>`,
+};
+
+function render(opt, i, el) {
+  const ids = ['monster', 'redbull', 'coffee'];
+  const drop = (id, px) => svg('-14 -14 28 28', opt.drop(id), px);
+  const icon = (id, px) => svg('0 0 24 24', opt.icon(id), px);
+  const hudColor = { monster: '#CBD5E1', redbull: '#60A5FA', coffee: '#D97706' };
+  el.innerHTML = `
+    <div class="title"><b>${i ? `<span class="num">${i}</span>` : ''}${opt.name}</b><small>${opt.note}</small></div>
+    <div class="ctx">
+      <div class="box"><small>Drop · actual size</small>
+        <div class="mapbit">${ids.map((id, k) => `<span style="position:absolute;left:${28 + k*46}px;top:50%;transform:translate(-50%,-50%);line-height:0">${drop(id, 28)}</span>`).join('')}</div></div>
+      <div class="box zoom"><small>Drop · zoomed</small><div class="row">${ids.map(id => drop(id, 56)).join('')}</div></div>
+      <div class="box"><small>HUD</small><div class="hud">${ids.map(id => `<span style="color:${hudColor[id]}">${icon(id, 20)}100</span>`).join('')}</div>
+        <small style="margin-top:4px">Cost labels</small>
+        <div class="row" style="gap:8px"><span class="cost" style="--accent:#C026D3"><b>.NET</b>${icon('monster', 16)} 110</span><span class="cost" style="--accent:#2563EB"><b>React</b>${icon('redbull', 16)} 60</span></div></div>
+    </div>`;
+}
+render(current, 0, document.getElementById('opt-current'));
+const dh = document.getElementById('drinks');
+options.forEach((o, i) => { const el = document.createElement('div'); el.className = 'opt'; dh.append(el); render(o, i + 1, el); });
+</script>
+</main>
+</body>
+</html>
