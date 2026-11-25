@@ -70,7 +70,11 @@ export function devEffects(game, dev) {
     if (!p.describeEffect || !powerupState(game, p.id).active) continue;
     out.push(...collect('powerup', p.id, 'powerup', p.name, () => p.describeEffect(game, dev)));
   }
-  const ev = game.activeEvent ? getEvent(game.activeEvent) : null;
-  if (ev?.describeEffect) out.push(...collect('event', ev.id, 'event', ev.name, () => ev.describeEffect(game, dev)));
+  if (game.activeEvent) {
+    out.push(...collect('event', game.activeEvent, 'event', game.activeEvent, () => {
+      const ev = getEvent(game.activeEvent);
+      return ev?.describeEffect ? lines(ev.describeEffect(game, dev), 'event', ev.name) : null;
+    }));
+  }
   return GROUPS.flatMap(g => out.filter(l => l.group === g));
 }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame } from '../src/engine/game.js';
+import { CELL } from '../src/engine/map.js';
 import { placeDev } from '../src/engine/devs.js';
 import { powerupState } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
@@ -110,7 +111,7 @@ test('Review Focus 5: aura lines once per upgrade id, in radius only', () => {
   const o2 = placeDev(g, 'a', 0, 4); o2.upgrade = aura;
   assert.deepEqual(devEffects(g, dev).map(l => [l.group, l.name, l.text]), [['team', 'Aura Up (nearby)', 'faster']]);
   const { g: far, dev: d2 } = setup();
-  const f = placeDev(far, 'a', 1, 3); f.x = d2.x + 5 * 40; f.upgrade = aura;
+  const f = placeDev(far, 'a', 1, 3); f.x = d2.x + 5 * CELL; f.upgrade = aura;
   assert.deepEqual(devEffects(far, d2), []);
 });
 
@@ -121,4 +122,33 @@ test('mixed order follows GROUPS', () => {
   const { g, dev } = setup(1);
   g.investmentLevels = { inv: 1 }; powerupState(g, 'pu').active = true; g.activeEvent = 'ev';
   assert.deepEqual(devEffects(g, dev).map(l => l.group), ['upgrade', 'investment', 'powerup', 'event']);
+});
+
+test('hook result normalisation', () => {
+  const run = result => {
+    R.resetRegistry(); R.registerDeveloper({ id: 'd', name: 'Dev', drink: 'coffee', cost: 10, damage: 1, fireRate: 1, range: 1 });
+    R.registerInvestment({ id: 'inv', name: 'Inv', describeEffect: () => result });
+    const g = createGame(); startGame(g); g.drinks = { coffee: 99 };
+    const dev = placeDev(g, 'd', 0, 3);
+    g.investmentLevels = { inv: 1 };
+    return devEffects(g, dev);
+  };
+  assert.deepEqual(run(['a', 'b']).map(l => l.text), ['a', 'b']);
+  assert.deepEqual(run([{ name: 'X', text: 'a' }, { text: 'b' }]).map(l => [l.name, l.text]), [['X', 'a'], ['Inv 1', 'b']]);
+  assert.deepEqual(run(null), []);
+  assert.deepEqual(run([]), []);
+  assert.deepEqual(run({ text: '' }), []);
+});
+
+test('developer and feature hooks land in team, developer before aura', () => {
+  const aura = { id: 'au', name: 'Aura Up', aura: { radius: 2, describe: () => 'faster', apply() {} } };
+  R.registerDeveloper({ id: 'a', name: 'A', drink: 'coffee', cost: 1, damage: 1, fireRate: 1, range: 1 });
+  R.registerDeveloper({ id: 'n', name: 'N', drink: 'coffee', cost: 1, damage: 1, fireRate: 1, range: 1,
+    describeEffect: () => [{ text: 'own' }, { name: 'Custom', text: 'own2' }] });
+  R.registerFeature({ id: 'feat', name: 'Feat', describeEffect: () => 'fx' });
+  const { g } = setup();
+  const n = placeDev(g, 'n', 1, 3);
+  const o = placeDev(g, 'a', 0, 4); o.upgrade = aura;
+  assert.deepEqual(devEffects(g, n).map(l => [l.group, l.name, l.text]), [
+    ['team', 'N', 'own'], ['team', 'Custom', 'own2'], ['team', 'Aura Up (nearby)', 'faster'], ['team', 'Feat', 'fx']]);
 });
