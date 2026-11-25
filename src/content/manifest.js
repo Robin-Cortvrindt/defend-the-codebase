@@ -57,6 +57,7 @@ export const CONTENT = [
   './investments/cross-functional.js',    // unlock: balanced team bonus
   './investments/full-stack-squad.js',    // unlock: React hits bounce
   './investments/garbage-collection.js',  // unlock: Java 2x2 squares slow bugs
+  './investments/robot-vacuum.js',        // unlock: a robot vacuum collects drops
   // Features (teammates' add-ons, Nexios references, ...)
   './features/side-panel.js',
   './features/mailbox.js',
