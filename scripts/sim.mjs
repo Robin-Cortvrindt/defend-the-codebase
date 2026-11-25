@@ -4,7 +4,9 @@
 //   node scripts/sim.mjs --pickup 0.7     collect only 70% of the drops (default 1), each 1 s after it appears
 //   node scripts/sim.mjs --trials N      seeded trials per row (default 30): prints mean / median / p10 of sprints cleared
 //   node scripts/sim.mjs --meta [runs]    run after run from zero: earn Investor Capital, buy the cheapest investment, repeat
+//   node scripts/sim.mjs --trojan         the bot summons a Trojan horse at every bell it can afford; reports how the horses went
 import { CONTENT_URLS } from '../src/content/manifest.js';
+import { on } from '../src/engine/events.js';
 import { loadModules } from '../src/engine/loader.js';
 import { createGame, startGame, startWave, ringBell, step, sprintInfo, chooseYearReview } from '../src/engine/game.js';
 import { buyUpgrade } from '../src/engine/upgrades.js';
@@ -18,6 +20,22 @@ import { setStorage, saveProgress, loadProgress, awardCapital, investmentCost, i
 
 await loadModules(CONTENT_URLS);
 setStorage(null);
+const { summonTrojan } = await import('../src/content/features/trojan-horse.js');
+const TROJAN = process.argv.includes('--trojan');
+
+// Trojan horse bookkeeping per game. killBug spawns a bug's drops before it emits bug:killed,
+// so the drops seen since the previous kill belong to the bug that just died.
+const horseStats = new WeakMap();
+let sinceKill = [];
+on('drop:spawned', ({ drop }) => sinceKill.push(drop.id));
+on('bug:killed', ({ game, bug }) => {
+  const h = horseStats.get(game);
+  if (h && bug.type === 'trojan-horse') { h.squashed++; for (const id of sinceKill) h.drops.add(id); }
+  sinceKill = [];
+});
+on('bug:leaked', ({ game, bug }) => { const h = horseStats.get(game); if (h && bug.type === 'trojan-horse') h.leaked++; });
+on('drop:collected', ({ game, drop }) => { const h = horseStats.get(game); if (h?.drops.has(drop.id)) h.collected += drop.amount; });
+on('trojan:summoned', ({ game, price }) => { const h = horseStats.get(game); if (h) { h.summoned++; h.paid += price * 3; } });
 
 // Rank buildable cells by how much path is in range.
 function coverage(col, row, range) {
@@ -40,6 +58,7 @@ for (const a of cells) {
 
 function play(strategy, usePowers, seed = 1) {
   const g = createGame(); g.random = mulberry32(seed); startGame(g); trackPickups(g, seed);
+  if (TROJAN) horseStats.set(g, { summoned: 0, squashed: 0, leaked: 0, paid: 0, collected: 0, drops: new Set() });
   const free = x => !g.devs.some(d => d.col === x.c && d.row === x.r);
   let i = 0;
   const buy = () => {
@@ -58,7 +77,7 @@ function play(strategy, usePowers, seed = 1) {
     step(g, 0.05); t += 0.05; tickPickups(g, 0.05);
     if (usePowers && g.phase === 'wave') { for (const p of ['ceo', 'business', 'training']) usePowerup(g, p); if (g.bugs.length > 40) usePowerup(g, 'claude'); }
     if (g.phase === 'review') { if (g.pendingYearReview) chooseYearReview(g, 'accept'); while (buyUpgrade(g, 'aircon') || buyUpgrade(g, 'floor')); }
-    if (g.phase === 'bell' || g.phase === 'review') { buy(); ringBell(g); }
+    if (g.phase === 'bell' || g.phase === 'review') { if (TROJAN) summonTrojan(g); buy(); ringBell(g); }
   }
   return g;
 }
@@ -103,6 +122,11 @@ if (args.includes('--meta')) {
       const games = Array.from({ length: trials }, (_, k) => play(s, powers, k + 1));
       const { mean, median, p10 } = stats(games.map(g => g.sprint));
       console.log(name.padEnd(12), label + ':', `mean ${mean.toFixed(1).padStart(5)} median ${String(median).padStart(3)} p10 ${String(p10).padStart(3)} | sample ${describe(games[0])}`);
+      if (TROJAN) {
+        const t = games.map(x => horseStats.get(x)).reduce((a, h) => ({ n: a.n + h.summoned, won: a.won + h.squashed, lost: a.lost + h.leaked, net: a.net + h.collected - h.paid }), { n: 0, won: 0, lost: 0, net: 0 });
+        const pct = k => (t.n ? `${Math.round(100 * k / t.n)}%` : '—').padStart(4);
+        console.log(''.padEnd(12), '  trojan   :', `horses ${String(t.n).padStart(4)} squashed ${pct(t.won)} leaked ${pct(t.lost)} | mean net drinks per horse ${t.n ? Math.round(t.net / t.n) : '—'}`);
+      }
     }
   }
 }

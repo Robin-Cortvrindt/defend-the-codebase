@@ -15,9 +15,10 @@ import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
 import { drawDrinkIcon } from './drink-icons.js';
 import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
+import { getBellActions, bellActionView } from './bell.js';
 
 let app;
-const refs = { hire: [], powerups: [] };
+const refs = { hire: [], powerups: [], bellActions: [] };
 let lastPhase = null;
 
 export function initUI(appRef) {
@@ -195,6 +196,7 @@ function swingBell() {
 export function updateUI() {
   const g = app.game, v = app.view;
   updateDrinks(g);
+  refreshBellActions();
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
   set(refs.warrants, 'textContent', String(g.warrants));
@@ -360,6 +362,45 @@ const BELL_SVG = `
   <path class="waves" d="M-60 -20 q-8 10 0 20 M-70 -26 q-12 16 0 32 M60 -20 q8 10 0 20 M70 -26 q12 16 0 32" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>`;
 
+// Choices that features offer at the bell (see bell.js), e.g. summoning a Trojan horse. null when there are none.
+// The buttons are refreshed every frame by refreshBellActions(), so they follow drinks picked up or spent at the bell.
+function bellActionsEl(g, rerender) {
+  refs.bellActions = [];
+  const list = getBellActions(g);
+  if (!list.length) return null;
+  return h('div', { class: 'bell-actions' }, list.map(({ action }) => {
+    const ref = { g, action, label: h('b'), cost: h('span', { class: 'bell-cost' }), hint: h('small'), costKey: null };
+    ref.btn = h('button', {
+      class: 'btn bell-action',
+      onclick: () => {
+        let ok = false;
+        try { ok = !!action.onClick(g); } catch (e) { console.error(e); }
+        if (ok) playSound('powerup');
+        rerender();
+      },
+    }, ref.label, ref.cost, ref.hint);
+    refs.bellActions.push(ref);
+    refreshBellAction(ref);
+    return ref.btn;
+  }));
+}
+
+function refreshBellAction(ref) {
+  const view = bellActionView(ref.g, ref.action);
+  set(ref.label, 'textContent', String(view.label));
+  set(ref.hint, 'textContent', String(view.hint));
+  set(ref.btn, 'disabled', !view.enabled);
+  const key = JSON.stringify(view.cost);
+  if (key !== ref.costKey) {
+    ref.costKey = key;
+    ref.cost.replaceChildren(...Object.entries(view.cost ?? {}).map(([id, n]) => h('span', { class: 'cost' }, drinkIconEl(id, 14), String(n))));
+  }
+}
+
+function refreshBellActions() {
+  for (const ref of refs.bellActions ?? []) if (ref.btn.isConnected) refreshBellAction(ref);
+}
+
 function showOverlay(phase) {
   const ov = $('#overlay');
   setScreen(['lost', 'won'].includes(phase) ? phase : 'run');
@@ -378,6 +419,7 @@ function showOverlay(phase) {
         h('div', { class: 'eyebrow' }, `Sprint ${sprintInfo(g.sprint - 1).sprint} done · +${sprintBonusEach(g.sprint - 1)} of each drink · +1 Warrant`),
         h('h2', {}, `Ring the bell to start sprint ${sprintInfo(g.sprint).sprint}`),
         h('small', {}, 'Hiring and selling still work'),
+        bellActionsEl(g, () => showOverlay('bell')),
       ),
     ));
   } else if (phase === 'review') {
@@ -443,6 +485,7 @@ function renderReview(ov, g) {
         h('div', { class: 'eyebrow' }, `Quarter review · Q${done.quarter} · ${g.warrants} Warrants`),
         h('h2', {}, g.pendingYearReview ? 'Yearly review still open' : ringLabel),
         h('small', {}, 'Hire, place and sell developers on the map'),
+        bellActionsEl(g, rerender),
       ),
       h('button', { class: 'btn ghost', onclick: () => setMin(false) }, 'Back to review'),
     ));
@@ -506,6 +549,7 @@ function renderReview(ov, g) {
     h('div', {},
       h('h2', {}, g.pendingYearReview ? 'Finish the yearly review first' : ringLabel),
       h('small', {}, 'Sprints get harder every quarter'),
+      bellActionsEl(g, rerender),
     ),
     h('button', { class: 'btn ghost hire-from-review', onclick: () => setMin(true) }, 'Hire developers →'),
   ));

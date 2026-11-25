@@ -61,12 +61,18 @@ export function dropDrinks(game, bug, def) {
   const drops = [];
   for (const p of picks) {
     const { x, y } = landingSpot(game, bug.x, bug.y);
-    const drop = { id: game.nextId++, x, y, fromX: bug.x, fromY: bug.y, flight: FLIGHT, drink: p.drink, amount: p.amount, ttl: DROP_TTL };
-    game.drops.push(drop);
-    drops.push(drop);
-    emit('drop:spawned', { game, drop });
+    drops.push(placeDrop(game, { x, y, fromX: bug.x, fromY: bug.y, drink: p.drink, amount: p.amount }));
   }
   return drops;
+}
+
+// Puts one drop on the board: it flies from (fromX, fromY) to (x, y), then lies there for `ttl` seconds.
+// Content uses this for loot it scatters itself (pick the spot with landingSpot so it stays clickable).
+export function placeDrop(game, { x, y, fromX = x, fromY = y, flight = FLIGHT, drink, amount, ttl = DROP_TTL }) {
+  const drop = { id: game.nextId++, x, y, fromX, fromY, flight, drink, amount, ttl };
+  game.drops.push(drop);
+  emit('drop:spawned', { game, drop });
+  return drop;
 }
 
 export function tickDrops(game, dt) {

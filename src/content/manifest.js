@@ -16,6 +16,7 @@ export const CONTENT = [
   './bugs/merge-conflict.js', // splits in two when squashed
   './bugs/memory-leak.js',    // grows the longer it lives
   './bugs/security-risk.js', // boss at the end of every sprint
+  './bugs/trojan-horse.js',  // summoned at the bell; explodes into loot
   // Waves
   './waves.js',
   // Power-ups
@@ -62,6 +63,7 @@ export const CONTENT = [
   './features/side-panel.js',
   './features/mailbox.js',
   './features/retrospective.js',
+  './features/trojan-horse.js',   // pay at the bell to summon a trojan horse
 ];
 
 export const CONTENT_URLS = CONTENT.map(p => new URL(p, import.meta.url).href);

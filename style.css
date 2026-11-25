@@ -139,6 +139,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .bell-card h2 { margin: 2px 0; font-size: clamp(14px, 1.7vw, 18px); font-weight: 900; line-height: 1.2; }
 .bell-card small { color: var(--s400); font-size: 12px; }
 .bell-card .eyebrow { font-size: 10px; }
+.bell-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bell-action { text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: var(--navy); border: 1px solid var(--navy3); border-top: 2px solid var(--orange); border-radius: 8px; padding: 6px 10px; }
+.bell-action:hover:not([disabled]) { background: var(--navy3); }
+.bell-action[disabled] { opacity: .55; cursor: not-allowed; }
+.bell-action small { color: var(--s400); font-size: 11px; }
+.bell-cost { display: flex; gap: 8px; font-weight: 700; }
+.bell-cost .cost { display: inline-flex; align-items: center; gap: 3px; }
 .bell-wrap { cursor: pointer; line-height: 0; flex: none; }
 .bell-svg { width: clamp(64px, 9vw, 104px); height: auto; }
 .bell-svg .bell-body { transform-origin: 0 -54px; animation: idle 1.6s ease-in-out infinite; }
