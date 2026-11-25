@@ -65,7 +65,6 @@ Flavour: after placement, "Initializing 847 beans…" shows above the tower for 
 
 Azure details *(design calls)*: it starts **on** after purchase. It charges only while it's on **and** has a bug in range, at 1 Warrant every 0.5 s, so Warrants stay whole numbers and never go below 0. At 0 Warrants it stops firing until you have Warrants again.
 
-
 ### React — fast, light hits
 
 | Level | Name | Cost | Effect |
@@ -105,7 +104,7 @@ The engine must offer hooks for at least what §4 needs:
 - **stat changes on other developers** (Enterprise Architect's aura),
 - **replacing what a shot does** (pierce, splash, pulse, chained re-hits), using an engine helper that applies one hit with counter damage, `onHit`, kill, reward and XP, so content doesn't duplicate that logic,
 - **a per-tick update that can stop the tower firing** (Garbage Collector's pause, Azure's toggle and Warrants drain),
-- **extra panel buttons for the selected developer** (Azure's on/off toggle),
+- **extra panel buttons for the selected developer** (Azure's on/off toggle).
 
 The exact signatures are the builder's call. A developer-level hook (e.g. React's ecosystem bonus) applies at every level. Every hook call is wrapped in try/catch like existing content hooks.
 
