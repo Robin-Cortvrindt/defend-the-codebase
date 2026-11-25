@@ -1,0 +1,255 @@
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  .nx{--navy:#001E32;--navy2:#0A2A40;--navy3:#123650;--blue:#2563EB;--orange:#EA580C;--fuchsia:#C026D3;--green:#16A34A;
+      --s600:#475569;--s500:#64748B;--s400:#94A3B8;--s200:#E2E8F0;--tint:#EEF1F5;font-family:Lato,system-ui,sans-serif}
+  .nx .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:24px}
+  .nx .gs{background:var(--navy);border-radius:12px;overflow:hidden;color:#fff;border:1px solid var(--navy3)}
+  .nx .cap{padding:12px 16px;background:#fff;color:var(--navy);border-bottom:1px solid var(--s200)}
+  .nx .eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s500)}
+  .nx .cap h3{margin:2px 0 0;font-size:17px;font-weight:700}
+  .nx .hud{display:flex;align-items:center;gap:18px;padding:10px 16px;border-bottom:1px solid var(--navy3)}
+  .nx .hud img{height:18px;max-height:18px;width:auto;align-self:center}
+  .nx .stat{display:flex;flex-direction:column;line-height:1.1}
+  .nx .stat small{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--s400)}
+  .nx .stat b{font-size:20px;font-weight:900}
+  .nx .prod{display:flex;gap:3px;margin-top:4px}
+  .nx .prod i{width:14px;height:8px;border-radius:2px;background:var(--green)}
+  .nx .prod i.off{background:var(--navy3)}
+  .nx .btn{margin-left:auto;font-size:13px;font-weight:700;border-radius:8px;padding:7px 12px;background:var(--blue);color:#fff}
+  .nx .btn.off{background:var(--navy3);color:var(--s400)}
+  .nx svg{display:block;width:100%;height:auto}
+  .nx .bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 16px;border-top:1px solid var(--navy3)}
+  .nx .pu{background:var(--navy2);border:1px solid var(--navy3);border-radius:10px;padding:8px 10px;position:relative;overflow:hidden}
+  .nx .pu .n{font-size:13px;font-weight:700}
+  .nx .pu .s{font-size:11px;color:var(--s400)}
+  .nx .pu.ready{border-color:var(--green)} .nx .pu.ready .s{color:#4ADE80}
+  .nx .pu.active{background:#fff;color:var(--navy);border-color:#fff} .nx .pu.active .s{color:var(--s600)}
+  .nx .pu .cd{position:absolute;left:0;bottom:0;height:3px;background:var(--s500)}
+  .nx .pu.active .cd{background:var(--green)}
+  .nx .hire{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 12px}
+  .nx .hire div{border-radius:8px;padding:7px 10px;font-size:13px;background:var(--navy2);border-top:2px solid}
+  .nx .hire span{float:right;color:var(--s400)}
+  .nx .note{font-size:13px;line-height:1.45;color:var(--s600);padding:12px 16px;background:var(--tint)}
+  .nx .key{display:flex;gap:22px;flex-wrap:wrap;font-size:13px;color:var(--s600);margin:6px 0 20px}
+  .nx .key b{font-weight:700;color:var(--navy)}
+  .nx .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+</style>
+
+<div class="nx">
+<h2>Defend the Codebase: game states with technology icons</h2>
+<p class="subtitle">Navy surface, slate neutrals, Lato, no emoji. Each developer type owns one Nexios accent, and each bug carries the accent of the developer that counters it.</p>
+
+<div class="key">
+  <span><span class="sw" style="background:#2563EB"></span><b>React</b> · fast, light, counters typo bugs</span>
+  <span><span class="sw" style="background:#EA580C"></span><b>Java</b> · balanced, counters null pointers</span>
+  <span><span class="sw" style="background:#C026D3"></span><b>.Net</b> · slow, heavy, counters legacy bugs</span>
+  <span><span class="sw" style="background:#16A34A"></span><b>Green</b> · ready, healthy, success</span>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="nmap">
+      <rect width="640" height="320" fill="#001E32"/>
+      <g stroke="#0A2A40" stroke-width="1">
+        <path d="M40 0V320M80 0V320M120 0V320M160 0V320M200 0V320M240 0V320M280 0V320M320 0V320M360 0V320M400 0V320M440 0V320M480 0V320M520 0V320M560 0V320M600 0V320"/>
+        <path d="M0 40H640M0 80H640M0 120H640M0 160H640M0 200H640M0 240H640M0 280H640"/>
+      </g>
+      <polyline points="0,60 180,60 180,260 420,260 420,140 576,140" fill="none" stroke="#123650" stroke-width="36" stroke-linejoin="round"/>
+      <polyline points="0,60 180,60 180,260 420,260 420,140 576,140" fill="none" stroke="#1E4A6A" stroke-width="1" stroke-dasharray="4 8"/>
+      <rect x="576" y="106" width="56" height="68" rx="10" fill="#0A2A40" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="604" y="132" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="1.8" fill="#94A3B8" font-family="Lato">PROD</text>
+      <rect x="590" y="142" width="28" height="4" rx="1" fill="#16A34A"/><rect x="590" y="150" width="28" height="4" rx="1" fill="#16A34A"/><rect x="590" y="158" width="28" height="4" rx="1" fill="#16A34A"/>
+    </g>
+    <!-- tower tiles: accent tile, white tech glyph, 36px -->
+    <g id="dReact">
+      <rect x="-18" y="-18" width="36" height="36" rx="9" fill="#2563EB" stroke="#fff" stroke-width="1.5"/>
+      <g fill="none" stroke="#fff" stroke-width="1.8">
+        <ellipse rx="13" ry="5"/><ellipse rx="13" ry="5" transform="rotate(60)"/><ellipse rx="13" ry="5" transform="rotate(-60)"/>
+      </g><circle r="2.6" fill="#fff"/>
+    </g>
+    <g id="dJava">
+      <rect x="-18" y="-18" width="36" height="36" rx="9" fill="#EA580C" stroke="#fff" stroke-width="1.5"/>
+      <path d="M-9 -1 h15 v6 a7 7 0 0 1 -7 7 h-1 a7 7 0 0 1 -7 -7 z" fill="#fff"/>
+      <path d="M6 1 h2 a3.2 3.2 0 0 1 0 6.4 h-2.4" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M-11 14 h19" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-4 -12 q-3 3 0 6 q3 3 0 6 M2 -13 q-3 3 0 6 q3 3 0 6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" transform="translate(0,1) scale(1,.7)"/>
+    </g>
+    <g id="dNet">
+      <rect x="-18" y="-18" width="36" height="36" rx="9" fill="#C026D3" stroke="#fff" stroke-width="1.5"/>
+      <text y="5" text-anchor="middle" font-size="13" font-weight="900" fill="#fff" font-family="Lato" letter-spacing="-.3">.NET</text>
+    </g>
+    <!-- bugs: light body, counter-accent ring + legs -->
+    <g id="bTypo"><circle r="4.5" fill="#E2E8F0" stroke="#2563EB" stroke-width="2"/></g>
+    <g id="bNull"><path d="M-9 -3l-4 -3M-9 3l-4 3M9 -3l4 -3M9 3l4 3" stroke="#94A3B8" stroke-width="1.5"/><ellipse rx="9" ry="7" fill="#E2E8F0" stroke="#EA580C" stroke-width="2.5"/></g>
+    <g id="bLegacy"><path d="M-12 -6l-5 -4M-14 0h-6M-12 6l-5 4M12 -6l5 -4M14 0h6M12 6l5 4" stroke="#94A3B8" stroke-width="2"/><ellipse rx="15" ry="11" fill="#E2E8F0" stroke="#C026D3" stroke-width="3"/><path d="M0 -11v22" stroke="#C026D3" stroke-width="1.5"/></g>
+    <g id="badgeJ"><rect x="-8" y="-7" width="16" height="14" rx="3" fill="#fff"/><text y="4" text-anchor="middle" font-size="10" font-weight="900" fill="#001E32" font-family="Lato">J</text></g>
+    <g id="badgeC"><rect x="-8" y="-7" width="16" height="14" rx="3" fill="#fff"/><text y="4" text-anchor="middle" font-size="10" font-weight="900" fill="#001E32" font-family="Lato">C</text><rect x="-8" y="5" width="16" height="2" fill="#16A34A"/></g>
+    <g id="badgeS"><rect x="-8" y="-7" width="16" height="14" rx="3" fill="#16A34A"/><text y="4" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Lato">S</text></g>
+    <g id="devs">
+      <use href="#dReact" x="260" y="200"/><use href="#dJava" x="120" y="120"/><use href="#dNet" x="380" y="200"/><use href="#dReact" x="480" y="100"/>
+    </g>
+  </defs>
+</svg>
+
+<div style="display:flex;gap:28px;align-items:flex-end;margin:0 0 22px;flex-wrap:wrap">
+  <div><div class="eyebrow" style="margin-bottom:8px">Actual in-game size · 36 px on a 40 px grid</div>
+    <svg viewBox="0 0 260 60" style="width:260px;background:#001E32;border-radius:10px">
+      <use href="#dReact" x="40" y="30"/><use href="#dJava" x="100" y="30"/><use href="#dNet" x="160" y="30"/>
+      <use href="#bLegacy" x="222" y="30"/>
+    </svg></div>
+  <div><div class="eyebrow" style="margin-bottom:8px">Zoomed ×3 for detail</div>
+    <svg viewBox="0 0 180 60" style="width:540px;background:#001E32;border-radius:10px">
+      <use href="#dReact" x="35" y="30"/><use href="#dJava" x="90" y="30"/><use href="#dNet" x="145" y="30"/>
+    </svg></div>
+</div>
+<div class="grid">
+
+  <!-- 1 -->
+  <div class="gs">
+    <div class="cap"><div class="eyebrow">State 01</div><h3>Mid-wave: developers hold the line</h3></div>
+    <div class="hud">
+      <img src="../../assets/nexios-wordmark-white.webp" alt="Nexios">
+      <div class="stat"><small>Warrants</small><b>145</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i class="off"></i></div></div>
+      <div class="stat"><small>Wave</small><b>3 / 10</b></div>
+      <span class="btn off">Wave running</span>
+    </div>
+    <svg viewBox="0 0 640 320">
+      <use href="#nmap"/>
+      <circle cx="260" cy="200" r="90" fill="#2563EB" fill-opacity=".08" stroke="#2563EB" stroke-width="1" stroke-dasharray="4 4"/>
+      <use href="#devs"/>
+      <use href="#badgeC" x="281" y="179"/><use href="#badgeJ" x="141" y="99"/><use href="#badgeS" x="401" y="179"/><use href="#badgeJ" x="501" y="79"/>
+      <use href="#bTypo" x="36" y="58"/><use href="#bTypo" x="50" y="65"/><use href="#bTypo" x="62" y="56"/><use href="#bTypo" x="76" y="63"/><use href="#bTypo" x="88" y="57"/>
+      <use href="#bNull" x="140" y="60"/>
+      <use href="#bTypo" x="178" y="118"/><use href="#bTypo" x="186" y="132"/>
+      <use href="#bNull" x="182" y="200"/>
+      <use href="#bLegacy" x="302" y="260"/>
+      <use href="#bTypo" x="420" y="212"/>
+      <line x1="260" y1="200" x2="186" y2="132" stroke="#2563EB" stroke-width="2"/>
+      <line x1="380" y1="200" x2="304" y2="258" stroke="#C026D3" stroke-width="4"/>
+      <text x="304" y="236" text-anchor="middle" font-size="14" font-weight="900" fill="#fff" font-family="Lato">80 ×2</text>
+      <text x="196" y="112" font-size="11" font-weight="700" fill="#4ADE80" font-family="Lato">+2</text>
+      <rect x="240" y="220" width="40" height="4" rx="2" fill="#123650"/><rect x="240" y="220" width="26" height="4" rx="2" fill="#16A34A"/>
+    </svg>
+    <div class="bar">
+      <div class="pu active"><div class="n">Thomas</div><div class="s">More XP · 6 s left</div><div class="cd" style="width:60%"></div></div>
+      <div class="pu ready"><div class="n">Jeroen</div><div class="s">More warrants · ready</div></div>
+      <div class="pu"><div class="n">Bart</div><div class="s">Attack speed · 24 s</div><div class="cd" style="width:35%"></div></div>
+      <div class="pu"><div class="n">Claude</div><div class="s">Squash all · 150</div></div>
+    </div>
+    <div class="hire">
+      <div style="border-color:#2563EB">React<span>50</span></div>
+      <div style="border-color:#EA580C">Java<span>75</span></div>
+      <div style="border-color:#C026D3">.Net<span>110</span></div>
+    </div>
+    <div class="note">The bug's ring colour shows which developer counters it. Here the fuchsia .Net senior lands a double hit on a fuchsia-ringed legacy bug. The XP bar under the selected developer is green, and so is the S badge.</div>
+  </div>
+
+  <!-- 2 -->
+  <div class="gs">
+    <div class="cap"><div class="eyebrow">State 02</div><h3>Wave cleared: ring the victory bell</h3></div>
+    <div class="hud">
+      <img src="../../assets/nexios-wordmark-white.webp" alt="Nexios">
+      <div class="stat"><small>Warrants</small><b>230</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i></i><i class="off"></i></div></div>
+      <div class="stat"><small>Wave</small><b>3 / 10</b></div>
+      <span class="btn">Ring the bell →</span>
+    </div>
+    <svg viewBox="0 0 640 320">
+      <use href="#nmap"/><use href="#devs"/>
+      <rect width="640" height="320" fill="#001E32" fill-opacity=".82"/>
+      <g transform="translate(320,138)">
+        <circle r="74" fill="none" stroke="#123650" stroke-width="1"/>
+        <circle r="92" fill="none" stroke="#0A2A40" stroke-width="1"/>
+        <path d="M-36 28 Q-38 -36 0 -42 Q38 -36 36 28 L46 38 H-46 Z" fill="#fff"/>
+        <path d="M-46 38 H46" stroke="#16A34A" stroke-width="3"/>
+        <circle cy="47" r="7" fill="#E2E8F0"/>
+        <rect x="-5" y="-54" width="10" height="12" rx="3" fill="#E2E8F0"/>
+        <text y="6" text-anchor="middle" font-size="11" font-weight="900" letter-spacing="1.5" fill="#001E32" font-family="Lato">NEXIOS</text>
+        <path d="M-60 -20 q-8 10 0 20 M-70 -26 q-12 16 0 32 M60 -20 q8 10 0 20 M70 -26 q12 16 0 32" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <text x="320" y="252" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="2.2" fill="#94A3B8" font-family="Lato">WAVE 3 SQUASHED · +40 BONUS</text>
+      <text x="320" y="280" text-anchor="middle" font-size="22" font-weight="900" fill="#fff" font-family="Lato">Ring the bell to start wave 4</text>
+    </svg>
+    <div class="bar">
+      <div class="pu"><div class="n">Thomas</div><div class="s">18 s</div><div class="cd" style="width:50%"></div></div>
+      <div class="pu ready"><div class="n">Jeroen</div><div class="s">ready</div></div>
+      <div class="pu"><div class="n">Bart</div><div class="s">9 s</div><div class="cd" style="width:75%"></div></div>
+      <div class="pu"><div class="n">Claude</div><div class="s">150</div></div>
+    </div>
+    <div class="note">Play pauses on the bell. Hiring and selling still work, so this doubles as the planning moment between waves.</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="gs">
+    <div class="cap"><div class="eyebrow">State 03</div><h3>Claude backfires: every bug doubles</h3></div>
+    <div class="hud">
+      <img src="../../assets/nexios-wordmark-white.webp" alt="Nexios">
+      <div class="stat"><small>Warrants</small><b>35</b></div>
+      <div class="stat"><small>Production</small><div class="prod"><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div></div>
+      <div class="stat"><small>Wave</small><b>6 / 10</b></div>
+      <span class="btn off">Wave running</span>
+    </div>
+    <svg viewBox="0 0 640 320">
+      <use href="#nmap"/><use href="#devs"/><use href="#dJava" x="300" y="100"/>
+      <use href="#bNull" x="60" y="60"/><use href="#bNull" x="78" y="54"/>
+      <use href="#bTypo" x="110" y="58"/><use href="#bTypo" x="118" y="66"/><use href="#bTypo" x="126" y="56"/><use href="#bTypo" x="134" y="64"/>
+      <use href="#bLegacy" x="180" y="150"/><use href="#bLegacy" x="184" y="180"/>
+      <use href="#bNull" x="240" y="260"/><use href="#bNull" x="258" y="266"/>
+      <use href="#bTypo" x="330" y="256"/><use href="#bTypo" x="338" y="264"/><use href="#bTypo" x="346" y="254"/><use href="#bTypo" x="354" y="262"/>
+      <use href="#bLegacy" x="420" y="196"/><use href="#bLegacy" x="424" y="226"/>
+      <rect x="168" y="12" width="304" height="40" rx="8" fill="#fff"/>
+      <rect x="168" y="12" width="4" height="40" fill="#EA580C"/>
+      <text x="186" y="29" font-size="10" font-weight="700" letter-spacing="1.8" fill="#64748B" font-family="Lato">CLAUDE · BACKFIRE</text>
+      <text x="186" y="45" font-size="14" font-weight="900" fill="#001E32" font-family="Lato">Hallucinated a fix — bug count doubled</text>
+    </svg>
+    <div class="bar">
+      <div class="pu"><div class="n">Thomas</div><div class="s">31 s</div><div class="cd" style="width:20%"></div></div>
+      <div class="pu"><div class="n">Jeroen</div><div class="s">12 s</div><div class="cd" style="width:70%"></div></div>
+      <div class="pu ready"><div class="n">Bart</div><div class="s">ready</div></div>
+      <div class="pu"><div class="n">Claude</div><div class="s">Next · 340</div></div>
+    </div>
+    <div class="note">Claude was used for 225 and backfired, and the price still went up. When it works, a white flash clears the map and every bug pays out.</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="gs">
+    <div class="cap"><div class="eyebrow">State 04</div><h3>End of game: defended or production down</h3></div>
+    <svg viewBox="0 0 640 400">
+      <rect width="320" height="400" fill="#001E32"/>
+      <rect x="320" width="320" height="400" fill="#0A2A40"/>
+      <image href="../../assets/nexios-wordmark-white.webp" x="40" y="36" height="18" width="90" preserveAspectRatio="xMinYMid meet"/>
+      <rect x="40" y="80" width="28" height="3" fill="#16A34A"/>
+      <text x="40" y="112" font-size="12" font-weight="700" letter-spacing="2.2" fill="#94A3B8" font-family="Lato">10 OF 10 WAVES</text>
+      <text x="40" y="150" font-size="30" font-weight="900" fill="#fff" font-family="Lato">Codebase</text>
+      <text x="40" y="184" font-size="30" font-weight="900" fill="#fff" font-family="Lato">defended</text>
+      <g font-family="Lato">
+        <text x="40" y="236" font-size="40" font-weight="900" fill="#fff">612</text>
+        <text x="40" y="254" font-size="11" font-weight="700" letter-spacing="1.8" fill="#94A3B8">BUGS SQUASHED</text>
+        <text x="180" y="236" font-size="40" font-weight="900" fill="#fff">4</text>
+        <text x="180" y="254" font-size="11" font-weight="700" letter-spacing="1.8" fill="#94A3B8">SENIORS</text>
+      </g>
+      <line x1="40" y1="282" x2="280" y2="282" stroke="#123650"/>
+      <rect x="40" y="308" width="130" height="36" rx="8" fill="#2563EB"/>
+      <text x="105" y="331" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Lato">Play again →</text>
+
+      <image href="../../assets/nexios-wordmark-white.webp" x="360" y="36" height="18" width="90" preserveAspectRatio="xMinYMid meet"/>
+      <rect x="360" y="80" width="28" height="3" fill="#EA580C"/>
+      <text x="360" y="112" font-size="12" font-weight="700" letter-spacing="2.2" fill="#94A3B8" font-family="Lato">FELL ON WAVE 7</text>
+      <text x="360" y="150" font-size="30" font-weight="900" fill="#fff" font-family="Lato">Production</text>
+      <text x="360" y="184" font-size="30" font-weight="900" fill="#fff" font-family="Lato">is down</text>
+      <rect x="360" y="206" width="240" height="62" rx="8" fill="#001E32" stroke="#123650"/>
+      <g font-size="11" fill="#E2E8F0" font-family="monospace">
+        <text x="374" y="228">500 · NullPointerException</text>
+        <text x="374" y="244" fill="#94A3B8">  at prod.main(Legacy.java:1)</text>
+        <text x="374" y="260" fill="#94A3B8">on-call: you</text>
+      </g>
+      <line x1="360" y1="282" x2="600" y2="282" stroke="#123650"/>
+      <rect x="360" y="308" width="150" height="36" rx="8" fill="#fff"/>
+      <text x="435" y="331" text-anchor="middle" font-size="13" font-weight="700" fill="#001E32" font-family="Lato">Hotfix and retry →</text>
+    </svg>
+    <div class="note">Both end screens follow the Nexios layout: wordmark at the top, a short accent dash, a small uppercase eyebrow, a large title and big stat numbers. Green marks the win and orange marks the loss.</div>
+  </div>
+
+</div>
+</div>

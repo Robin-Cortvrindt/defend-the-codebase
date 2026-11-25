@@ -1,0 +1,5 @@
+.superpowers/
+.idea/
+.mcp.json
+out/
+*.log
