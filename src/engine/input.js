@@ -14,8 +14,9 @@ export function initInput(canvas, app) {
   canvas.addEventListener('mousemove', ev => {
     const { x, y } = toLogical(ev);
     app.view.hover = cellAt(x, y);
+    app.view.cursor = { x, y };
   });
-  canvas.addEventListener('mouseleave', () => { app.view.hover = null; });
+  canvas.addEventListener('mouseleave', () => { app.view.hover = null; app.view.cursor = null; });
 
   canvas.addEventListener('click', ev => {
     const g = app.game;

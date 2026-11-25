@@ -1,5 +1,5 @@
 // Canvas rendering. Reads game state, never changes it.
-import { getDeveloper, getBug, getFeatures } from './registry.js';
+import { getDeveloper, getBug, getFeatures, getEvent } from './registry.js';
 import { WIDTH, HEIGHT, CELL, COLS, ROWS, WAYPOINTS, PATH_WIDTH, PROD, cellCenter } from './map.js';
 import { LEVELS, devStats, canPlace } from './devs.js';
 
@@ -17,6 +17,7 @@ export function render(ctx, game, view) {
   for (const dev of game.devs) drawDev(ctx, dev, view.selected === dev);
   drawHover(ctx, game, view);
   for (const bug of game.bugs) drawBug(ctx, bug);
+  drawActiveEvent(ctx, game, view);
   drawEffects(ctx, game);
   for (const f of getFeatures()) {
     if (!f.draw) continue;
@@ -24,6 +25,15 @@ export function render(ctx, game, view) {
     try { f.draw(ctx, game); } catch (e) { console.error(`[feature ${f.id}]`, e); }
     ctx.restore();
   }
+  ctx.restore();
+}
+
+// The running random event can draw over the map (e.g. PROD down), below banners and effects.
+function drawActiveEvent(ctx, game, view) {
+  const def = game.activeEvent && getEvent(game.activeEvent);
+  if (!def?.draw) return;
+  ctx.save();
+  try { def.draw(ctx, game, view); } catch (e) { console.error(`[event ${def.id}]`, e); }
   ctx.restore();
 }
 

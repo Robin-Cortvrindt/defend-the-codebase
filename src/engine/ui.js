@@ -1,5 +1,5 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs } from './registry.js';
+import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent } from './registry.js';
 import { totalWaves, startWave, startGame, ringBell } from './game.js';
 import { LEVELS, sellDev } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost } from './powerups.js';
@@ -42,6 +42,7 @@ function buildHud() {
     stat('Warrants', refs.warrants = h('b', {}, '0')),
     stat('Production', refs.prod = h('div', { class: 'prod' })),
     stat('Wave', refs.wave = h('b', {}, '0 / 10')),
+    stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
     h('div', { class: 'hud-spacer' }),
     refs.speed = h('button', { class: 'btn ghost', title: 'Game speed (F)', onclick: toggleSpeed }, '1×'),
     refs.pause = h('button', { class: 'btn ghost', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
@@ -126,6 +127,9 @@ export function updateUI() {
   set(refs.warrants, 'textContent', String(Math.floor(g.warrants)));
   const shownWave = Math.min(g.wave + 1, totalWaves());
   set(refs.wave, 'textContent', `${shownWave} / ${totalWaves()}`);
+  const ev = g.activeEvent && getEvent(g.activeEvent);
+  set(refs.incident, 'textContent', ev ? ev.name : 'None');
+  toggle(refs.incident, 'on', !!ev);
   const lit = Math.ceil((g.lives / g.maxLives) * 10);
   [...refs.prod.children].forEach((el, i) => { toggle(el, 'off', i >= lit); toggle(el, 'low', g.lives / g.maxLives <= 0.4); });
 

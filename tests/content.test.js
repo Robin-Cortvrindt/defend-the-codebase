@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
 import { CONTENT_URLS } from '../src/content/manifest.js';
 import { loadModules } from '../src/engine/loader.js';
+import { createGame } from '../src/engine/game.js';
 
 test('manifest registers 3 developers, 3 bugs, 10 consistent waves', async () => {
   R.resetRegistry();
@@ -15,4 +16,24 @@ test('manifest registers 3 developers, 3 bugs, 10 consistent waves', async () =>
   assert.equal(waves.length, 10);
   for (const w of waves) for (const g of w.groups) assert.ok(R.getBug(g.bug), `wave bug ${g.bug} registered`);
   assert.deepEqual([...new Set(waves[0].groups.map(g => g.bug))], ['typo']);
+  assert.deepEqual(R.getEvents().map(e => e.id), ['prod-down', 'heating-out', 'no-coffee', 'no-redbull', 'heat-wave']);
+
+  // each event's end exactly undoes its start
+  for (const e of R.getEvents()) {
+    const g = createGame();
+    e.start(g); e.end(g);
+    assert.equal(g.mods.timeScale, 1, e.id);
+    assert.equal(g.mods.bugSpeedMultiplier, 1, e.id);
+    assert.equal(g.mods.devFireRate.java ?? 1, 1, e.id);
+    assert.equal(g.mods.devFireRate.dotnet ?? 1, 1, e.id);
+  }
+
+  // prod-down draws with or without a cursor
+  const noop = () => {};
+  const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, {
+    get: (t, k) => (k in t ? t[k] : noop), set: () => true,
+  });
+  const prod = R.getEvent('prod-down');
+  prod.draw(ctx, createGame(), { cursor: null });
+  prod.draw(ctx, createGame(), { cursor: { x: 100, y: 100 } });
 });

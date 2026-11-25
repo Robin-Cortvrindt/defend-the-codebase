@@ -15,6 +15,7 @@ const CORE = [
   'developers/react.js', 'developers/java.js', 'developers/dotnet.js',
   'bugs/typo.js', 'bugs/nullpointer.js', 'bugs/legacy.js', 'waves.js',
   'powerups/training-manager.js', 'powerups/business-manager.js', 'powerups/ceo.js', 'powerups/claude.js',
+  'events/prod-down.js', 'events/heating-out.js', 'events/no-coffee.js', 'events/no-redbull.js', 'events/heat-wave.js',
 ].map(p => new URL(`./content/${p}`, import.meta.url).href);
 const contentUrls = await loadManifest(new URL('./content/manifest.js', import.meta.url).href, CORE);
 const { failed } = await loadModules(contentUrls);
@@ -22,7 +23,7 @@ if (failed.length) console.warn(`[main] ${failed.length} content file(s) failed 
 
 const app = {
   game: createGame(),
-  view: { hire: null, selected: null, hover: null, paused: false, speed: 1 },
+  view: { hire: null, selected: null, hover: null, cursor: null, paused: false, speed: 1 },
   restart() {
     this.game = createGame();
     Object.assign(this.view, { hire: null, selected: null, paused: false });

@@ -15,6 +15,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 64px; }
 .stat small { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
 .stat b { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.stat b.incident { font-size: 15px; color: var(--s400); }
+.stat b.incident.on { color: #EA580C; }
 .prod { display: flex; gap: 3px; margin-top: 6px; }
 .prod i { width: 10px; height: 9px; border-radius: 2px; background: var(--green); }
 .prod.low i, .prod i.low { background: var(--orange); }

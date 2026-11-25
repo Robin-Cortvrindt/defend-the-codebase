@@ -16,6 +16,12 @@ export const CONTENT = [
   './powerups/business-manager.js',
   './powerups/ceo.js',
   './powerups/claude.js',
+  // Random events (one may hit at the start of a wave)
+  './events/prod-down.js',
+  './events/heating-out.js',
+  './events/no-coffee.js',
+  './events/no-redbull.js',
+  './events/heat-wave.js',
   // Features (teammates' add-ons, Nexios references, ...)
 ];
 
