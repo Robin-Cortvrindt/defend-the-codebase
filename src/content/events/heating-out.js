@@ -2,12 +2,17 @@
 // (bugs are not affected). Server heat recovery reduces it; at level 3 it has no effect.
 import { registerEvent } from '../../engine/registry.js';
 import { resistanceTo } from '../../engine/upgrades.js';
+import { pctText } from '../../engine/effects.js';
 
 const heatingOut = {
   id: 'heating-out', name: 'The heating is out', description: 'Developers work at half speed', accent: '#2563EB',
   start(game) {
     game.heatingOutFactor = 0.5 + 0.5 * resistanceTo(game, 'heating-out'); // remembered so end() undoes exactly this
     game.mods.fireRateMultiplier *= game.heatingOutFactor;
+  },
+  describeEffect(game) {
+    const f = game.heatingOutFactor ?? 1;
+    return f === 1 ? null : `attack speed ${pctText(f)}`;
   },
   end(game) {
     game.mods.fireRateMultiplier /= game.heatingOutFactor ?? 1;

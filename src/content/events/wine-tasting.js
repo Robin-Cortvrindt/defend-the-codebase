@@ -5,6 +5,7 @@ import { registerEvent } from '../../engine/registry.js';
 
 const wineTasting = {
   id: 'wine-tasting', name: 'Thomas organized a wine tasting', description: 'Developers shoot at random bugs', accent: '#9F1239',
+  describeEffect() { return 'tipsy: shoots at random bugs'; },
   start() {},
   end() {},
 };

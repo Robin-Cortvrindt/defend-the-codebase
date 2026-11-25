@@ -1,10 +1,13 @@
 import { registerDeveloper } from '../../engine/registry.js';
 import { bugsInRange, hitBug, shotBeam } from '../../engine/devs.js';
 import { zigzagPoint } from '../../engine/zigzag.js';
+import { pctText } from '../../engine/effects.js';
 
 // React (front-end): fast, light hits. Counters swarms of typo bugs.
 // Its attack: small hooks thrown spinning on a curve, alternating left and right, that stick in the bug.
 const BLUE = '#2563EB';
+export const REACT_BONUS_PER = 0.1;         // attack speed per other React developer
+export const REACT_BONUS_MAX_OTHERS = 5;    // the bonus stops growing after this many
 const FLY = 0.6;   // share of the attack spent in the air; the rest it sticks in the bug and fades
 
 // A fishing hook at the origin pointing along +x, its eye at the back.
@@ -20,6 +23,9 @@ function hook(ctx, scale) {
   ctx.restore();
 }
 
+const reactOthers = (game, dev) => game.devs.filter(d => d.type === 'react' && d !== dev).length;
+const reactBonus = others => REACT_BONUS_PER * Math.min(REACT_BONUS_MAX_OTHERS, others);
+
 registerDeveloper({
   id: 'react',
   drink: 'redbull',
@@ -33,8 +39,12 @@ registerDeveloper({
   blurb: 'Fast, light hits',
   levelName: 'Create React App',
   modifyStats(game, dev, stats) {
-    const others = game.devs.filter(d => d.type === 'react' && d !== dev).length;
-    stats.fireRate *= 1 + 0.1 * Math.min(5, others);
+    stats.fireRate *= 1 + reactBonus(reactOthers(game, dev));
+  },
+  describeEffect(game, dev) {
+    const n = reactOthers(game, dev);
+    if (n < 1) return null;
+    return { name: `React team (${n} other${n === 1 ? '' : 's'})`, text: `attack speed ${pctText(1 + reactBonus(n))}` };
   },
   upgrades: {
     level2: { id: 'vite', name: 'Vite', cost: 30, description: 'Much faster rate of fire', tooltip: 'CRA is deprecated, sorry.', stats: { fireRate: 6 } },

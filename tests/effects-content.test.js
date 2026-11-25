@@ -8,6 +8,7 @@ import { createGame, startGame, startWave } from '../src/engine/game.js';
 import { placeDev, devStats } from '../src/engine/devs.js';
 import { usePowerup, tickPowerups } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
+import { isBuildable } from '../src/engine/map.js';
 import { devEffects } from '../src/engine/effects.js';
 
 // Content modules register themselves once (imports are cached), so load them once for the file.
@@ -94,4 +95,68 @@ test('math unchanged: Better laptops 3 still multiplies damage by 1.3', () => {
   const g = game({ 'better-laptops': 3 });
   const d = hire(g, 'java', 0);
   assert.ok(Math.abs(devStats(g, d).damage - R.getDeveloper('java').damage * 1.3) < 1e-9);
+});
+
+// --- Task 3: events and developers ---
+const up3 = (d, i = 0) => { d.level = 2; d.upgrade = R.getDeveloper(d.type).upgrades.level3[i]; return d; };
+
+test('Heating out shows its factor and nothing when it is 1', () => {
+  const g = game();
+  const d = hire(g, 'java', 0);
+  g.activeEvent = 'heating-out'; g.heatingOutFactor = 0.5;
+  assert.deepEqual(line(g, d, 'event'), [{ group: 'event', name: 'The heating is out', text: 'attack speed −50%' }]);
+  g.heatingOutFactor = 1;
+  assert.equal(line(g, d, 'event').length, 0);
+});
+
+test('Out of coffee hits Java only; Out of Red Bull hits .NET only', () => {
+  const g = game();
+  const j = hire(g, 'java', 0), r = hire(g, 'react', 1), n = hire(g, 'dotnet', 2);
+  g.activeEvent = 'no-coffee'; g.coffeeFactor = 0.5;
+  assert.equal(line(g, j, 'event')[0].text, 'attack speed −50%');
+  assert.equal(line(g, r, 'event').length, 0);
+  g.coffeeFactor = 1;
+  assert.equal(line(g, j, 'event').length, 0);
+  g.activeEvent = 'no-redbull'; g.redbullFactor = 0.5;
+  assert.equal(line(g, n, 'event')[0].text, 'attack speed −50%');
+  assert.equal(line(g, j, 'event').length, 0);
+  g.redbullFactor = 1;
+  assert.equal(line(g, n, 'event').length, 0);
+});
+
+test('Wine tasting says tipsy', () => {
+  const g = game();
+  const d = hire(g, 'java', 0);
+  g.activeEvent = 'wine-tasting';
+  assert.equal(line(g, d, 'event')[0].text, 'tipsy: shoots at random bugs');
+});
+
+test('React team bonus counts others and caps', () => {
+  const g = game();
+  const d = hire(g, 'react', 0);
+  assert.equal(line(g, d, 'team').length, 0);
+  const spots = [];
+  for (let r = 0; r < 12 && spots.length < 8; r++) for (let c = 0; c < 20 && spots.length < 8; c++) if (isBuildable(c, r) && !(c === 0 && r === 3)) spots.push([c, r]);
+  for (const [c, r] of spots.slice(0, 3)) hire(g, 'react', c, r);
+  assert.deepEqual(line(g, d, 'team'), [{ group: 'team', name: 'React team (3 others)', text: 'attack speed +30%' }]);
+  for (const [c, r] of spots.slice(3, 7)) hire(g, 'react', c, r);
+  assert.equal(g.devs.filter(x => x.type === 'react').length, 8);
+  assert.deepEqual(line(g, d, 'team'), [{ group: 'team', name: 'React team (7 others)', text: 'attack speed +50%' }]);
+});
+
+test('Enterprise Architect: aura line for neighbours, own line for itself', () => {
+  const g = game();
+  const arch = up3(hire(g, 'java', 0));
+  const near = hire(g, 'java', 1);
+  assert.deepEqual(line(g, near, 'team'), [{ group: 'team', name: 'Enterprise Architect (nearby)', text: 'damage +15%' }]);
+  assert.equal(line(g, arch, 'team').length, 0);
+  assert.equal(line(g, arch, 'upgrade').find(l => l.name === 'Enterprise Architect').text, 'damage −10%, +15% damage to developers nearby');
+});
+
+test('Spring Boot and Azure upgrade lines', () => {
+  const g = game();
+  const j = hire(g, 'java', 0); j.level = 1;
+  assert.deepEqual(line(g, j, 'upgrade')[0], { group: 'upgrade', name: 'Spring Boot Dev', text: 'damage 40, range 2.6' });
+  const n = up3(hire(g, 'dotnet', 3), 1); n.level = 2;
+  assert.equal(line(g, n, 'upgrade').find(l => l.name === 'Azure Function').text, 'triple area damage, 1 White Monster / 0.5 s');
 });

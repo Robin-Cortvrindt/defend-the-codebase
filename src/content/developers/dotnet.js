@@ -7,6 +7,8 @@ import { spendDrink } from '../../engine/drinks.js';
 
 // Azure Function hits every bug around its target for 3× the developer's damage (it costs White Monster).
 export const AZURE_DAMAGE_MULT = 3;
+export const AZURE_BILL_EVERY = 0.5;   // seconds of shooting per White Monster
+const MULT_WORD = { 2: 'double', 3: 'triple' };
 
 // .NET: slow, heavy hits and a longer range. Counters legacy bugs.
 // Its attack is a lightning strike: a jagged bolt cracks into the bug with a flash and a shockwave.
@@ -62,11 +64,12 @@ registerDeveloper({
       {
         id: 'azure', name: 'Azure Function', kind: 'gamble', cost: 100,
         description: 'Triple area damage, pay-as-you-go',
+        describeEffect: () => `${MULT_WORD[AZURE_DAMAGE_MULT] ?? `${AZURE_DAMAGE_MULT}×`} area damage, 1 White Monster / ${AZURE_BILL_EVERY} s`,
         update(game, dev, dt, stats) {
           if (dev.state.azureOff) return false;
           if (bugsInRange(game, dev, stats.range).length === 0) return true;
           dev.state.bill = (dev.state.bill ?? 0) + dt;
-          while (dev.state.bill >= 0.5 && spendDrink(game, 'monster', 1)) dev.state.bill -= 0.5;
+          while (dev.state.bill >= AZURE_BILL_EVERY && spendDrink(game, 'monster', 1)) dev.state.bill -= AZURE_BILL_EVERY;
           if (game.drinks.monster <= 0) dev.state.bill = 0; // no debt while broke
           return game.drinks.monster > 0;
         },
