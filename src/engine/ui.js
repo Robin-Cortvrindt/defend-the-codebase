@@ -1,30 +1,14 @@
 // DOM interface: HUD, hire bar, power-up bar, selected-developer panel and overlay screens.
-import { getDevelopers, getDeveloper, getPowerups, getFeatures, getBugs, getEvent, getUpgrades, getInvestments } from './registry.js';
-import { loadProgress, investmentLevel, investmentCost, canInvest, invest, resetProgress } from './investments.js';
-import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
+import { getDevelopers, getDeveloper, getPowerups, getFeatures, getEvent, getUpgrades } from './registry.js';
+import { loadProgress, capitalFor } from './investments.js';
+import { startWave, startGame, ringBell, sprintInfo, chooseYearReview, quitRun, CAO_COINS, SPRINTS_PER_QUARTER, deathAnimDone } from './game.js';
 import { upgradeLevel, upgradeCost, canBuy, buyUpgrade } from './upgrades.js';
 import { LEVELS, sellDev, hireCost } from './devs.js';
 import { canUse, usePowerup, powerupState, powerupCost, effectiveCooldown } from './powerups.js';
 import { drawDevTile } from './render.js';
 import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
-
-const $ = sel => document.querySelector(sel);
-
-function h(tag, props = {}, ...children) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) {
-    if (k === 'class') el.className = v;
-    else if (k === 'html') el.innerHTML = v;
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v);
-  }
-  for (const c of children.flat()) if (c != null) el.append(c);
-  return el;
-}
-
-// Only touch the DOM when a value actually changes.
-function set(el, prop, value) { if (el[prop] !== value) el[prop] = value; }
-function toggle(el, cls, on) { if (el.classList.contains(cls) !== on) el.classList.toggle(cls, on); }
+import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
+import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
 
 let app;
 const refs = { hire: [], powerups: [] };
@@ -32,6 +16,7 @@ let lastPhase = null;
 
 export function initUI(appRef) {
   app = appRef;
+  initMenu(app);
   buildHud();
   buildHire();
   buildPowerups();
@@ -47,10 +32,10 @@ function buildHud() {
     stat('Sprint', refs.wave = h('b', {}, 'Q1 · 1 / 7')),
     stat('Incident', refs.incident = h('b', { class: 'incident' }, 'None')),
     h('div', { class: 'hud-spacer' }),
-    refs.speed = h('button', { class: 'btn ghost', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
-    refs.pause = h('button', { class: 'btn ghost', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
+    refs.speed = h('button', { class: 'btn ghost run-only', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
+    refs.pause = h('button', { class: 'btn ghost run-only', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
     refs.mute = h('button', { class: 'btn ghost', title: 'Sound (M)', onclick: toggleMute }, 'Sound on'),
-    refs.waveBtn = h('button', { class: 'btn primary', onclick: onWaveButton }, 'Start wave 1'),
+    refs.waveBtn = h('button', { class: 'btn primary run-only', onclick: onWaveButton }, 'Start wave 1'),
   );
   for (let i = 0; i < 10; i++) refs.prod.append(h('i'));
 }
@@ -105,7 +90,7 @@ function activatePowerup(id) {
 
 function onWaveButton() {
   const g = app.game;
-  if (g.phase === 'menu') { unlockAudio(); startGame(g); }
+  if (g.phase === 'menu') { unlockAudio(); app.lastRun = null; startGame(g); }
   else if (g.phase === 'building') { unlockAudio(); startWave(g); }
   else if (g.phase === 'bell' || (g.phase === 'review' && !g.pendingYearReview)) swingBell();
 }
@@ -181,8 +166,10 @@ export function updateUI() {
   updateSelPanel();
   // On game over, let the building burn down first; the end screen follows once the collapse is done.
   const waitForCollapse = g.phase === 'lost' && !deathAnimDone(g);
+  if (waitForCollapse) setScreen('collapse');
   if (g.phase !== lastPhase && !waitForCollapse) { lastPhase = g.phase; showOverlay(g.phase); }
   toggle($('#stage'), 'paused', v.paused);
+  updateMenu();
 }
 
 function updateSelPanel() {
@@ -221,27 +208,13 @@ const BELL_SVG = `
 
 function showOverlay(phase) {
   const ov = $('#overlay');
+  setScreen(['lost', 'won'].includes(phase) ? phase : 'run');
   ov.className = '';
   ov.innerHTML = '';
   const g = app.game;
   if (phase === 'menu') {
-    ov.className = 'screen';
-    const legend = h('div', { class: 'legend' }, getDevelopers().map(d => {
-      const bug = getBugs().find(b => b.id === d.counters);
-      return h('span', {}, h('i', { style: `background:${d.accent}` }), h('b', {}, d.name), ` counters ${bug ? bug.name.toLowerCase() + 's' : d.counters}`);
-    }));
-    ov.append(h('div', { class: 'screen-card' },
-      h('img', { src: 'assets/nexios-wordmark-white.webp', alt: 'Nexios', class: 'wordmark' }),
-      h('i', { class: 'dash', style: 'background:#2563EB' }),
-      h('div', { class: 'eyebrow' }, 'Intent Engineering Bootcamp · Day 5'),
-      h('h1', {}, 'Defend the Codebase'),
-      h('p', { class: 'lede' }, 'Bugs are crawling toward the Nexios building. Hire developers next to the path, earn Warrants for every bug they squash and ring the Nexios bell after each sprint. Every quarter ends with a review where you spend Nexios Coins on the building. How many years can you keep production up?'),
-      legend,
-      h('div', { class: 'screen-actions' },
-        h('button', { class: 'btn primary big', onclick: () => { unlockAudio(); startGame(g); } }, 'Start →'),
-        h('button', { class: 'btn ghost big', onclick: showShop }, `Investments · 💼 ${loadProgress().capital}`),
-      ),
-    ));
+    showMenu();
+    return;
   } else if (phase === 'bell') {
     ov.className = 'bell-overlay';
     const bellWrap = h('div', { class: 'bell-wrap', html: BELL_SVG, onclick: swingBell, title: 'Ring the bell' });
@@ -275,7 +248,8 @@ function showOverlay(phase) {
     h('p', { class: 'lede investors' }, `New investors put in +${g.capitalEarned ?? 0} 💼 · you now have ${loadProgress().capital} 💼`),
     h('div', { class: 'screen-actions' },
       h('button', { class: 'btn light big', onclick: () => app.restart() }, 'Hotfix and retry →'),
-      h('button', { class: 'btn ghost big', onclick: showShop }, 'Investments'),
+      h('button', { class: 'btn ghost big', onclick: () => showShop(() => showOverlay('lost')) }, 'Investments'),
+      h('button', { class: 'btn ghost big', onclick: () => app.toMenu() }, 'Main menu'),
     )));
   }
 }
@@ -292,56 +266,6 @@ function endCard(accent, eyebrow, title, stats, ...extra) {
 }
 
 export function resetUI() { lastPhase = null; buildPowerups(); }
-
-// ---------- investments shop (between runs) ----------
-
-const INVEST_GROUPS = [['developers', 'Developers'], ['powerups', 'Power-ups'], ['unlocks', 'Unlocks']];
-
-function investmentText(def, level) {
-  try { if (level > 0 && def.effectText) return def.effectText(level); } catch (e) { console.error(`[investment ${def.id}]`, e); }
-  return def.description || '';
-}
-
-function showShop() {
-  const ov = $('#overlay');
-  ov.className = 'screen invest';
-  ov.innerHTML = '';
-  const rerender = () => showShop();
-  const { capital } = loadProgress();
-  const sections = INVEST_GROUPS.map(([group, title]) => {
-    const defs = getInvestments().filter(d => (d.group || 'developers') === group);
-    if (!defs.length) return null;
-    return h('div', { class: 'shop' }, h('div', { class: 'eyebrow' }, title), defs.map(def => {
-      const level = investmentLevel(def.id);
-      const max = def.maxLevel ?? Infinity;
-      const maxed = level >= max;
-      const unlock = group === 'unlocks';
-      const cost = investmentCost(def.id);
-      const label = maxed ? (unlock ? 'Owned' : 'Max') : `💼 ${cost}`;
-      const btnProps = { class: 'btn primary', onclick: () => { if (invest(def.id)) { playSound('powerup'); rerender(); } } };
-      if (!canInvest(def.id)) btnProps.disabled = '';
-      return h('div', { class: 'shop-row' },
-        h('div', {}, h('b', {}, def.name), h('small', {}, investmentText(def, level))),
-        unlock || !Number.isFinite(max) ? null : h('span', { class: 'lvl' }, `Lv ${level}/${max}`),
-        h('button', btnProps, label),
-      );
-    }));
-  });
-  const reset = () => {
-    if (!window.confirm('Reset all investments and Investor Capital?')) return;
-    resetProgress(); rerender();
-  };
-  ov.append(h('div', { class: 'screen-card invest-card' },
-    h('div', { class: 'eyebrow' }, 'Between runs'),
-    h('h1', {}, 'Investments'),
-    h('p', { class: 'lede' }, `Investor Capital: 💼 ${capital}. Every investment stays for all your future runs.`),
-    sections,
-    h('div', { class: 'screen-actions' },
-      h('button', { class: 'btn light big', onclick: () => showOverlay(app.game.phase) }, '← Back'),
-      h('button', { class: 'btn ghost', onclick: reset }, 'Reset progress'),
-    ),
-  ));
-}
 
 // ---------- quarter review ----------
 
@@ -432,13 +356,4 @@ function renderReview(ov, g) {
     h('button', { class: 'btn ghost hire-from-review', onclick: () => setMin(true) }, 'Hire developers →'),
   ));
   ov.append(card);
-}
-
-// Best run (furthest sprint) is kept in this browser only.
-function recordBest(sprint) {
-  let best = -1;
-  try { best = Number(localStorage.getItem('dtc-best') ?? -1); } catch { /* storage unavailable */ }
-  const isNew = sprint > best;
-  if (isNew) { try { localStorage.setItem('dtc-best', String(sprint)); } catch { /* ignore */ } }
-  return { sprint: Math.max(sprint, best), isNew };
 }
