@@ -10,6 +10,7 @@ import { initUI, updateUI, resetUI } from './engine/ui.js';
 import { initInput } from './engine/input.js';
 import { awardCapital } from './engine/investments.js';
 import { playSound } from './engine/sound.js';
+import { startMusic } from './engine/music.js';
 
 // If the manifest itself is broken (a typo in the one shared file), still load the core game.
 const CORE = [
@@ -60,6 +61,7 @@ on('game:won', () => playSound('won'));
 on('game:lost', () => playSound('lost'));
 // New investors pay out Investor Capital for how far the run got (not in the ?demo=1 shortcut).
 on('game:lost', ({ game }) => { if (!DEMO && game === app.game) awardCapital(game); });
+startMusic(() => app.game); // background loop; silent until the first click unlocks audio
 
 // ----- canvas -----
 const canvas = document.getElementById('game');

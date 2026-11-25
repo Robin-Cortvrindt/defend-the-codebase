@@ -11,6 +11,7 @@ export function unlockAudio() {
 }
 
 export const isMuted = () => muted;
+export const getAudioContext = () => ctx;
 export function setMuted(m) { muted = m; }
 
 function tone({ freq, type = 'sine', start = 0, dur = 0.2, vol = 0.2, to }) {
