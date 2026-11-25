@@ -14,10 +14,10 @@ import { playSound, unlockAudio, isMuted, setMuted } from './sound.js';
 import { $, h, set, toggle, setScreen, recordBest } from './dom.js';
 import { drawDrinkIcon } from './drink-icons.js';
 import { initMenu, showMenu, showShop, updateMenu } from './menu.js';
-import { getBellActions } from './bell.js';
+import { getBellActions, bellActionView } from './bell.js';
 
 let app;
-const refs = { hire: [], powerups: [] };
+const refs = { hire: [], powerups: [], bellActions: [] };
 let lastPhase = null;
 
 export function initUI(appRef) {
@@ -187,6 +187,7 @@ function swingBell() {
 export function updateUI() {
   const g = app.game, v = app.view;
   updateDrinks(g);
+  refreshBellActions();
   const si = sprintInfo(g.sprint);
   set(refs.wave, 'textContent', `Y${si.year} · Q${si.quarter} · ${si.sprint} / ${SPRINTS_PER_QUARTER}`);
   set(refs.warrants, 'textContent', String(g.warrants));
@@ -353,23 +354,42 @@ const BELL_SVG = `
 </svg>`;
 
 // Choices that features offer at the bell (see bell.js), e.g. summoning a Trojan horse. null when there are none.
+// The buttons are refreshed every frame by refreshBellActions(), so they follow drinks picked up or spent at the bell.
 function bellActionsEl(g, rerender) {
+  refs.bellActions = [];
   const list = getBellActions(g);
   if (!list.length) return null;
-  const call = (fn, fallback) => { try { return fn ? fn(g) : fallback; } catch (e) { console.error(e); return fallback; } };
   return h('div', { class: 'bell-actions' }, list.map(({ action }) => {
-    const cost = call(action.cost, null);
-    const props = {
+    const ref = { g, action, label: h('b'), cost: h('span', { class: 'bell-cost' }), hint: h('small'), costKey: null };
+    ref.btn = h('button', {
       class: 'btn bell-action',
-      onclick: () => { try { action.onClick(g); playSound('powerup'); } catch (e) { console.error(e); } rerender(); },
-    };
-    if (!call(action.enabled, true)) props.disabled = '';
-    return h('button', props,
-      h('b', {}, call(action.label, action.id)),
-      cost ? h('span', { class: 'bell-cost' }, Object.entries(cost).map(([id, n]) => h('span', { class: 'cost' }, drinkIconEl(id, 14), String(n)))) : null,
-      action.hint ? h('small', {}, call(action.hint, '')) : null,
-    );
+      onclick: () => {
+        let ok = false;
+        try { ok = !!action.onClick(g); } catch (e) { console.error(e); }
+        if (ok) playSound('powerup');
+        rerender();
+      },
+    }, ref.label, ref.cost, ref.hint);
+    refs.bellActions.push(ref);
+    refreshBellAction(ref);
+    return ref.btn;
   }));
+}
+
+function refreshBellAction(ref) {
+  const view = bellActionView(ref.g, ref.action);
+  set(ref.label, 'textContent', String(view.label));
+  set(ref.hint, 'textContent', String(view.hint));
+  set(ref.btn, 'disabled', !view.enabled);
+  const key = JSON.stringify(view.cost);
+  if (key !== ref.costKey) {
+    ref.costKey = key;
+    ref.cost.replaceChildren(...Object.entries(view.cost ?? {}).map(([id, n]) => h('span', { class: 'cost' }, drinkIconEl(id, 14), String(n))));
+  }
+}
+
+function refreshBellActions() {
+  for (const ref of refs.bellActions ?? []) if (ref.btn.isConnected) refreshBellAction(ref);
 }
 
 function showOverlay(phase) {
