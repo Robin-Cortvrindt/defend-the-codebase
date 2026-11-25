@@ -39,6 +39,7 @@ export const CONTENT = [
   './upgrades/fridge.js',
   './upgrades/generator.js',
   './upgrades/water.js',
+  './upgrades/trap.js',
   // Investments (permanent, bought between runs with Investor Capital)
   './investments/better-laptops.js',
   './investments/agile-coaching.js',

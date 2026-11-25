@@ -112,3 +112,21 @@ test('draws without throwing, empty or with a full sack', () => {
     assert.doesNotThrow(() => goblinFeature.draw(stubCtx(), g));
   }
 });
+
+test('the building draws a goblin trap that grows per level, also next to every other upgrade', async () => {
+  const { drawBuilding } = await import('../src/engine/building.js');
+  const { recordingCtx } = await import('./stub-ctx.js');
+  const calls = level => {
+    const ctx = recordingCtx();
+    drawBuilding(ctx, { floors: 1, lives: 5, maxLives: 10, time: 1, levels: { aircon: 3, heating: 3, coffee: 3, fridge: 3, generator: 3, water: 3, trap: level } });
+    return ctx.calls.length;
+  };
+  const none = calls(0);
+  assert.ok(calls(1) > none, 'level 1 adds the trap');
+  assert.ok(calls(3) > calls(1), 'level 3 has more teeth and a cage');
+});
+
+test('the Goblin trap upgrade and its side-panel label', async () => {
+  const trap = (await import('../src/content/upgrades/trap.js')).default;
+  assert.deepEqual([trap.id, trap.name, trap.description, trap.counters], ['trap', 'Goblin trap', 'Counters: greedy goblin', 'goblin']);
+});
