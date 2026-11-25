@@ -5,6 +5,7 @@ import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, spawnBug, killBug } from '../src/engine/game.js';
 import { HALF_GAP } from '../src/content/bugs/merge-conflict.js';
 import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 // The content file registers on import; keep its definitions and re-register them per test.
 const DEFS = ['merge-conflict', 'merge-conflict-half'].map(id => R.getBug(id));
@@ -46,7 +47,7 @@ test('merge conflict drops its own reward plus one per half', () => {
   for (const half of [...g.bugs]) killBug(g, half);
   collectAll(g);
   const r = id => R.getBug(id).reward;
-  assert.equal(totalDrinks(g) - w, r('merge-conflict') + 2 * r('merge-conflict-half'));
+  assert.equal(totalDrinks(g) - w, (r('merge-conflict') + 2 * r('merge-conflict-half')) * COLLECT_MULT);
 });
 
 test('the icons draw with and without a bug', () => {

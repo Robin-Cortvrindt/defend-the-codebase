@@ -4,7 +4,7 @@ import { registerTestDrinks } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, step, spawnBug, killBug, quitRun } from '../src/engine/game.js';
-import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, nearestDrop, stealDrop, isLanded, landingSpot, DROP_TTL, DROP_RANGE, FLIGHT, PICK_RADIUS, SWEEP_RADIUS } from '../src/engine/drops.js';
+import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, nearestDrop, stealDrop, isLanded, landingSpot, DROP_TTL, DROP_RANGE, FLIGHT, PICK_RADIUS, SWEEP_RADIUS, COLLECT_MULT } from '../src/engine/drops.js';
 import { on } from '../src/engine/events.js';
 import { placeDev } from '../src/engine/devs.js';
 import { cellAt, isBuildable, COLS, ROWS } from '../src/engine/map.js';
@@ -57,7 +57,7 @@ test('clicks are ignored while paused; otherwise collect', () => {
   assert.equal(g.drops.length, 1);
   assert.equal(clickDrop(g, { paused: false }, x, y), 1);
   assert.equal(g.drops.length, 0);
-  assert.equal(g.drinks.coffee, 103);
+  assert.equal(g.drinks.coffee, 100 + 3 * COLLECT_MULT);
 });
 
 test('a click 25 px away picks nothing', () => {
@@ -78,7 +78,7 @@ test('one click on a drop sweeps up every drop nearby; farther drops stay', () =
   g.drops.push({ id: 4, x: 100 + SWEEP_RADIUS + 1, y: 100, drink: 'coffee', amount: 4, ttl: 10 });
   assert.equal(pickDrop(g, 100, 100), 3);
   assert.deepEqual(g.drops.map(d => d.id), [4]);
-  assert.deepEqual(g.drinks, { coffee: 101, monster: 102, redbull: 103 });
+  assert.deepEqual(g.drinks, { coffee: 100 + 1 * COLLECT_MULT, monster: 100 + 2 * COLLECT_MULT, redbull: 100 + 3 * COLLECT_MULT });
 });
 
 test('the sweep only starts when the click hits a drop', () => {
@@ -264,4 +264,14 @@ test('no free cell in range: the drop lands on the nearest free cell', () => {
   const { col, row } = cellAt(x, y);
   assert.ok(isBuildable(col, row));
   assert.ok(col <= 1 && row <= 1, `cell ${col},${row}`);
+});
+
+test('collecting a drop pays double its amount and the pop shows the doubled number', () => {
+  const g = waveGame();
+  assert.equal(COLLECT_MULT, 2);
+  const drop = { id: 1, x: 100, y: 100, drink: 'monster', amount: 4, ttl: 10 };
+  g.drops.push(drop);
+  assert.equal(collectDrop(g, drop), true);
+  assert.equal(g.drinks.monster, 108);
+  assert.ok(g.effects.some(e => e.kind === 'pop' && e.text === '+8'));
 });

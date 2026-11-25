@@ -6,6 +6,7 @@ import { createGame, startGame, startWave, spawnBug, step } from '../src/engine/
 import { placeDev, sellDev, tickDevs, grantXp, devStats, nextUpgrades, upgradeUnlocked, upgradeStatus, buyUpgrade, levelName, bugsInRange, hitBug } from '../src/engine/devs.js';
 import { pointAt } from '../src/engine/map.js';
 import { registerTestDrinks, totalDrinks, collectAll } from './helpers/drinks.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); registerTestDrinks();
@@ -84,7 +85,7 @@ test('kill grants reward and 1 xp; xp alone never levels up', () => {
   tickDevs(g, 0.01);
   assert.equal(g.bugs.length, 0);
   collectAll(g);
-  assert.equal(totalDrinks(g), w + 1);
+  assert.equal(totalDrinks(g), w + 1 * COLLECT_MULT);
   assert.equal(d.xp, 1);
   grantXp(g, d, 40);
   assert.equal(d.level, 0);
@@ -192,7 +193,7 @@ test('Review Focus 2: hitting an already-dead bug gives no second reward or xp',
   assert.equal(hitBug(g, d, b, 10), true);
   assert.equal(hitBug(g, d, b, 10), false);
   collectAll(g);
-  assert.equal(totalDrinks(g), w + 1);
+  assert.equal(totalDrinks(g), w + 1 * COLLECT_MULT);
   assert.equal(d.xp, 1);
   assert.equal(d.kills, 1);
 });

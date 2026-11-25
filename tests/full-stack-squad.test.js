@@ -7,6 +7,7 @@ import { createGame, startGame, startWave, spawnBug } from '../src/engine/game.j
 import { placeDev, sellDev, tickDevs, devStats } from '../src/engine/devs.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
 import { CELL } from '../src/engine/map.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 let squad;
 beforeEach(async () => {
@@ -112,7 +113,7 @@ test('bounce kill credits the React developer: XP, kill, drinks', () => {
   assert.equal(react.kills, 1);
   assert.equal(react.xp, 1);
   collectAll(g);
-  assert.equal(totalDrinks(g), before + 3);
+  assert.equal(totalDrinks(g), before + 3 * COLLECT_MULT);
 });
 
 test('without the unlock there is no bounce', () => {

@@ -6,6 +6,8 @@ import { emit } from './events.js';
 import { addEffect, sprintInfo, SPRINTS_PER_QUARTER } from './game.js';
 import { isBuildable, cellCenter, COLS, ROWS } from './map.js';
 
+// Collecting a drop (by click or by the robot vacuum) pays this many times its amount.
+export const COLLECT_MULT = 2;
 export const DROP_TTL = 10;     // seconds of game time before an uncollected drop disappears
 export const BLINK_AT = 3;      // a drop blinks for its last 3 s
 export const PICK_RADIUS = 20;  // logical px: how close a click must be to a drop
@@ -98,10 +100,11 @@ export function collectDrop(game, drop, by = 'player') {
   const i = game.drops.indexOf(drop);
   if (i < 0) return false;
   game.drops.splice(i, 1);
-  addDrink(game, drop.drink, drop.amount);
+  const amount = drop.amount * COLLECT_MULT;
+  addDrink(game, drop.drink, amount);
   emit('drop:collected', { game, drop, by });
   addEffect(game, {
-    kind: 'pop', x: drop.x, y: drop.y - 8, text: `+${drop.amount}`,
+    kind: 'pop', x: drop.x, y: drop.y - 8, text: `+${amount}`,
     color: getDrink(drop.drink)?.color ?? '#fff', size: 14, ttl: 0.9,
   });
   return true;

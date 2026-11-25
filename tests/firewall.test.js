@@ -9,6 +9,7 @@ import { isPathCell } from '../src/engine/map.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
 import securityTraining, { firewallFeature, findFirewalls, tickFirewalls, FIREWALL_DPS, fireParticles } from '../src/content/investments/security-training.js';
 import { stubCtx } from './stub-ctx.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
@@ -76,7 +77,7 @@ test('kill pays drinks and gives XP + a kill to both developers', () => {
   tickFirewalls(g, 1);
   assert.equal(g.bugs.includes(bug), false);
   collectAll(g);
-  assert.equal(totalDrinks(g), before + 3);
+  assert.equal(totalDrinks(g), before + 3 * COLLECT_MULT);
   assert.deepEqual([a.xp, b.xp, a.kills, b.kills], [1, 1, 1, 1]);
 });
 

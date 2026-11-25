@@ -7,6 +7,7 @@ import { setStorage, saveProgress } from '../src/engine/investments.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 import { stubCtx } from './stub-ctx.js';
 import vacuum, { vacuumFeature, vacuumOnLost, VACUUM_SPEEDS, DOCK } from '../src/content/investments/robot-vacuum.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
@@ -47,7 +48,7 @@ test('drives to the nearest landed drop and collects it, drinks paid', () => {
   g.drops.push(far, near);
   run(g, 1.2);
   assert.deepEqual(g.drops, [far]);
-  assert.equal(g.drinks.coffee, 104);
+  assert.equal(g.drinks.coffee, 100 + 4 * COLLECT_MULT);
 });
 
 test('faster per level: 7 / 10 / 13 px in 0.1 s', () => {

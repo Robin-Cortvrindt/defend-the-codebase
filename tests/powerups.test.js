@@ -62,7 +62,7 @@ test('Claude success kills all bugs and pays rewards; power-ups cost nothing', (
   assert.equal(usePowerup(g, 'claude'), true);
   assert.equal(g.bugs.length, 0);
   collectAll(g);
-  assert.equal(totalDrinks(g), drinksBefore + 8);
+  assert.equal(totalDrinks(g), drinksBefore + 8 * COLLECT_MULT);
 });
 
 test('power-ups work with every drink at 0', () => {
@@ -135,6 +135,7 @@ test('I1: a power-up whose canActivate throws is just unusable, never throws', (
 // ---------- power-up investments ----------
 import { powerupMod, effectiveCooldown } from '../src/engine/powerups.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 const PU_INVESTMENTS = ['training-budget', 'training-planning', 'sales-targets', 'sales-pipeline', 'leadership-coaching', 'ceo-calendar', 'prompt-engineering', 'enterprise-plan'];
 async function withPowerupInvestments() {

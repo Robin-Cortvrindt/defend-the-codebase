@@ -5,6 +5,7 @@ import * as R from '../src/engine/registry.js';
 import { clearAll, on } from '../src/engine/events.js';
 import { createGame, startGame, startWave, ringBell, step, spawnBug, sprintInfo, chooseYearReview, killBug, getSprintDef, deathAnimDone, DEATH_ANIM, quitRun } from '../src/engine/game.js';
 import { PATH_LENGTH } from '../src/engine/map.js';
+import { COLLECT_MULT } from '../src/engine/drops.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); registerTestDrinks();
@@ -189,10 +190,10 @@ test('a normal kill pays a random drink: reward x drinkMultiplier', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.spawnQueue = []; g.random = () => 0;
   killBug(g, spawnBug(g, 'b')); collectAll(g);
-  assert.equal(g.drinks.coffee, 103);
+  assert.equal(g.drinks.coffee, 100 + 3 * COLLECT_MULT);
   g.mods.drinkMultiplier = 2;
   killBug(g, spawnBug(g, 'b')); collectAll(g);
-  assert.equal(g.drinks.coffee, 109);
+  assert.equal(g.drinks.coffee, 100 + (3 + 6) * COLLECT_MULT);
 });
 
 test('a kill pays at least 1 drink', () => {
@@ -200,14 +201,14 @@ test('a kill pays at least 1 drink', () => {
   const g = createGame(); startGame(g); startWave(g);
   g.random = () => 0; g.mods.drinkMultiplier = 0.4;
   killBug(g, spawnBug(g, 'tiny')); collectAll(g);
-  assert.equal(g.drinks.coffee, 101);
+  assert.equal(g.drinks.coffee, 100 + 1 * COLLECT_MULT);
 });
 
 test('a boss kill pays every drink reward / n', () => {
   R.registerBug({ id: 'boss', hp: 1, speed: 1, reward: 30, boss: true, radius: 5 });
   const g = createGame(); startGame(g); startWave(g);
   killBug(g, spawnBug(g, 'boss')); collectAll(g);
-  assert.deepEqual(g.drinks, { coffee: 110, monster: 110, redbull: 110 });
+  assert.deepEqual(g.drinks, { coffee: 100 + 10 * COLLECT_MULT, monster: 100 + 10 * COLLECT_MULT, redbull: 100 + 10 * COLLECT_MULT });
 });
 
 test('yearly review accept raises drinkMultiplier', () => {
