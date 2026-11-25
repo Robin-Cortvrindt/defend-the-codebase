@@ -7,9 +7,9 @@ A browser tower defense game for the Intent Engineering Bootcamp hackathon. Bugs
 ## How it plays
 
 - **Hire developers** next to the path with Warrants, the currency. Squashed bugs pay Warrants.
-- **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's ring colour shows which developer counters it, and counters do double damage.
-- **Grey bugs** have no counter, so everybody chips in. From sprint 5, a **merge conflict** (conflict markers) splits into two smaller, faster halves when squashed. From sprint 7, a **memory leak** (droplet) grows bigger and tougher the longer it lives, up to twice its health, so squash it early.
-- **Boss:** every sprint ends with a **security risk** (red ring, padlock). It's big, slow and tough, no developer counters it, and letting it through costs 5 lives.
+- **Counters:** React (blue) is fast and light and counters typo bugs. Java (orange) is balanced and counters null pointers. .NET (fuchsia) is slow and heavy and counters legacy bugs. A bug's main colour shows which developer counters it, and counters do double damage. Each bug has its own look: typos are blue spelling-mistake squiggles, null pointers orange ∅ beetles, legacy bugs floppy-disk beetles.
+- **Grey bugs** have no counter, so everybody chips in. From sprint 5, a **merge conflict** (a green + / red − diff bug) splits into two smaller, faster halves when squashed. From sprint 7, a **memory leak** (a memory module whose chips light up as it fills) grows bigger and tougher the longer it lives, up to twice its health, so squash it early.
+- **Boss:** every sprint ends with a **security risk** (a red armoured beetle with an open padlock). It's big, slow and tough, no developer counters it, and letting it through costs 5 lives.
 - **Developer upgrades:** squashing bugs earns XP. 10 XP unlocks level 2 and 30 XP unlocks a choice of two level-3 branches, one steady and one a gamble. Levels here count from 1; in code and events they count from 0, so level 2 is `level: 1`. You pay for each upgrade in Warrants, so every sprint is a choice between hiring and upgrading.
 
   | Developer | Level 1 | Level 2 | Level 3 steady | Level 3 gamble |
