@@ -84,7 +84,11 @@ Option 1 won because a permanent panel is layout, not an add-on.
 - `#stage` and a new `<aside id="side-panel" aria-label="Your run">` are wrapped in a new `<div id="play">`, laid out as a grid: board `1fr`, panel `280px`.
 - `#app`'s `max-width` goes from `1100px` to `1380px` (my call). The board then keeps roughly its current size, and the panel is added next to it.
 - The panel has three `<section>` children, with ids `panel-building`, `panel-devs` and `panel-tasks`, so each feature knows where to render. A feature that fails to load leaves its section empty, and the game still runs.
-- **Height.** The panel is as tall as the board. When there's more content than space, the Tasks list scrolls inside its section.
+- **Height (decided after the mockup).** The panel is as tall as its content, and the board sits at the top of its column.
+  - With the full upgrade list, the panel can be taller than the board. The strip under the board is then plain background. That's accepted: the team approved the mockup with the full list.
+  - The Tasks list does not scroll on its own.
+  - Mockup: `docs/mockups/side-panel.html`.
+- **Phones.** On a phone, the Building section shows a one-line upgrade summary ("N of M levels") instead of the full list, as in mockup state 4.
 - **Phones.** At `max-width: 720px`, `#play` becomes one column, with the panel below the board.
 - **Canvas.** Because `resize()` reads `#stage.clientWidth`, the board shrinks to its grid column automatically.
 
