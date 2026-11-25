@@ -9,8 +9,7 @@ export const LEVELS = [
   { name: 'Consultant', badge: 'C', xp: 10 },
   { name: 'Senior Consultant', badge: 'S', xp: 30 },
 ];
-const LEVEL_DAMAGE = 1.25;
-const LEVEL_FIRE_RATE = 1.15;
+export const XP_GATES = [0, 10, 30];
 
 export const devAt = (game, col, row) => game.devs.find(d => d.col === col && d.row === row);
 
@@ -23,7 +22,7 @@ export function placeDev(game, typeId, col, row) {
   if (!canPlace(game, typeId, col, row)) return null;
   const def = getDeveloper(typeId);
   const { x, y } = cellCenter(col, row);
-  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, xp: 0, cooldown: 0, spent: def.cost, kills: 0 };
+  const dev = { id: game.nextId++, type: typeId, col, row, x, y, level: 0, upgrade: null, state: {}, xp: 0, cooldown: 0, spent: def.cost, kills: 0 };
   game.warrants -= def.cost;
   game.devs.push(dev);
   emit('dev:placed', { game, dev });
@@ -40,21 +39,62 @@ export function sellDev(game, dev) {
   return refund;
 }
 
+export function nextUpgrades(dev) {
+  const ups = getDeveloper(dev.type)?.upgrades;
+  if (!ups) return [];
+  if (dev.level === 0) return ups.level2 ? [ups.level2] : [];
+  if (dev.level === 1) return ups.level3 ?? [];
+  return [];
+}
+
+export const upgradeUnlocked = dev => nextUpgrades(dev).length > 0 && dev.xp >= XP_GATES[dev.level + 1];
+
+export function upgradeStatus(game, dev, upgrade) {
+  if (dev.xp < XP_GATES[dev.level + 1]) return { ok: false, reason: 'xp' };
+  if (game.warrants < upgrade.cost) return { ok: false, reason: 'warrants' };
+  return { ok: true, reason: null };
+}
+
+export function buyUpgrade(game, dev, upgradeId) {
+  const upgrade = nextUpgrades(dev).find(u => u.id === upgradeId);
+  if (!upgrade || !upgradeStatus(game, dev, upgrade).ok) return false;
+  game.warrants -= upgrade.cost;
+  dev.spent += upgrade.cost;
+  dev.level++;
+  dev.upgrade = upgrade;
+  if (dev.level === 2) game.stats.seniors++;
+  emit('dev:levelup', { game, dev, level: dev.level, upgrade });
+  return true;
+}
+
+export function levelName(dev) {
+  const def = getDeveloper(dev.type);
+  return dev.upgrade?.name ?? def?.levelName ?? def?.name;
+}
+
 export function devStats(game, dev) {
   const def = getDeveloper(dev.type);
+  const ups = def.upgrades;
+  const stats = { damage: def.damage, fireRate: def.fireRate, range: def.range };
+  if (dev.level >= 1 && ups?.level2?.stats) Object.assign(stats, ups.level2.stats);
+  if (dev.level === 2 && dev.upgrade?.stats) Object.assign(stats, dev.upgrade.stats);
+  try { def.modifyStats?.(game, dev, stats); } catch (e) { console.error(e); }
+  try { dev.upgrade?.modifyStats?.(game, dev, stats); } catch (e) { console.error(e); }
+  // Aura step: Task 4 applies nearby developers' auras to `stats` here.
   return {
-    damage: def.damage * LEVEL_DAMAGE ** dev.level * game.mods.damageMultiplier,
-    fireRate: def.fireRate * LEVEL_FIRE_RATE ** dev.level * game.mods.fireRateMultiplier,
-    range: def.range * CELL * game.mods.rangeMultiplier,
+    ...stats,
+    damage: stats.damage * game.mods.damageMultiplier,
+    fireRate: stats.fireRate * game.mods.fireRateMultiplier,
+    range: stats.range * CELL * game.mods.rangeMultiplier,
   };
 }
 
 export function grantXp(game, dev, amount) {
+  const before = dev.xp;
   dev.xp += amount * game.mods.xpMultiplier;
-  while (dev.level < LEVELS.length - 1 && dev.xp >= LEVELS[dev.level + 1].xp) {
-    dev.level++;
-    if (dev.level === LEVELS.length - 1) game.stats.seniors++;
-    emit('dev:levelup', { game, dev, level: dev.level });
+  const gate = XP_GATES[dev.level + 1];
+  if (nextUpgrades(dev).length > 0 && before < gate && dev.xp >= gate) {
+    emit('dev:upgradeready', { game, dev, level: dev.level + 1 });
   }
 }
 
