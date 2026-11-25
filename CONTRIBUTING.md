@@ -22,19 +22,20 @@ Handy URL: `http://localhost:8000/?demo=1` starts wave 1 with one developer of e
 | `registerBug` | `{ id, name, ring, radius, hp, speed /*px/s*/, livesLost, reward, legs?, onHit?, onDeath?, update? }` |
 | `registerPowerup` | `{ id, name, description, duration /*s, 0 = instant*/, cooldown, getCost?(game), canActivate?(game), activate(game), deactivate?(game) }` |
 | `registerFeature` | `{ id, init?(game), update?(game, dt), draw?(ctx, game), hudButtons?: [{ label, hint, onClick(game) }] }` |
+| `registerEvent` | `{ id, name, description, accent?, weight? /*default 1*/, minWave? /*default 2*/, start(game), end(game), draw?(ctx, game, view) }`: a random event. Each wave from wave 2 has a 25% chance to start one; it lasts until the wave ends. `view.cursor` is the mouse position or `null` (`src/content/events/`) |
 | `registerWaves` | `[{ hp /*health multiplier*/, groups: [{ bug, count, interval, delay }] }]` (`src/content/waves.js`) |
 
 ## Events (`on(name, fn)` from `src/engine/events.js`)
 
 Subscribe with `on(...)` at the **top level of your file**, not inside `init`. `init` runs again on every restart, so listeners added there would double up.
 
-`game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `game:won` · `game:lost`
+`game:start` · `wave:start` · `wave:cleared` · `bell:rung` · `bug:spawned` · `bug:killed` · `bug:leaked` · `dev:placed` · `dev:levelup` · `dev:sold` · `powerup:activated` · `claude:backfire` · `event:start` · `event:end` · `game:won` · `game:lost`
 
 Each one passes `{ game, ... }`, for example `bug:killed` gives `{ game, bug, dev }`.
 
 ## Changing the rules: `game.mods`
 
-`xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier`
+`xpMultiplier` · `warrantMultiplier` · `fireRateMultiplier` · `damageMultiplier` · `bugSpeedMultiplier` · `rangeMultiplier` · `timeScale` (whole simulation speed) · `devFireRate` (object keyed by developer id, e.g. `devFireRate.java`; a missing key counts as 1)
 
 Multiply when your effect starts and divide when it ends, so effects stack.
 
