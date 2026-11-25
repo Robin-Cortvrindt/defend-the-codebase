@@ -31,6 +31,9 @@ function el(tag, cls, text) {
   return e;
 }
 const title = text => el('div', 'sp-title', text);
+// Short tile labels for the known upgrades; any other upgrade uses the first word of its name.
+const SHORT = { aircon: 'Aircon', heating: 'Heating', coffee: 'Coffee', fridge: 'Fridge', generator: 'Power' };
+const shortName = r => SHORT[r.id] ?? String(r.name).split(' ')[0];
 const kv = (label, value, cls = '') => { const row = el('div', 'sp-kv'); row.append(el('span', '', label), el('b', cls, String(value))); return row; };
 
 function renderBuilding(sec, game) {
@@ -43,13 +46,17 @@ function renderBuilding(sec, game) {
   const bar = el('div', `sp-bar${share <= 0.4 ? ' low' : ''}`);
   const fill = el('i'); fill.style.width = `${Math.round(Math.max(0, Math.min(1, share)) * 100)}%`; bar.append(fill);
   sec.append(bar, kv('Nexios Coins', info.coins, 'sp-coins'));
+  // Compact: one row of small tiles (short label + pips); the full name and counter are in the tooltip.
+  const tiles = el('div', 'sp-upgs');
   for (const r of rows) {
-    const row = el('div', 'sp-up');
+    const tile = el('span', 'sp-upg');
+    tile.title = `${r.name} · ${r.description ?? ''} · level ${r.level} of ${r.maxLevel}`;
     const pips = el('span', 'sp-pips');
     for (let i = 0; i < r.maxLevel; i++) pips.append(el('i', i < r.level ? 'on' : ''));
-    row.append(el('span', 'sp-up-name', r.name), el('small', '', r.description ?? ''), pips);
-    sec.append(row);
+    tile.append(el('span', 'sp-upg-name', shortName(r)), pips);
+    tiles.append(tile);
   }
+  sec.append(tiles);
   sec.append(el('div', 'sp-summary', `Upgrades: ${sum.levels} of ${sum.max} levels`));
 }
 
@@ -64,15 +71,18 @@ function devIcon(def) {
 function renderDevs(sec, game) {
   const counts = devCounts(game);
   const defs = new Map(getDevelopers().map(d => [d.id, d]));
-  sec.textContent = '';
-  sec.append(title('Developers'));
-  for (const d of counts) {
-    const row = el('div', 'sp-dev');
-    row.append(devIcon(defs.get(d.id)), el('span', '', d.name), el('b', '', String(d.count)));
-    sec.append(row);
-  }
   const total = counts.reduce((s, d) => s + d.count, 0);
-  sec.append(el('div', 'sp-total', total === 0 ? 'No developers hired yet' : `${total} developer${total === 1 ? '' : 's'}`));
+  sec.textContent = '';
+  // Compact: the total sits in the header, the types are one row of chips.
+  const head = title('Developers');
+  head.append(el('span', 'sp-total', total === 0 ? 'None hired yet' : `${total} developer${total === 1 ? '' : 's'}`));
+  const chips = el('div', 'sp-devs');
+  for (const d of counts) {
+    const chip = el('div', 'sp-dev');
+    chip.append(devIcon(defs.get(d.id)), el('span', '', d.name), el('b', '', String(d.count)));
+    chips.append(chip);
+  }
+  sec.append(head, chips);
 }
 
 function sync(game) {

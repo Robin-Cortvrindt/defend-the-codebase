@@ -299,15 +299,15 @@ function setupTasks(game) {
     if (result) playSound(result === 'reward' ? 'mail' : 'phished');
     blurFocus();
   });
-  ui = { root, count, slot, list, card: null, bar: null, offerId: 0, key: null, highlight: { id: 0, until: 0 }, game };
+  ui = { root, count, slot, list, card: null, bar: null, offerId: 0, key: null, rows: new Map(), highlight: { id: 0, until: 0 }, game };
 }
 
 function showOffer(mail) {
   ui.slot.textContent = '';
-  const card = el('div', 'mb-offer');
-  card.setAttribute('role', 'button');
-  card.tabIndex = 0;
-  const row = el('div', 'mb-offer-row');
+  // A real <button>: Enter and Space accept it, and input.js leaves focused buttons alone.
+  const card = el('button', 'mb-offer');
+  card.type = 'button';
+  const row = el('span', 'mb-offer-row');
   row.append(el('small', '', rewardText(mail)), el('span', 'mb-accept', 'Click to accept'));
   const bar = el('i', 'mb-time');
   card.append(el('span', 'mb-from', `New mail · ${mail.from}`), el('b', '', mail.subject), row, bar);
@@ -334,21 +334,41 @@ function hideOffer(immediate = false) {
   setTimeout(() => card.remove(), 250);
 }
 
-function renderTasks(box, claimable, now) {
+// Rows are rebuilt only when the set of tasks or a task's done-state changes. Progress ticks update
+// the bar and the "x/y" text in place, so a Claim button is never swapped out under the pointer.
+function renderTasks(box) {
   ui.list.textContent = '';
+  ui.rows = new Map();
   if (!box.mails.length) { ui.list.append(el('div', 'mb-empty', 'No tasks yet. Click new mail when it pops up to accept it.')); return; }
   for (const m of box.mails) {
-    const row = el('div', `mb-task${m.id === ui.highlight.id && now < ui.highlight.until ? ' fresh' : ''}`);
-    const bar = el('i'); const fill = el('b'); fill.style.width = `${Math.round((m.progress / m.target) * 100)}%`; bar.append(fill);
-    const prog = el('div', 'mb-prog'); prog.append(bar, el('small', '', `${m.progress}/${m.target}`));
+    const row = el('div', 'mb-task');
+    const bar = el('i'); const fill = el('b'); bar.append(fill);
+    const text = el('small', '');
+    const prog = el('div', 'mb-prog'); prog.append(bar, text);
     row.append(el('span', 'mb-from', m.from), el('span', 'mb-subj', m.subject), el('span', 'mb-rew', rewardText(m)), prog);
+    let claim = null;
     if (isDone(m)) {
-      const claim = el('button', 'mb-claim', 'Claim');
+      claim = el('button', 'mb-claim', 'Claim');
+      claim.type = 'button';
       claim.dataset.id = String(m.id);
-      claim.disabled = !claimable;
       row.append(claim);
     }
     ui.list.append(row);
+    ui.rows.set(m.id, { row, fill, text, claim });
+  }
+}
+
+function updateTasks(box, claimable, now) {
+  for (const m of box.mails) {
+    const r = ui.rows.get(m.id);
+    if (!r) continue;
+    const width = `${Math.round((m.progress / m.target) * 100)}%`;
+    if (r.fill.style.width !== width) r.fill.style.width = width;
+    const text = `${m.progress}/${m.target}`;
+    if (r.text.textContent !== text) r.text.textContent = text;
+    if (r.claim && r.claim.disabled === claimable) r.claim.disabled = !claimable;
+    const fresh = m.id === ui.highlight.id && now < ui.highlight.until;
+    if (r.row.classList.contains('fresh') !== fresh) r.row.classList.toggle('fresh', fresh);
   }
 }
 
@@ -360,10 +380,9 @@ function syncTasks(game, paused, now) {
   if (box.offer && box.offer.mail.id !== ui.offerId) showOffer(box.offer.mail);
   else if (!box.offer && ui.card) hideOffer();
   if (box.offer && ui.bar) ui.bar.style.width = `${Math.max(0, (box.offer.remaining / OFFER_SECONDS) * 100).toFixed(1)}%`;
-  const claimable = canClaim(game) && !paused;
-  const fresh = now < ui.highlight.until ? ui.highlight.id : 0;
-  const key = `${claimable}|${fresh}|${box.mails.map(m => `${m.id}:${m.progress}`).join(',')}`;
-  if (key !== ui.key) { ui.key = key; renderTasks(box, claimable, now); }
+  const key = box.mails.map(m => `${m.id}:${isDone(m) ? 1 : 0}`).join(',');
+  if (key !== ui.key) { ui.key = key; renderTasks(box); }
+  updateTasks(box, canClaim(game) && !paused, now);
 }
 
 const feature = {

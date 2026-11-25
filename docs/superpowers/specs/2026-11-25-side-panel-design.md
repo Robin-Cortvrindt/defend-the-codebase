@@ -99,15 +99,17 @@ Option 1 won because a permanent panel is layout, not an add-on.
 - **Floors:** `game.floors`.
 - **Production:** `game.lives / game.maxLives`, with a small bar. It turns orange at 40% or below, matching the HUD.
 - **Nexios Coins:** `game.coins`.
-- **Upgrades:** every registered upgrade except `floor`, one row each.
-  - Each row shows the name, what it counters (its `description`, e.g. "Counters: heat wave") and the level as 3 pips (`upgradeLevel(game, id)` out of `maxLevel`).
+- **Upgrades (compact, decided after the first build):** every registered upgrade except `floor`, shown as one row of small tiles.
+  - Each tile has a short label (Aircon, Heating, Coffee, Fridge, Power; any other upgrade uses the first word of its name) and the level as 3 pips (`upgradeLevel(game, id)` out of `maxLevel`).
+  - The full name, what it counters and the level are in the tile's tooltip, e.g. "Air conditioning · Counters: heat wave · level 1 of 3".
   - Upgrades at level 0 still show, with empty pips, so the player sees what's available.
 - It updates every frame from `draw`, re-rendering only when a value changed.
 
 ### Developers section (`side-panel.js`)
 
-- One row per registered developer type, in registry order: the type's icon, its name and the count of `game.devs` of that type.
-- A total line: "N developers".
+- **Compact (decided after the first build):** one row of chips, one per registered developer type in registry order. Each chip shows the type's icon, its name and the count of `game.devs` of that type.
+- The total sits in the section header: "N developers", or "None hired yet".
+- **Why compact:** with full rows, Building and Developers took about 410 of the 526 px panel height on a 1366 px window. Tasks then showed only a sliver, and the offer card was off-screen below about 1366 px. Compact, they take about 215 px. That leaves room for the offer card and two to three tasks at 1366 px, and keeps the offer card visible down to 1024 px.
 
 ### Tasks section (`mailbox.js`, reworked)
 
