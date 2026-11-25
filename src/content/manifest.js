@@ -58,6 +58,7 @@ export const CONTENT = [
   // Features (teammates' add-ons, Nexios references, ...)
   './features/side-panel.js',
   './features/mailbox.js',
+  './features/retrospective.js',
 ];
 
 export const CONTENT_URLS = CONTENT.map(p => new URL(p, import.meta.url).href);

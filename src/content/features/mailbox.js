@@ -229,7 +229,11 @@ export function claimMail(game, mailId) {
   const i = box?.mails.findIndex(m => m.id === mailId) ?? -1;
   if (i < 0 || !isDone(box.mails[i])) return null;
   const [mail] = box.mails.splice(i, 1);
-  if (mail.phishing) return applyPenalty(game, mail);
+  if (mail.phishing) {
+    const kind = applyPenalty(game, mail);
+    emit('mail:phished', { game, mail, kind });   // the retrospective counts these
+    return kind;
+  }
   payReward(game, mail);
   return 'reward';
 }
