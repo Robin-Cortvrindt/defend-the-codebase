@@ -57,17 +57,18 @@ registerDeveloper({
   id: 'java', /* ...base stats... */
   levelName: 'Junior Java Dev',
   upgrades: {
-    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 30, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
+    level2: { id: 'springboot', name: 'Spring Boot Dev', cost: 25, description: '+damage, +range', stats: { damage: 40, range: 2.6 } },
     level3: [
       {
-        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 40,
-        description: '+15% damage to developers nearby',
-        aura: { radius: 4, apply(game, dev, stats) { stats.damage *= 1.15; } },
+        id: 'architect', name: 'Enterprise Architect', kind: 'steady', cost: 50,
+        description: 'Less damage itself, +15% damage to developers nearby',
+        modifyStats(game, dev, stats) { stats.damage *= 0.9; },
+        aura: { radius: 7, apply(game, dev, stats) { stats.damage *= 1.15; } },
       },
       {
-        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 60,
+        id: 'gc', name: 'Garbage Collector', kind: 'gamble', cost: 75,
         description: 'Stop-the-World, then a pulse',
-        update(game, dev, dt, stats) { /* hold fire 1 s every 8 s, then hitBug every bug in range */ },
+        update(game, dev, dt, stats) { /* hold fire 1 s every 8 s, then hitBug every bug in range for 2x */ },
       },
     ],
   },
