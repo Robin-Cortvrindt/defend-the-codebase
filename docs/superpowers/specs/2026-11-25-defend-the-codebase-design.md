@@ -179,3 +179,44 @@ If time runs short, cut from the bottom of this list. Steps 1–3 alone are a pl
 - How the canvas scales to the window and handles high-DPI screens.
 - Placeholder sound sources (generated or free, e.g. kenney.nl).
 - Internal engine module boundaries, as long as the registry, events and modifiers contract in §6 holds.
+
+---
+
+## 9. Update (approved 2026-11-25): sprints, quarters, the Nexios building, reviews
+
+This section replaces the parts of §4 it contradicts. Waves become **sprints**, the game becomes **endless**, and the PROD box becomes the **Nexios building**.
+
+### Sprints and quarters
+- A wave is now called a **sprint**. Every **quarter** has **7 sprints** and every **year** has **4 quarters**. There's no last sprint: you play until production goes down.
+- The HUD shows `Year Y · QN · Sprint S / 7`. Sprints are numbered globally inside the engine (`game.sprint`, starting at 0) and turned into year, quarter and sprint for display.
+- Difficulty never caps. The first 10 hand-made sprints come from `waves.js`. After that, sprints are generated from the last hand-made one, with more bugs and more health each sprint.
+- **The run ends** on the lost screen, which shows how far you got ("Fell in Year 1 · Q3 · Sprint 5") and your best run, saved in `localStorage` with a try/catch around it.
+- The old win screen is no longer reachable. The `game:won` event stays in the event list for compatibility but is never emitted.
+
+### Nexios Coins
+- This is a second currency, `game.coins`, which starts at 0.
+- Finishing a sprint pays **1 coin**. Finishing a quarter pays **3 more**.
+
+### Quarter review (after sprint 7 of every quarter)
+- It replaces the plain bell screen for that sprint. It shows the quarter's stats (bugs squashed and lives lost this quarter) and the **building shop**, then the bell to start the next quarter.
+- **Building upgrades** are registered content, using the same pattern as power-ups:
+  - **Add a floor:** +5 maximum production and heals 5. Costs `3 + floors bought` coins (3, 4, 5…). The building is drawn one storey taller for each floor.
+  - **Air conditioning:** levels 1 to 3, costing 3, 5 and 7 coins. Each level takes away a third of the heat-wave slowdown. A roof unit is drawn, getting bigger with the level.
+
+### Heat waves (designed by the random-events work, not here)
+- The heat wave is one of the random events, designed and built in a separate piece of work (`docs/superpowers/specs/2026-11-25-random-events-design.md`).
+- **The only interface:** air conditioning sets `game.heatResistance` (0, 1/3, 2/3, 1 for levels 0–3), and the heat wave scales its effect by `1 - heatResistance`.
+
+### Yearly review (after every Q4)
+- It comes straight after that year's quarter review, as a choice between two cards:
+  - **Accept the review:** a permanent +10% on Warrant income (`warrantMultiplier ×1.1`).
+  - **Ask for a raise:** a 50% chance of +20% (`×1.2`). If it fails, nothing changes.
+- The result appears as a banner ("Raise approved" or "Raise denied — maybe next year"). The total bonus is shown in the HUD.
+
+### The Nexios building
+- It replaces the PROD box at the end of the path, in the same place. It's drawn as a small office with a "NEXIOS" sign, its floors stack upward, and the air-conditioning unit sits on the roof. Its health bar shows production (`game.lives / game.maxLives`).
+
+### Extension points (added)
+- `registerUpgrade({ id, name, description, maxLevel?, getCost(game), apply(game), draw? })`. Upgrades appear in the quarter-review shop.
+- New events: `sprint:start`, `sprint:cleared`, `quarter:review`, `year:review`, `upgrade:bought`.
+- `wave:start` and `wave:cleared` are still emitted as aliases, so existing features keep working.
