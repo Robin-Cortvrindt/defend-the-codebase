@@ -1,4 +1,5 @@
-// Drinks that a squashed bug leaves on the board. They must be clicked before they time out.
+// Drinks that a squashed bug leaves on the board. They must be clicked before they time out;
+// one click on a drop sweeps up every drop around it.
 import { getDrinks, getDrink } from './registry.js';
 import { addDrink, randomDrink } from './drinks.js';
 import { emit } from './events.js';
@@ -6,7 +7,8 @@ import { addEffect, sprintInfo, SPRINTS_PER_QUARTER } from './game.js';
 
 export const DROP_TTL = 10;     // seconds of game time before an uncollected drop disappears
 export const BLINK_AT = 3;      // a drop blinks for its last 3 s
-export const PICK_RADIUS = 20;  // logical px
+export const PICK_RADIUS = 20;  // logical px: how close a click must be to a drop
+export const SWEEP_RADIUS = 48; // logical px: a hit then collects every drop this close to the click
 const JITTER = 8;               // +/- px around the bug's position
 
 // Normal bug: one random drink. Boss: every drink, the reward split over them.
@@ -53,20 +55,19 @@ export function collectDrop(game, drop) {
   return true;
 }
 
-// Collect the nearest drop within PICK_RADIUS of (x, y). Only while bugs can be on the board.
+// A click that lands on a drop (within PICK_RADIUS) collects every drop within SWEEP_RADIUS
+// of the click. Returns how many were collected. Only while bugs can be on the board.
 export function pickDrop(game, x, y) {
-  if (game.phase !== 'wave' && game.phase !== 'bell') return null;
-  let best = null, bestD = PICK_RADIUS * PICK_RADIUS;
-  for (const d of game.drops) {
-    const dist = (d.x - x) ** 2 + (d.y - y) ** 2;
-    if (dist <= bestD) { best = d; bestD = dist; }
-  }
-  if (best) collectDrop(game, best);
-  return best;
+  if (game.phase !== 'wave' && game.phase !== 'bell') return 0;
+  const near = r => d => (d.x - x) ** 2 + (d.y - y) ** 2 <= r * r;
+  if (!game.drops.some(near(PICK_RADIUS))) return 0;
+  const swept = game.drops.filter(near(SWEEP_RADIUS));
+  for (const d of swept) collectDrop(game, d);
+  return swept.length;
 }
 
 export function clickDrop(game, view, x, y) {
-  if (view?.paused) return null;
+  if (view?.paused) return 0;
   return pickDrop(game, x, y);
 }
 

@@ -4,7 +4,7 @@ import { registerTestDrinks } from './helpers/drinks.js';
 import * as R from '../src/engine/registry.js';
 import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame, startWave, step, spawnBug, killBug, quitRun } from '../src/engine/game.js';
-import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, DROP_TTL, PICK_RADIUS } from '../src/engine/drops.js';
+import { tickDrops, clickDrop, pickDrop, collectDrop, quarterHoldLeft, DROP_TTL, PICK_RADIUS, SWEEP_RADIUS } from '../src/engine/drops.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); registerTestDrinks();
@@ -49,9 +49,9 @@ test('clicks are ignored while paused; otherwise collect', () => {
   const g = waveGame(); g.random = () => 0;
   killBug(g, spawnBug(g, 'b'));
   const { x, y } = g.drops[0];
-  assert.equal(clickDrop(g, { paused: true }, x, y), null);
+  assert.equal(clickDrop(g, { paused: true }, x, y), 0);
   assert.equal(g.drops.length, 1);
-  assert.ok(clickDrop(g, { paused: false }, x, y));
+  assert.equal(clickDrop(g, { paused: false }, x, y), 1);
   assert.equal(g.drops.length, 0);
   assert.equal(g.drinks.coffee, 103);
 });
@@ -60,26 +60,34 @@ test('a click 25 px away picks nothing', () => {
   const g = waveGame();
   killBug(g, spawnBug(g, 'b'));
   const { x, y } = g.drops[0];
-  assert.equal(pickDrop(g, x + 25, y), null);
+  assert.equal(pickDrop(g, x + 25, y), 0);
   assert.ok(PICK_RADIUS < 25);
   assert.equal(g.drops.length, 1);
 });
 
-test('Review Focus 1: two close drops, one click collects only the nearer one', () => {
+test('one click on a drop sweeps up every drop nearby; farther drops stay', () => {
   const g = waveGame();
   g.drops.push({ id: 1, x: 100, y: 100, drink: 'coffee', amount: 1, ttl: 10 });
-  g.drops.push({ id: 2, x: 104, y: 100, drink: 'monster', amount: 1, ttl: 10 });
-  const got = pickDrop(g, 103, 100);
-  assert.equal(got.id, 2);
-  assert.deepEqual(g.drops.map(d => d.id), [1]);
-  assert.equal(g.drinks.monster, 101);
-  assert.equal(g.drinks.coffee, 100);
+  g.drops.push({ id: 2, x: 104, y: 100, drink: 'monster', amount: 2, ttl: 10 });
+  g.drops.push({ id: 3, x: 100, y: 100 + SWEEP_RADIUS - 1, drink: 'redbull', amount: 3, ttl: 10 });
+  g.drops.push({ id: 4, x: 100 + SWEEP_RADIUS + 1, y: 100, drink: 'coffee', amount: 4, ttl: 10 });
+  assert.equal(pickDrop(g, 100, 100), 3);
+  assert.deepEqual(g.drops.map(d => d.id), [4]);
+  assert.deepEqual(g.drinks, { coffee: 101, monster: 102, redbull: 103 });
+});
+
+test('the sweep only starts when the click hits a drop', () => {
+  const g = waveGame();
+  g.drops.push({ id: 1, x: 100, y: 100, drink: 'coffee', amount: 1, ttl: 10 });
+  assert.ok(PICK_RADIUS < 30 && SWEEP_RADIUS > 30);
+  assert.equal(pickDrop(g, 130, 100), 0, 'within the sweep zone but not on a drop');
+  assert.equal(g.drops.length, 1);
 });
 
 test('no pickups outside wave / bell', () => {
   const g = createGame(); startGame(g);
   g.drops.push({ id: 1, x: 5, y: 5, drink: 'coffee', amount: 1, ttl: 10 });
-  assert.equal(pickDrop(g, 5, 5), null);
+  assert.equal(pickDrop(g, 5, 5), 0);
   assert.equal(collectDrop(g, { id: 9 }), false);
 });
 
