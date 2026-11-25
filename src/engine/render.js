@@ -88,7 +88,7 @@ function buildingSpec(game) {
   const u = game.upgrades || {};
   return {
     floors: game.floors, lives: game.lives, maxLives: game.maxLives, time: game.time,
-    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0 },
+    levels: { aircon: u.aircon || 0, heating: u.heating || 0, coffee: u.coffee || 0, fridge: u.fridge || 0, generator: u.generator || 0, water: u.water || 0 },
   };
 }
 
@@ -480,7 +480,7 @@ function drawAttack(ctx, game, e, t) {
   const def = getDeveloper(e.dev);
   const accent = def?.accent || '#fff';
   if (def?.drawAttack) {
-    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, accent };
+    const a = { from: e.from, to: e.to, progress: attackProgress(e), time: game.time, seed: e.seed, shot: e.shot, counter: !!e.counter, tipsy: !!e.tipsy, accent };
     safeDraw(ctx, `[developer ${e.dev}] drawAttack`, () => def.drawAttack(ctx, a));
     return;
   }

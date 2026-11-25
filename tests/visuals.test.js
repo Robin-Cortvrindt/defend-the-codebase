@@ -69,7 +69,8 @@ test('render: drawAttack gets progress in 0..1 and the shot details', () => {
   render(stubCtx(), g, {});
   assert.equal(calls.length, 1);
   assert.ok(calls[0].progress > 0 && calls[0].progress <= 1);
-  assert.deepEqual(Object.keys(calls[0]).sort(), ['accent', 'counter', 'from', 'progress', 'seed', 'shot', 'time', 'to']);
+  assert.deepEqual(Object.keys(calls[0]).sort(), ['accent', 'counter', 'from', 'progress', 'seed', 'shot', 'time', 'tipsy', 'to']);
+  assert.equal(calls[0].tipsy, false, 'no wine tasting: a sober shot');
 });
 
 test('render: a throwing drawAttack is logged and the frame finishes', () => {

@@ -1,11 +1,12 @@
 // The Nexios building: your base at the end of the path. Pure canvas drawing, no game logic.
 // Every building upgrade shows up here. `b` describes what to draw:
-// { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator } }
+// { floors, lives, maxLives, time, levels: { aircon, heating, coffee, fridge, generator, water } }
 
 const C = {
   navy: '#001E32', navy2: '#0A2A40', navy3: '#123650', glass: '#1E4A6A',
   blue: '#2563EB', orange: '#EA580C', fuchsia: '#C026D3', green: '#16A34A', greenL: '#4ADE80',
   s500: '#64748B', s400: '#94A3B8', s200: '#E2E8F0', white: '#fff', light: '#FDE68A',
+  water: '#38BDF8', waterL: '#7DD3FC', waterXL: '#BAE6FD',
 };
 const FONT = 'Lato, system-ui, sans-serif';
 
@@ -123,6 +124,8 @@ export function drawBuilding(ctx, b) {
   }
   // generator annex at the right foot
   if (L.generator) drawGenerator(ctx, x + w - 2, ground, L.generator, t);
+  // water cooler against the wall below the door
+  if (L.water) drawWaterCooler(ctx, x + 1, ground - 6, L.water, t);
 
   // outline
   ctx.strokeStyle = C.s200; ctx.lineWidth = 1;
@@ -256,5 +259,28 @@ function drawGenerator(ctx, rightX, groundY, level, t) {
   for (let k = 0; k < level; k++) {
     ctx.fillStyle = Math.sin(t * 5 + k) > -0.6 ? C.greenL : C.green;
     ctx.fillRect(gx + gw - 4, gy + 4 + k * 3, 2, 2);
+  }
+}
+
+// A white stand with a blue tap and a jug on top; the jug fills a third per level, bubbles at level 3.
+function drawWaterCooler(ctx, leftX, floorY, level, t) {
+  const sx = leftX + 1, sw = 8, sh = 9;
+  ctx.fillStyle = C.s200; ctx.fillRect(sx, floorY - sh, sw, sh);
+  ctx.fillStyle = C.s400; ctx.fillRect(sx, floorY - sh, sw, 1); ctx.fillRect(sx + 1, floorY - 2, sw - 2, 1);
+  ctx.fillStyle = C.blue; ctx.fillRect(sx + sw - 3, floorY - sh + 3, 2, 1.5);            // tap
+  const jx = sx + 1, jw = 6, jh = 8, jy = floorY - sh - jh, fill = (jh * Math.min(3, level)) / 3;
+  ctx.fillStyle = 'rgba(186,230,253,.25)'; ctx.fillRect(jx, jy, jw, jh);                 // empty jug
+  ctx.fillStyle = C.water; ctx.fillRect(jx, jy + jh - fill, jw, fill);
+  ctx.fillStyle = C.waterL; ctx.fillRect(jx, jy + jh - fill, jw, 0.8);                    // water line
+  ctx.strokeStyle = C.waterXL; ctx.lineWidth = 0.6; ctx.strokeRect(jx + 0.3, jy + 0.3, jw - 0.6, jh - 0.6);
+  ctx.fillStyle = C.waterXL; ctx.fillRect(jx + 2, jy - 1.2, 2, 1.2);                      // neck
+  if (level >= 3) {
+    ctx.fillStyle = C.white;
+    for (let k = 0; k < 2; k++) {
+      const p = (t * 0.7 + k * 0.5) % 1;
+      ctx.globalAlpha = 0.9 * (1 - p);
+      ctx.beginPath(); ctx.arc(jx + 2 + k * 2, jy + jh - 1 - p * (jh - 2), 0.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
 }

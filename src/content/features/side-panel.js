@@ -32,7 +32,7 @@ function el(tag, cls, text) {
 }
 const title = text => el('div', 'sp-title', text);
 // Short tile labels for the known upgrades; any other upgrade uses the first word of its name.
-const SHORT = { aircon: 'Aircon', heating: 'Heating', coffee: 'Coffee', fridge: 'Fridge', generator: 'Power' };
+const SHORT = { aircon: 'Aircon', heating: 'Heating', coffee: 'Coffee', fridge: 'Fridge', generator: 'Power', water: 'Water' };
 const shortName = r => SHORT[r.id] ?? String(r.name).split(' ')[0];
 const kv = (label, value, cls = '') => { const row = el('div', 'sp-kv'); row.append(el('span', '', label), el('b', cls, String(value))); return row; };
 

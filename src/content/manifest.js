@@ -29,6 +29,7 @@ export const CONTENT = [
   './events/no-coffee.js',
   './events/no-redbull.js',
   './events/heat-wave.js',
+  './events/wine-tasting.js',  // developers shoot random bugs; zigzag shots
   // Building upgrades (quarter review shop)
   './upgrades/floor.js',
   './upgrades/aircon.js',
@@ -36,6 +37,7 @@ export const CONTENT = [
   './upgrades/coffee.js',
   './upgrades/fridge.js',
   './upgrades/generator.js',
+  './upgrades/water.js',
   // Investments (permanent, bought between runs with Investor Capital)
   './investments/better-laptops.js',
   './investments/agile-coaching.js',

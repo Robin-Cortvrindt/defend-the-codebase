@@ -5,9 +5,9 @@ import { clearAll } from '../src/engine/events.js';
 import { createGame, startGame } from '../src/engine/game.js';
 import { buyUpgrade, upgradeCost, resistanceTo } from '../src/engine/upgrades.js';
 
-const UPGRADES = ['aircon', 'heating', 'coffee', 'fridge', 'generator'];
-const EVENTS = ['heat-wave', 'heating-out', 'no-coffee', 'no-redbull', 'prod-down'];
-const COUNTERS = { aircon: 'heat-wave', heating: 'heating-out', coffee: 'no-coffee', fridge: 'no-redbull', generator: 'prod-down' };
+const UPGRADES = ['aircon', 'heating', 'coffee', 'fridge', 'generator', 'water'];
+const EVENTS = ['heat-wave', 'heating-out', 'no-coffee', 'no-redbull', 'prod-down', 'wine-tasting'];
+const COUNTERS = { aircon: 'heat-wave', heating: 'heating-out', coffee: 'no-coffee', fridge: 'no-redbull', generator: 'prod-down', water: 'wine-tasting' };
 let defs = {};
 
 beforeEach(async () => {
