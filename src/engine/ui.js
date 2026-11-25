@@ -34,6 +34,7 @@ function buildHud() {
     h('div', { class: 'hud-spacer' }),
     refs.speed = h('button', { class: 'btn ghost run-only', title: 'Game speed: click or F to speed up, right-click or Shift+F to slow down', onclick: () => toggleSpeed(), oncontextmenu: e => { e.preventDefault(); toggleSpeed(true); } }, '1×'),
     refs.pause = h('button', { class: 'btn ghost run-only', title: 'Pause (P)', onclick: togglePause }, 'Pause'),
+    h('button', { class: 'btn ghost run-only', title: 'Quit this run', onclick: openQuit }, 'Quit'),
     refs.mute = h('button', { class: 'btn ghost', title: 'Sound (M)', onclick: toggleMute }, 'Sound on'),
     refs.waveBtn = h('button', { class: 'btn primary run-only', onclick: onWaveButton }, 'Start wave 1'),
   );
@@ -102,9 +103,50 @@ function toggleSpeed(back = false) {
   const n = SPEEDS.length;
   app.view.speed = SPEEDS[((i < 0 ? 0 : i) + (back ? n - 1 : 1)) % n];
 }
-export function togglePause() { if (['wave', 'building', 'bell', 'review'].includes(app.game.phase)) app.view.paused = !app.view.paused; }
+export function togglePause() { if (quitBox) return; if (['wave', 'building', 'bell', 'review'].includes(app.game.phase)) app.view.paused = !app.view.paused; }
 function toggleMute() { setMuted(!isMuted()); }
 export const uiActions = { toggleSpeed, togglePause, toggleMute, onWaveButton };
+
+// ---------- quit confirmation ----------
+
+const QUIT_PHASES = ['building', 'wave', 'bell', 'review'];
+let quitBox = null;
+let pausedBeforeQuit = false;
+export const isQuitOpen = () => !!quitBox;
+
+function openQuit() {
+  const g = app.game;
+  if (quitBox || !QUIT_PHASES.includes(g.phase)) return;
+  pausedBeforeQuit = app.view.paused;
+  app.view.paused = true;
+  const si = sprintInfo(g.sprint);
+  quitBox = h('div', { class: 'quit-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Quit this run?' },
+    h('div', { class: 'quit-box' },
+      h('div', { class: 'eyebrow' }, `Year ${si.year} · Q${si.quarter} · Sprint ${si.sprint}`),
+      h('h2', {}, 'Quit this run?'),
+      h('p', { class: 'lede' }, 'Production goes down and you return to the main menu. Investors still pay for how far you got: ',
+        h('b', {}, `+${capitalFor(g.sprint)} 💼`), '.'),
+      h('div', { class: 'screen-actions' },
+        h('button', { class: 'btn ghost big', onclick: closeQuit }, 'Keep playing'),
+        h('button', { class: 'btn danger big', onclick: confirmQuit }, 'Quit run'),
+      ),
+    ));
+  $('#stage').append(quitBox);
+  quitBox.querySelector('.btn.ghost').focus();
+}
+
+export function closeQuit() {
+  if (!quitBox) return;
+  quitBox.remove();
+  quitBox = null;
+  app.view.paused = pausedBeforeQuit;
+}
+
+function confirmQuit() {
+  closeQuit();
+  app.view.paused = false;
+  quitRun(app.game);
+}
 
 let bellSwinging = false;
 function swingBell() {
@@ -165,6 +207,12 @@ export function updateUI() {
 
   updateSelPanel();
   // On game over, let the building burn down first; the end screen follows once the collapse is done.
+  // A quit run burns down like a real loss, then goes straight back to the main menu.
+  if (g.phase === 'lost' && g.quit && deathAnimDone(g)) {
+    recordBest(g.sprint);
+    app.toMenu({ sprint: g.sprint, capital: g.capitalEarned ?? 0, quit: true });
+    return;
+  }
   const waitForCollapse = g.phase === 'lost' && !deathAnimDone(g);
   if (waitForCollapse) setScreen('collapse');
   if (g.phase !== lastPhase && !waitForCollapse) { lastPhase = g.phase; showOverlay(g.phase); }

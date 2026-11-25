@@ -10,7 +10,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #app { width: 100%; max-width: 1100px; background: var(--navy); border: 1px solid var(--navy3); border-radius: 12px; overflow: hidden; align-self: flex-start; }
 
 /* HUD */
-#hud { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
+#hud { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--navy3); flex-wrap: wrap; }
 .wordmark { height: 20px; max-height: 20px; width: auto; align-self: center; }
 .stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .stat small { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--s400); }
@@ -22,6 +22,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .prod.low i, .prod i.low { background: var(--orange); }
 .prod i.off { background: var(--navy3); }
 .hud-spacer { flex: 1; }
+#hud .btn { padding: 8px 11px; }
+
 /* What each screen hides (data-screen is set in dom.js setScreen) */
 #app:is([data-screen="menu"], [data-screen="howto"], [data-screen="invest"]) :is(#hud, #powerups, #hire) { display: none; }
 #app:is([data-screen="won"], [data-screen="lost"]) #hud :is(.stat, .run-only) { display: none; }
@@ -237,3 +239,13 @@ kbd { font: inherit; font-size: 11px; font-weight: 700; background: var(--navy3)
   .menu-side { border-left: 0; border-top: 1px solid var(--navy3); }
   .steps, .inv-cols { grid-template-columns: 1fr; }
 }
+
+/* quit confirmation (ui.js openQuit) */
+.btn.danger { background: var(--orange); }
+.btn.danger:hover { background: #C2410C; }
+.quit-modal { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(0, 30, 50, .78); line-height: 1.4; padding: 16px; }
+.quit-box { background: var(--navy2); border: 1px solid var(--navy3); border-radius: 12px; padding: 20px 22px; max-width: 380px; }
+.quit-box h2 { margin: 4px 0 8px; font-size: 22px; font-weight: 900; }
+.quit-box .lede { font-size: 14px; }
+.quit-box .lede b { color: #fff; }
+#stage:has(.quit-modal) .pause-veil { display: none; }
