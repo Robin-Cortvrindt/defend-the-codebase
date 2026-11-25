@@ -337,7 +337,7 @@ function drawBug(ctx, bug) {
   const def = getBug(bug.type);
   if (!def) return;
   const x = bug.x + (bug.jitter || 0) * 0.7, y = bug.y + (bug.jitter || 0);
-  const r = def.radius;
+  const r = bug.radius ?? def.radius;   // a bug may grow or shrink (e.g. a memory leak)
   ctx.save();
   ctx.translate(x, y);
   if (def.legs) {
@@ -355,7 +355,7 @@ function drawBug(ctx, bug) {
   ctx.ellipse(0, 0, r * 1.1, r * 0.85, 0, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.s200; ctx.fill();
   ctx.strokeStyle = def.ring; ctx.lineWidth = r > 10 ? 3 : 2; ctx.stroke();
-  if (def.drawIcon) { try { def.drawIcon(ctx, r); } catch (e) { console.error(e); } }
+  if (def.drawIcon) { try { def.drawIcon(ctx, r, bug); } catch (e) { console.error(e); } }
   ctx.restore();
   if (bug.hp < bug.maxHp) {
     const w = Math.max(12, r * 2.2);
