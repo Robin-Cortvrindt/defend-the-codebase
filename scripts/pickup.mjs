@@ -1,8 +1,8 @@
 // Pickup model for the sims: the bot can't click, so each drop is collected with probability PICKUP,
-// PICKUP_DELAY seconds of game time after it appears (if it is still on the board by then).
+// PICKUP_DELAY seconds of game time after it lands (if it is still on the board by then: the goblin may have it).
 //   --pickup <p>   chance 0..1 (default 1, also when missing or not a number). The pickup rolls are seeded per game (trackPickups(game, seed)), so a given game seed gives the same rolls; game randomness is seeded by the caller.
 import { on } from '../src/engine/events.js';
-import { collectDrop } from '../src/engine/drops.js';
+import { collectDrop, FLIGHT } from '../src/engine/drops.js';
 
 export const PICKUP_DELAY = 1;
 const flag = process.argv.indexOf('--pickup');
@@ -15,7 +15,7 @@ export const mulberry32 = a => () => { a = (a + 0x6D2B79F5) | 0; let t = Math.im
 // One global listener for the whole process; it only touches games registered through trackPickups.
 on('drop:spawned', ({ game, drop }) => {
   const s = pending.get(game);
-  if (s && s.rng() < PICKUP) s.queue.push({ at: s.t + PICKUP_DELAY, drop });
+  if (s && s.rng() < PICKUP) s.queue.push({ at: s.t + FLIGHT + PICKUP_DELAY, drop });
 });
 
 // seed: the game's trial seed; the pickup stream is derived from it so it never shares draws with game.random.
