@@ -18,7 +18,7 @@ registerDeveloper({
     stats.fireRate *= 1 + 0.1 * Math.min(5, others);
   },
   upgrades: {
-    level2: { id: 'vite', name: 'Vite', cost: 40, description: 'Much faster rate of fire', tooltip: 'CRA is deprecated, sorry.', stats: { fireRate: 6 } },
+    level2: { id: 'vite', name: 'Vite', cost: 30, description: 'Much faster rate of fire', tooltip: 'CRA is deprecated, sorry.', stats: { fireRate: 6 } },
     level3: [
       {
         id: 'nextjs', name: 'Next.js', kind: 'steady', cost: 50,
