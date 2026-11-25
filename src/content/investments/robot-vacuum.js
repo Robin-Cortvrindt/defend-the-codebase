@@ -4,6 +4,7 @@
 // slower than an untrapped goblin. Clicking drinks yourself still works as before: it's a helper.
 // Built like security-training.js: one investment + one feature, gated on game.unlocks.
 import { registerInvestment, registerFeature } from '../../engine/registry.js';
+import { on } from '../../engine/events.js';
 import { HEIGHT } from '../../engine/map.js';
 import { nearestDrop, collectDrop } from '../../engine/drops.js';
 
@@ -23,17 +24,18 @@ const investment = {
 };
 
 const parked = () => ({ x: DOCK.x, y: DOCK.y, angle: 0, moving: false });
-// The engine doesn't call init (a new run is a new game object), so the state is also made on first use.
+// A new run is a new game object, so the vacuum is made at its dock on first use.
 const state = game => (game.vacuum ??= parked());
 
 export const vacuumFeature = {
   id: 'robot-vacuum',
-  init(game) { game.vacuum = parked(); },
   update(game, dt) {
     const level = game.unlocks?.vacuum;
-    if (!level || (game.phase !== 'wave' && game.phase !== 'bell')) return;
+    if (!level || game.phase === 'menu' || game.phase === 'lost' || game.phase === 'won') return;
     const v = state(game);
-    const target = nearestDrop(game, v.x, v.y);
+    // Drinks are only collected during a sprint; between sprints it drives home to its dock.
+    const sprint = game.phase === 'wave' || game.phase === 'bell';
+    const target = sprint ? nearestDrop(game, v.x, v.y) : null;
     const tx = target ? target.x : DOCK.x, ty = target ? target.y : DOCK.y;
     const dx = tx - v.x, dy = ty - v.y, len = Math.hypot(dx, dy);
     v.moving = len > 0.5;
@@ -45,7 +47,7 @@ export const vacuumFeature = {
       v.angle += turn * Math.min(1, dt * 8);
       if (len - s <= 0.5) { v.x = tx; v.y = ty; }
     }
-    if (target && Math.hypot(target.x - v.x, target.y - v.y) <= COLLECT_RADIUS) collectDrop(game, target);
+    if (target && Math.hypot(target.x - v.x, target.y - v.y) <= COLLECT_RADIUS) collectDrop(game, target, 'vacuum');
   },
   drawUnder(ctx, game) {   // on the floor: under effects and the PROD-is-down darkness
     if (!game.unlocks?.vacuum) return;
@@ -83,6 +85,10 @@ function drawVacuum(ctx, v, time) {
   ctx.fillStyle = on ? '#4ADE80' : '#166534'; ctx.beginPath(); ctx.arc(5, 0, 1.6, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
+
+// A lost run stops all updates: park it at once rather than leave it frozen mid-board during the collapse.
+export function vacuumOnLost({ game }) { if (game?.vacuum) game.vacuum = parked(); }
+on('game:lost', vacuumOnLost);
 
 registerInvestment(investment);
 registerFeature(vacuumFeature);

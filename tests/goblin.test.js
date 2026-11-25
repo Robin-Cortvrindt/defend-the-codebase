@@ -1,19 +1,20 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
-import { clearAll } from '../src/engine/events.js';
-import { createGame, startGame, startWave } from '../src/engine/game.js';
+import { clearAll, on } from '../src/engine/events.js';
+import { createGame, startGame, startWave, quitRun } from '../src/engine/game.js';
 import { collectDrop } from '../src/engine/drops.js';
 import { WIDTH } from '../src/engine/map.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 import { stubCtx } from './stub-ctx.js';
-import goblin, { goblinFeature, goblinSpeed, GOBLIN_SPEED } from '../src/content/events/goblin.js';
+import goblin, { goblinFeature, goblinOnLost, goblinSpeed, GOBLIN_SPEED } from '../src/content/events/goblin.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); registerTestDrinks();
   R.registerWaves([{ groups: [] }]);
   R.registerEvent(goblin);
   R.registerFeature(goblinFeature);
+  on('game:lost', goblinOnLost);   // clearAll() dropped the module's top-level listener
 });
 
 function setup(resistance = 0) {
@@ -90,9 +91,16 @@ test('end: it runs off the right edge without stealing, then is gone', () => {
   assert.equal(g.drops.length, 1);
 });
 
-test('Review Focus 3: init clears a goblin left from the last run', () => {
+test('Review Focus 3: a new run starts without a goblin', () => {
+  setup();
+  const g = createGame(); startGame(g);
+  assert.equal(g.goblin ?? null, null);
+});
+
+test('when the run is lost the goblin is gone at once (it would freeze during the collapse)', () => {
   const g = setup();
-  goblinFeature.init(g);
+  g.goblin.x = 300;
+  quitRun(g);
   assert.equal(g.goblin, null);
 });
 

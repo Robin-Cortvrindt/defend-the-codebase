@@ -218,6 +218,10 @@ test('stealDrop removes a drop without paying and emits drop:stolen', () => {
   assert.deepEqual(seen, [d]);
   assert.equal(g.drinks.coffee, 100);
   assert.equal(stealDrop(g, d), false);
+  const by = []; on('drop:collected', e => by.push(e.by));
+  g.drops.push({ id: 2, x: 100, y: 100, drink: 'coffee', amount: 1, ttl: 10 });
+  pickDrop(g, 100, 100);
+  assert.deepEqual(by, ['player'], 'a click counts as the player picking it up');
 });
 
 test('Review Focus 5: no free cell left, the drop lands where the bug died', () => {

@@ -1,24 +1,24 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as R from '../src/engine/registry.js';
-import { clearAll } from '../src/engine/events.js';
-import { createGame, startGame, startWave } from '../src/engine/game.js';
+import { clearAll, on } from '../src/engine/events.js';
+import { createGame, startGame, startWave, quitRun } from '../src/engine/game.js';
 import { setStorage, saveProgress } from '../src/engine/investments.js';
 import { registerTestDrinks } from './helpers/drinks.js';
 import { stubCtx } from './stub-ctx.js';
-import vacuum, { vacuumFeature, VACUUM_SPEEDS, DOCK } from '../src/content/investments/robot-vacuum.js';
+import vacuum, { vacuumFeature, vacuumOnLost, VACUUM_SPEEDS, DOCK } from '../src/content/investments/robot-vacuum.js';
 
 beforeEach(() => {
   R.resetRegistry(); clearAll(); setStorage(null); registerTestDrinks();
   R.registerWaves([{ groups: [] }]);
   R.registerInvestment(vacuum);
   R.registerFeature(vacuumFeature);
+  on('game:lost', vacuumOnLost);   // clearAll() dropped the module's top-level listener
 });
 
 function game(level = 1) {
   const g = createGame(); startGame(g); startWave(g); g.spawnQueue = [];
   g.unlocks.vacuum = level;
-  vacuumFeature.init(g);
   return g;
 }
 const drop = (id, x, y, extra = {}) => ({ id, x, y, drink: 'coffee', amount: 4, ttl: 10, ...extra });
@@ -61,7 +61,7 @@ test('faster per level: 7 / 10 / 13 px in 0.1 s', () => {
 
 test('returns to the dock and parks when the floor is clean', () => {
   const g = game(3);
-  g.vacuum.x = 300; g.vacuum.y = 150;
+  g.vacuum = { x: 300, y: 150, angle: 0, moving: false };
   run(g, 5);
   assert.deepEqual([g.vacuum.x, g.vacuum.y, g.vacuum.moving], [DOCK.x, DOCK.y, false]);
 });
@@ -73,19 +73,43 @@ test('ignores drops still in the air', () => {
   assert.equal(g.drops.length, 1);
 });
 
-test('Review Focus 3: init puts it back at the dock', () => {
-  const g = game(1);
-  g.vacuum.x = 400;
-  vacuumFeature.init(g);
+test('Review Focus 3: a new run starts with the vacuum at its dock', () => {
+  const old = game(1);
+  old.drops.push(drop(1, 400, 100));
+  run(old, 1);
+  assert.ok(old.vacuum.x > DOCK.x);
+  const g = createGame(); startGame(g); startWave(g); g.unlocks.vacuum = 1;
+  vacuumFeature.update(g, 0.05);
   assert.deepEqual([g.vacuum.x, g.vacuum.y], [DOCK.x, DOCK.y]);
 });
 
-test('only moves during a sprint', () => {
+test('between sprints it drives back to the dock but collects nothing', () => {
   const g = game(3);
-  g.phase = 'review';
-  g.drops.push(drop(1, DOCK.x + 100, DOCK.y));
+  g.drops.push(drop(1, 300, 150));
   run(g, 1);
-  assert.equal(g.vacuum.x, DOCK.x);
+  const x = g.vacuum.x;
+  assert.ok(x > DOCK.x);
+  g.phase = 'review';
+  g.drops.push(drop(2, g.vacuum.x, g.vacuum.y));
+  run(g, 5);
+  assert.deepEqual([g.vacuum.x, g.vacuum.y, g.vacuum.moving], [DOCK.x, DOCK.y, false]);
+  assert.ok(g.drops.some(d => d.id === 2), 'no pickups outside a sprint');
+});
+
+test('when the run is lost it is parked at the dock at once', () => {
+  const g = game(3);
+  g.drops.push(drop(1, 300, 150));
+  run(g, 1);
+  quitRun(g);
+  assert.deepEqual([g.vacuum.x, g.vacuum.y, g.vacuum.moving], [DOCK.x, DOCK.y, false]);
+});
+
+test('vacuum pickups are marked as made by the vacuum (no click sound)', () => {
+  const g = game(1);
+  const seen = []; on('drop:collected', e => seen.push(e.by));
+  g.drops.push(drop(1, DOCK.x + 5, DOCK.y));
+  run(g, 0.2);
+  assert.deepEqual(seen, ['vacuum']);
 });
 
 test('draws without throwing, parked or driving', () => {

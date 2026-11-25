@@ -3,6 +3,7 @@
 // Events have no update hook, so the same file registers a feature that moves and draws the goblin.
 // It draws from the feature too, so it can still run off the board after the event has ended.
 import { registerEvent, registerFeature } from '../../engine/registry.js';
+import { on } from '../../engine/events.js';
 import { WIDTH, HEIGHT } from '../../engine/map.js';
 import { resistanceTo } from '../../engine/upgrades.js';
 import { nearestDrop, stealDrop } from '../../engine/drops.js';
@@ -37,7 +38,6 @@ function moveTo(g, tx, ty, speed, dt) {
 
 export const goblinFeature = {
   id: 'goblin',
-  init(game) { game.goblin = null; },
   update(game, dt) {
     const g = game.goblin;
     if (!g) return;
@@ -96,6 +96,10 @@ export function drawGoblin(ctx, g, time) {
   ctx.beginPath(); ctx.arc(5, -4, 2, 0.2, 1.4); ctx.stroke();
   ctx.restore();
 }
+
+// A lost run stops all updates, so a goblin that was still running off would stand frozen through the collapse.
+export function goblinOnLost({ game }) { if (game) game.goblin = null; }
+on('game:lost', goblinOnLost);
 
 registerEvent(goblin);
 registerFeature(goblinFeature);

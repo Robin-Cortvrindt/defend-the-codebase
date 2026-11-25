@@ -78,12 +78,13 @@ export function tickDrops(game, dt) {
   game.drops = game.drops.filter(d => d.ttl > 0);
 }
 
-export function collectDrop(game, drop) {
+// `by`: who picked it up, 'player' (a click, the default) or e.g. 'vacuum'; passed on in drop:collected.
+export function collectDrop(game, drop, by = 'player') {
   const i = game.drops.indexOf(drop);
   if (i < 0) return false;
   game.drops.splice(i, 1);
   addDrink(game, drop.drink, drop.amount);
-  emit('drop:collected', { game, drop });
+  emit('drop:collected', { game, drop, by });
   addEffect(game, {
     kind: 'pop', x: drop.x, y: drop.y - 8, text: `+${drop.amount}`,
     color: getDrink(drop.drink)?.color ?? '#fff', size: 14, ttl: 0.9,
